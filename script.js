@@ -243,7 +243,8 @@ async function handleDemoLogin() {
                     status: 'lost',
                     dateReported: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
                     reportedBy: 'Maria Silva',
-                    contact: '+258 84 123 4567'
+                    contact: '+258 84 123 4567',
+                    province: 'maputo'
                 },
                 {
                     id: generateId(),
@@ -255,7 +256,8 @@ async function handleDemoLogin() {
                     status: 'lost',
                     dateReported: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
                     reportedBy: 'João Santos',
-                    contact: '+258 82 987 6543'
+                    contact: '+258 82 987 6543',
+                    province: 'maputo'
                 },
                 {
                     id: generateId(),
@@ -267,43 +269,86 @@ async function handleDemoLogin() {
                     status: 'lost',
                     dateReported: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
                     reportedBy: 'Carlos Manuel',
-                    contact: '+258 87 456 7890'
+                    contact: '+258 87 456 7890',
+                    province: 'maputo'
                 },
                 {
                     id: generateId(),
                     type: 'bi',
                     name: 'Bilhete de Identidade',
                     number: '2345678901',
-                    location: 'Praia da Macaneta, Marracuene',
-                    description: 'BI perdido na praia, cor verde',
+                    location: 'Praça da Independência, Beira',
+                    description: 'BI perdido durante o festival, cor verde',
                     status: 'lost',
                     dateReported: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-                    reportedBy: 'António José',
-                    contact: '+258 88 765 4321'
+                    reportedBy: 'António Beira',
+                    contact: '+258 84 234 5678',
+                    province: 'beira'
                 },
                 {
                     id: generateId(),
                     type: 'passaporte',
                     name: 'Passaporte',
                     number: 'P234567',
-                    location: 'Porto de Beira, Sofala',
+                    location: 'Porto de Nacala, Nampula',
                     description: 'Passaporte azul marinho, emitido em 2022',
                     status: 'lost',
                     dateReported: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-                    reportedBy: 'Manuel Costa',
-                    contact: '+258 89 876 5432'
+                    reportedBy: 'Fátima Nampula',
+                    contact: '+258 82 345 6789',
+                    province: 'nampula'
                 },
                 {
                     id: generateId(),
                     type: 'carta',
                     name: 'Carta de Condução',
                     number: 'CD234567',
-                    location: 'Universidade Lúrio, Nampula',
+                    location: 'Universidade Zambeze, Quelimane',
                     description: 'Carta de condução categoria C, válida até 2024',
                     status: 'lost',
                     dateReported: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-                    reportedBy: 'Paulo Mário',
-                    contact: '+258 81 234 5678'
+                    reportedBy: 'José Quelimane',
+                    contact: '+258 87 567 8901',
+                    province: 'quelimane'
+                },
+                {
+                    id: generateId(),
+                    type: 'bi',
+                    name: 'Bilhete de Identidade',
+                    number: '3456789012',
+                    location: 'Mercado do Pescado, Pemba',
+                    description: 'BI perdido durante compras, cor azul, foto recente',
+                    status: 'lost',
+                    dateReported: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+                    reportedBy: 'Amélia Pemba',
+                    contact: '+258 84 567 8901',
+                    province: 'pemba'
+                },
+                {
+                    id: generateId(),
+                    type: 'passaporte',
+                    name: 'Passaporte',
+                    number: 'P456789',
+                    location: 'Universidade Lúrio, Nampula',
+                    description: 'Passaporte perdido na biblioteca, cor preta',
+                    status: 'lost',
+                    dateReported: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
+                    reportedBy: 'Eduardo Nampula',
+                    contact: '+258 82 678 9012',
+                    province: 'nampula'
+                },
+                {
+                    id: generateId(),
+                    type: 'carta',
+                    name: 'Carta de Condução',
+                    number: 'CD567890',
+                    location: 'Praça dos Heróis, Xai-Xai',
+                    description: 'Carta de condução categoria A, válida até 2026',
+                    status: 'lost',
+                    dateReported: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000).toISOString(),
+                    reportedBy: 'Joaquim Gaza',
+                    contact: '+258 87 789 0123',
+                    province: 'xai-xai'
                 }
             ];
             localStorage.setItem(STORAGE_KEYS.LOST_DOCUMENTS, JSON.stringify(mockLostDocuments));
@@ -321,7 +366,8 @@ async function handleDemoLogin() {
                     status: 'found',
                     dateReported: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
                     reportedBy: 'Ana Pereira',
-                    contact: '+258 85 234 5678'
+                    contact: '+258 85 234 5678',
+                    province: 'matola'
                 },
                 {
                     id: generateId(),
@@ -333,7 +379,8 @@ async function handleDemoLogin() {
                     status: 'found',
                     dateReported: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
                     reportedBy: 'Pedro Costa',
-                    contact: '+258 83 345 6789'
+                    contact: '+258 83 345 6789',
+                    province: 'maputo'
                 },
                 {
                     id: generateId(),
@@ -345,43 +392,86 @@ async function handleDemoLogin() {
                     status: 'found',
                     dateReported: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
                     reportedBy: 'Sofia António',
-                    contact: '+258 86 567 8901'
+                    contact: '+258 86 567 8901',
+                    province: 'maputo'
                 },
                 {
                     id: generateId(),
                     type: 'bi',
                     name: 'Bilhete de Identidade',
                     number: '3456789012',
-                    location: 'Mercado Municipal de Quelimane, Zambézia',
-                    description: 'BI encontrado no mercado, cor azul',
+                    location: 'Mercado Municipal, Tete',
+                    description: 'BI encontrado na praça de alimentação',
                     status: 'found',
                     dateReported: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-                    reportedBy: 'Rosa Maria',
-                    contact: '+258 84 567 8901'
+                    reportedBy: 'Manuel Tete',
+                    contact: '+258 84 456 7890',
+                    province: 'tete'
                 },
                 {
                     id: generateId(),
                     type: 'passaporte',
                     name: 'Passaporte',
                     number: 'P345678',
-                    location: 'Aeroporto de Tete, Tete',
-                    description: 'Passaporte vermelho, encontrado na sala de espera',
+                    location: 'Praia do Tofo, Inhambane',
+                    description: 'Passaporte encontrado na praia, cor preta',
                     status: 'found',
                     dateReported: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-                    reportedBy: 'José Manuel',
-                    contact: '+258 82 678 9012'
+                    reportedBy: 'Rosa Inhambane',
+                    contact: '+258 82 456 7890',
+                    province: 'xai-xai'
                 },
                 {
                     id: generateId(),
                     type: 'carta',
                     name: 'Carta de Condução',
                     number: 'CD456789',
-                    location: 'Praça da Independência, Xai-Xai',
-                    description: 'Carta de condução encontrada no banco',
+                    location: 'Shopping Polana, Maputo',
+                    description: 'Carta de condução encontrada no cinema',
                     status: 'found',
                     dateReported: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-                    reportedBy: 'Carlos Alberto',
-                    contact: '+258 87 789 0123'
+                    reportedBy: 'Carlos Maputo',
+                    contact: '+258 87 678 9012',
+                    province: 'maputo'
+                },
+                {
+                    id: generateId(),
+                    type: 'bi',
+                    name: 'Bilhete de Identidade',
+                    number: '4567890123',
+                    location: 'Praia de Tofo, Inhambane',
+                    description: 'BI encontrado na praia, cor verde, foto antiga',
+                    status: 'found',
+                    dateReported: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+                    reportedBy: 'Maria Inhambane',
+                    contact: '+258 84 678 9012',
+                    province: 'inhambane'
+                },
+                {
+                    id: generateId(),
+                    type: 'passaporte',
+                    name: 'Passaporte',
+                    number: 'P567890',
+                    location: 'Aeroporto de Nacala, Nampula',
+                    description: 'Passaporte encontrado no terminal de chegadas',
+                    status: 'found',
+                    dateReported: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
+                    reportedBy: 'António Nacala',
+                    contact: '+258 82 789 0123',
+                    province: 'nampula'
+                },
+                {
+                    id: generateId(),
+                    type: 'carta',
+                    name: 'Carta de Condução',
+                    number: 'CD678901',
+                    location: 'Universidade Pedagógica, Beira',
+                    description: 'Carta de condução encontrada no estacionamento',
+                    status: 'found',
+                    dateReported: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000).toISOString(),
+                    reportedBy: 'Carlos Beira',
+                    contact: '+258 87 890 1234',
+                    province: 'beira'
                 }
             ];
             localStorage.setItem(STORAGE_KEYS.FOUND_DOCUMENTS, JSON.stringify(mockFoundDocuments));
