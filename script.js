@@ -231,10 +231,88 @@ async function handleDemoLogin() {
             localStorage.setItem(STORAGE_KEYS.DOCUMENTS, JSON.stringify([]));
         }
         if (!localStorage.getItem(STORAGE_KEYS.LOST_DOCUMENTS)) {
-            localStorage.setItem(STORAGE_KEYS.LOST_DOCUMENTS, JSON.stringify([]));
+            // Mock data for lost documents
+            const mockLostDocuments = [
+                {
+                    id: generateId(),
+                    type: 'bi',
+                    name: 'Bilhete de Identidade',
+                    number: '1234567890',
+                    location: 'Praça dos Trabalhadores, Maputo',
+                    description: 'BI perdido na praça, cor azul, foto recente',
+                    status: 'lost',
+                    dateReported: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 dias atrás
+                    reportedBy: 'Maria Silva',
+                    contact: '+258 84 123 4567'
+                },
+                {
+                    id: generateId(),
+                    type: 'passaporte',
+                    name: 'Passaporte',
+                    number: 'P123456',
+                    location: 'Aeroporto Internacional de Maputo',
+                    description: 'Passaporte vermelho, emitido em 2023',
+                    status: 'lost',
+                    dateReported: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 dias atrás
+                    reportedBy: 'João Santos',
+                    contact: '+258 82 987 6543'
+                },
+                {
+                    id: generateId(),
+                    type: 'carta',
+                    name: 'Carta de Condução',
+                    number: 'CD789012',
+                    location: 'Baixa de Maputo, próximo ao Mercado Central',
+                    description: 'Carta de condução categoria B, válida até 2025',
+                    status: 'lost',
+                    dateReported: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 dia atrás
+                    reportedBy: 'Carlos Manuel',
+                    contact: '+258 87 456 7890'
+                }
+            ];
+            localStorage.setItem(STORAGE_KEYS.LOST_DOCUMENTS, JSON.stringify(mockLostDocuments));
         }
         if (!localStorage.getItem(STORAGE_KEYS.FOUND_DOCUMENTS)) {
-            localStorage.setItem(STORAGE_KEYS.FOUND_DOCUMENTS, JSON.stringify([]));
+            // Mock data for found documents
+            const mockFoundDocuments = [
+                {
+                    id: generateId(),
+                    type: 'bi',
+                    name: 'Bilhete de Identidade',
+                    number: '9876543210',
+                    location: 'Shopping Maputo Sul, Matola',
+                    description: 'BI encontrado no estacionamento, cor verde',
+                    status: 'found',
+                    dateReported: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 dias atrás
+                    reportedBy: 'Ana Pereira',
+                    contact: '+258 85 234 5678'
+                },
+                {
+                    id: generateId(),
+                    type: 'passaporte',
+                    name: 'Passaporte',
+                    number: 'P654321',
+                    location: 'Praia da Costa do Sol, Maputo',
+                    description: 'Passaporte azul marinho, encontrado na praia',
+                    status: 'found',
+                    dateReported: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(), // 4 dias atrás
+                    reportedBy: 'Pedro Costa',
+                    contact: '+258 83 345 6789'
+                },
+                {
+                    id: generateId(),
+                    type: 'carta',
+                    name: 'Carta de Condução',
+                    number: 'CD345678',
+                    location: 'Universidade Eduardo Mondlane, Maputo',
+                    description: 'Carta de condução encontrada na biblioteca',
+                    status: 'found',
+                    dateReported: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(), // 6 dias atrás
+                    reportedBy: 'Sofia António',
+                    contact: '+258 86 567 8901'
+                }
+            ];
+            localStorage.setItem(STORAGE_KEYS.FOUND_DOCUMENTS, JSON.stringify(mockFoundDocuments));
         }
         if (!localStorage.getItem(STORAGE_KEYS.CHAT_MESSAGES)) {
             localStorage.setItem(STORAGE_KEYS.CHAT_MESSAGES, JSON.stringify([]));
