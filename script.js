@@ -221,25 +221,39 @@ function updateThemeIcon() {
 // Login functionality
 async function handleDemoLogin() {
     try {
-        const response = await fetch('/api/auth/demo', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        });
+        // Simulate demo login without API call
+        currentUser = 'Demo User';
+        isLoggedIn = true;
+        localStorage.setItem(STORAGE_KEYS.IS_LOGGED_IN, 'true');
         
-        if (response.ok) {
-            const data = await response.json();
-            currentUser = data.user;
-            isLoggedIn = true;
-            showApp();
-            showToast(t('message.welcome_demo') || 'Bem-vindo! Você está usando a versão demo.', 'success');
-        } else {
-            showToast('Erro ao fazer login', 'error');
+        // Initialize demo data if not exists
+        if (!localStorage.getItem(STORAGE_KEYS.DOCUMENTS)) {
+            localStorage.setItem(STORAGE_KEYS.DOCUMENTS, JSON.stringify([]));
         }
+        if (!localStorage.getItem(STORAGE_KEYS.LOST_DOCUMENTS)) {
+            localStorage.setItem(STORAGE_KEYS.LOST_DOCUMENTS, JSON.stringify([]));
+        }
+        if (!localStorage.getItem(STORAGE_KEYS.FOUND_DOCUMENTS)) {
+            localStorage.setItem(STORAGE_KEYS.FOUND_DOCUMENTS, JSON.stringify([]));
+        }
+        if (!localStorage.getItem(STORAGE_KEYS.CHAT_MESSAGES)) {
+            localStorage.setItem(STORAGE_KEYS.CHAT_MESSAGES, JSON.stringify([]));
+        }
+        
+        showApp();
+        showToast(t('message.welcome_demo') || 'Bem-vindo! Você está usando a versão demo.', 'success');
+        
+        // Load initial data
+        loadUserPoints();
+        loadDocuments();
+        loadLostDocuments();
+        loadFoundDocuments();
+        initializeFeedData();
+        updateProfileStats();
+        
     } catch (error) {
         console.error('Login error:', error);
-        showToast('Erro de conexão', 'error');
+        showToast('Erro ao fazer login', 'error');
     }
 }
 
@@ -475,95 +489,85 @@ function setupFileUpload() {
 async function handleAddDocument(e) {
     e.preventDefault();
     
-    const formData = new FormData();
-    formData.append('type', document.getElementById('document-type').value);
-    formData.append('name', document.getElementById('document-name').value);
-    formData.append('number', document.getElementById('document-number').value);
-    formData.append('description', document.getElementById('document-description').value);
-    
-    // Add files
-    const fileInput = document.getElementById('document-image');
-    if (fileInput && fileInput.files) {
-        for (let file of fileInput.files) {
-            formData.append('files', file);
-        }
-    }
+    const newDocument = {
+        id: generateId(),
+        type: document.getElementById('document-type').value,
+        name: document.getElementById('document-name').value,
+        number: document.getElementById('document-number').value,
+        description: document.getElementById('document-description').value,
+        status: 'active',
+        dateAdded: new Date().toISOString()
+    };
     
     // Validate required fields
-    if (!formData.get('type') || !formData.get('name') || !formData.get('number')) {
+    if (!newDocument.type || !newDocument.name || !newDocument.number) {
         showToast(t('message.fill_required') || 'Por favor, preencha todos os campos obrigatórios.', 'error');
         return;
     }
     
     try {
-        const response = await fetch('/api/documents', {
-            method: 'POST',
-            body: formData
-        });
+        // Get existing documents
+        const documents = getDocuments();
         
-        if (response.ok) {
-            // Close modal and reset form
-            if (documentModal) documentModal.classList.remove('active');
-            if (documentForm) documentForm.reset();
-            
-            // Reload documents display
-            loadDocuments();
-            updateProfileStats();
-            
-            showToast(t('message.document_added') || 'Documento adicionado com sucesso!', 'success');
-        } else {
-            const error = await response.json();
-            showToast(error.error || 'Erro ao adicionar documento', 'error');
-        }
+        // Add new document
+        documents.push(newDocument);
+        
+        // Save to localStorage
+        localStorage.setItem(STORAGE_KEYS.DOCUMENTS, JSON.stringify(documents));
+        
+        // Close modal and reset form
+        if (documentModal) documentModal.classList.remove('active');
+        if (documentForm) documentForm.reset();
+        
+        // Reload documents display
+        loadDocuments();
+        updateProfileStats();
+        
+        showToast(t('message.document_added') || 'Documento adicionado com sucesso!', 'success');
     } catch (error) {
         console.error('Error adding document:', error);
-        showToast('Erro de conexão', 'error');
+        showToast('Erro ao adicionar documento', 'error');
     }
 }
 
 async function loadDocuments() {
     try {
-        const response = await fetch('/api/documents');
-        if (response.ok) {
-            const documents = await response.json();
-            
-            // Save documents to localStorage
-            localStorage.setItem(STORAGE_KEYS.DOCUMENTS, JSON.stringify(documents));
-
-            const documentsGrid = document.getElementById('documents-grid');
-            const documentCount = document.getElementById('document-count');
-            
-            if (!documentsGrid) return;
-            
-            // Update count
-            if (documentCount) {
-                documentCount.textContent = `${documents.length} total`;
-            }
-            
-            // Clear grid
-            documentsGrid.innerHTML = '';
-            
-            if (documents.length === 0) {
-                documentsGrid.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-file-alt"></i>
-                        <h3>${t('documents.no_documents') || 'Nenhum documento adicionado ainda'}</h3>
-                        <p>${t('documents.add_first') || 'Clique em "Adicionar Novo Documento" para adicionar seu primeiro documento.'}</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            // Render documents
-            documents.forEach(doc => {
-                const documentCard = createDocumentCard(doc, true);
-                documentsGrid.appendChild(documentCard);
-            });
-            
-            // Update profile stats after loading documents
-            updateProfileStats();
-
+        // Get documents from localStorage instead of API
+        const documents = getDocuments();
+        
+        const documentsGrid = document.getElementById('documents-grid');
+        const documentCount = document.getElementById('document-count');
+        
+        if (!documentsGrid) return;
+        
+        // Update count
+        if (documentCount) {
+            documentCount.textContent = `${documents.length} total`;
         }
+        
+        // Clear grid
+        documentsGrid.innerHTML = '';
+        
+        if (documents.length === 0) {
+            documentsGrid.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-file-alt"></i>
+                    <h3>${t('documents.no_documents') || 'Nenhum documento adicionado ainda'}</h3>
+                    <p>${t('documents.add_first') || 'Clique em "Adicionar Novo Documento" para adicionar seu primeiro documento.'}</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Render documents
+        documents.forEach(doc => {
+            const documentCard = createDocumentCard(doc, true);
+            documentsGrid.appendChild(documentCard);
+        });
+        
+        // Update profile stats after loading documents
+        updateProfileStats();
+        
     } catch (error) {
         console.error('Error loading documents:', error);
     }
