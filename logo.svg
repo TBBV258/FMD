@@ -1,0 +1,54 @@
+<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="60" cy="60" r="55" fill="#2196F3" stroke="#ffffff" stroke-width="2"/>
+  
+  <!-- Search magnifying glass -->
+  <g transform="translate(25, 25)">
+    <!-- Glass circle -->
+    <circle cx="25" cy="25" r="18" fill="none" stroke="#FFD700" stroke-width="4"/>
+    <!-- Handle -->
+    <path d="M39 39 L50 50" stroke="#FFD700" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Document stack -->
+  <g transform="translate(45, 35)">
+    <!-- Back document -->
+    <rect x="8" y="8" width="28" height="36" rx="2" fill="#ffffff" opacity="0.8"/>
+    <!-- Middle document -->
+    <rect x="4" y="4" width="28" height="36" rx="2" fill="#ffffff" opacity="0.9"/>
+    <!-- Front document -->
+    <rect x="0" y="0" width="28" height="36" rx="2" fill="#ffffff"/>
+    
+    <!-- Document lines -->
+    <line x1="4" y1="8" x2="24" y2="8" stroke="#2196F3" stroke-width="1"/>
+    <line x1="4" y1="12" x2="20" y2="12" stroke="#2196F3" stroke-width="1"/>
+    <line x1="4" y1="16" x2="22" y2="16" stroke="#2196F3" stroke-width="1"/>
+    
+    <!-- ID photo placeholder -->
+    <rect x="18" y="4" width="8" height="10" rx="1" fill="#E0E0E0"/>
+    <circle cx="22" cy="7" r="1.5" fill="#999999"/>
+    <path d="M19 11 Q22 9 25 11" stroke="#999999" stroke-width="0.5" fill="none"/>
+  </g>
+  
+  <!-- Location pin -->
+  <g transform="translate(78, 75)">
+    <path d="M8 0 C12.4 0 16 3.6 16 8 C16 12 8 20 8 20 C8 20 0 12 0 8 C0 3.6 3.6 0 8 0 Z" fill="#FFD700"/>
+    <circle cx="8" cy="8" r="3" fill="#ffffff"/>
+  </g>
+  
+  <!-- Success checkmark -->
+  <g transform="translate(85, 25)">
+    <circle cx="8" cy="8" r="8" fill="#4CAF50"/>
+    <path d="M4 8 L7 11 L12 5" stroke="#ffffff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  
+  <!-- Brand text curve -->
+  <defs>
+    <path id="text-circle" d="M 60,60 m -50,0 a 50,50 0 1,1 100,0 a 50,50 0 1,1 -100,0"/>
+  </defs>
+  <text font-family="Roboto, Arial, sans-serif" font-size="8" font-weight="500" fill="#ffffff">
+    <textPath href="#text-circle" startOffset="25%">
+      FindMyDocs • Documentos • 
+    </textPath>
+  </text>
+</svg>

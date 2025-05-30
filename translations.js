@@ -1,0 +1,367 @@
+// Translations for the FindMyDocs application
+const translations = {
+    pt: {
+        // Navigation
+        'nav.home': 'Início',
+        'nav.report_lost': 'Relatar Perda',
+        'nav.report_found': 'Relatar Encontrado',
+        'nav.reset': 'Reset',
+        
+        // Login
+        'login.title': 'FindMyDocs',
+        'login.subtitle': 'Sistema de gestão de documentos perdidos e encontrados',
+        'login.demo_button': 'Entrar como Demo',
+        
+        // Welcome
+        'welcome.title': 'Bem-vindo, Google User!',
+        'welcome.tips_title': 'Dicas para Usar o FindMyDocs',
+        'welcome.points': 'Pontos',
+        'welcome.activity_points': 'Seus Pontos de Atividade',
+        'welcome.earn_points': 'Ganhe 100 pontos para uma verificação de documento gratuita!',
+        'welcome.help_others': 'Ganhe pontos ajudando outras pessoas a encontrarem seus documentos perdidos.',
+        'welcome.learn_more': 'Saber mais',
+        'welcome.free_plan': 'Plano Grátis',
+        'welcome.current': 'Atual',
+        'welcome.plan_description': 'Apenas armazenamento de carteira de identidade disponível',
+        'welcome.upgrade': 'Atualizar',
+        'welcome.add_document': 'Adicionar Novo Documento',
+        
+        // Tips
+        'tip.safe_location.title': 'Encontre em Locais Seguros',
+        'tip.safe_location.description': 'Sempre se encontre em delegacias, edifícios governamentais ou locais públicos ao trocar documentos.',
+        'tip.verify_ownership.title': 'Verificar Propriedade',
+        'tip.verify_ownership.description': 'Peça identificação adicional para verificar a propriedade antes de devolver documentos.',
+        'tip.be_specific.title': 'Seja Específico Sobre Localizações',
+        'tip.be_specific.description': 'Ao reportar documentos perdidos ou encontrados, seja o mais específico possível sobre a localização.',
+        'tip.report_immediately.title': 'Reporte Imediatamente',
+        'tip.report_immediately.description': 'Reporte documentos perdidos ou encontrados o mais rápido possível para aumentar as chances de recuperação.',
+        'tip.photo_safety.title': 'Segurança de Fotos',
+        'tip.photo_safety.description': 'Ao enviar fotos de documentos, cubra ou desfoque qualquer informação pessoal.',
+        'tip.earn_points.title': 'Ganhe Mais Pontos',
+        'tip.earn_points.description': 'Complete seu perfil, reporte documentos encontrados e ajude outros para ganhar mais pontos.',
+        
+        // Documents
+        'documents.title': 'Seus Documentos',
+        'documents.total': 'total',
+        'documents.no_documents': 'Nenhum documento adicionado ainda',
+        'documents.add_first': 'Clique em "Adicionar Novo Documento" para adicionar seu primeiro documento.',
+        'documents.view': 'Ver',
+        'documents.edit': 'Editar',
+        'documents.mark_lost': 'Marcar como Perdido',
+        'documents.cancel_lost': 'Cancelar Status de Perdido',
+        'documents.contact': 'Contato',
+        'documents.this_is_mine': 'Este é meu',
+        'documents.verified_finder': 'Localizador verificado',
+        
+        // Document Modal
+        'document.modal_title': 'Detalhes do Documento',
+        'document.modal_subtitle': 'Adicione seu documento importante para proteção',
+        'document.type': 'Tipo de Documento',
+        'document.name': 'Nome do Documento',
+        'document.number': 'Número do Documento',
+        'document.description': 'Descrição (opcional)',
+        'document.upload_image': 'Enviar Imagem/PDF do Documento',
+        'document.upload_text': 'Clique para enviar ou arraste e solte',
+        'document.upload_formats': 'Imagens (JPG, PNG) ou PDF • Máx 5MB cada',
+        'document.security_title': 'Garantia de Segurança',
+        'document.security_description': 'Seus documentos são criptografados e armazenados com segurança. Apenas você tem acesso a eles.',
+        'document.types_title': 'Tipos de Documentos',
+        'document.types_description': 'Contas gratuitas podem apenas armazenar carteiras de identidade. Atualize para Premium para passaportes, carteiras de motorista e cartões bancários.',
+        'document.cancel': 'Cancelar',
+        'document.save': 'Salvar Documento',
+        
+        // Lost Documents
+        'lost.title': 'Documentos Perdidos',
+        'lost.report_button': 'Reportar Perda',
+        'lost.search_placeholder': 'Buscar documentos...',
+        'lost.all_types': 'Todos os Tipos',
+        'lost.recently_reported': 'Recentemente Reportados como Perdidos',
+        'lost.documents_found': 'documentos encontrados',
+        'lost.no_documents': 'Nenhum documento perdido reportado',
+        'lost.be_first': 'Seja o primeiro a reportar um documento perdido.',
+        
+        // Lost Modal
+        'lost.modal_title': 'Reportar Perda',
+        'lost.document_type': 'Tipo de Documento',
+        'lost.document_name': 'Nome do Documento',
+        'lost.where_lost': 'Onde foi perdido?',
+        'lost.location_placeholder': 'Digite o local onde foi perdido',
+        'lost.location_help': 'Seja o mais específico possível para ajudar outros a encontrá-lo',
+        'lost.additional_details': 'Detalhes adicionais',
+        'lost.description_placeholder': 'Descreva o documento que foi perdido',
+        'lost.description_help': 'Inclua qualquer informação visível que possa ajudar a identificar o documento',
+        'lost.contact_info': 'Suas informações de contato',
+        'lost.contact_placeholder': '+258 00 000 0000',
+        'lost.contact_help': 'Isso será compartilhado com quem encontrar o documento',
+        'lost.report_button_submit': 'Reportar Perda',
+        
+        // Found Documents
+        'found.title': 'Documentos Encontrados',
+        'found.report_button': 'Reportar Encontrado',
+        'found.recently_found': 'Documentos Encontrados Recentemente',
+        'found.no_documents': 'Nenhum documento encontrado reportado',
+        'found.help_others': 'Ajude outros reportando documentos que você encontrou.',
+        
+        // Found Modal
+        'found.modal_title': 'Reportar Encontrado',
+        'found.tips_title': 'Dicas para Relatos de Documentos Encontrados',
+        'found.tips_description': 'Obrigado por ajudar! Fornecer detalhes precisos ajuda a devolver documentos aos seus donos mais rapidamente.',
+        'found.where_found': 'Onde você o encontrou?',
+        'found.location_placeholder': 'Digite o local onde você o encontrou',
+        'found.finder_contact': 'Suas informações de contato',
+        'found.finder_contact_placeholder': '+258 00 000 0000',
+        'found.finder_contact_help': 'Isso será compartilhado com o proprietário do documento caso ele o reivindique',
+        'found.upload_image': 'Enviar imagem (opcional)',
+        'found.upload_help': 'Uma foto ajuda o proprietário a identificar seu documento',
+        'found.privacy_warning': 'Por favor, proteja a privacidade - desfoque ou cubra informações sensíveis em fotos',
+        'found.report_button_submit': 'Enviar Relato de Encontrado',
+        
+        // Document Types
+        'type.bi': 'BI (Bilhete de Identidade)',
+        'type.passaporte': 'Passaporte',
+        'type.carta': 'Carta de Condução',
+        'type.outros': 'Outros',
+        
+        // Status
+        'status.active': 'Ativo',
+        'status.lost': 'Perdido',
+        'status.found': 'Encontrado',
+        
+        // Chat
+        'chat.title': 'Chat',
+        'chat.placeholder': 'Digite sua mensagem...',
+        'chat.send': 'Enviar',
+        
+        // Messages
+        'message.document_added': 'Documento adicionado com sucesso!',
+        'message.document_marked_lost': 'Documento marcado como perdido com sucesso!',
+        'message.lost_reported': 'Documento perdido reportado com sucesso!',
+        'message.found_reported': 'Documento encontrado reportado com sucesso! Obrigado por ajudar!',
+        'message.fill_required': 'Por favor, preencha todos os campos obrigatórios.',
+        'message.confirm_mark_lost': 'Tem certeza de que deseja marcar este documento como perdido? Isso o tornará visível no feed público de documentos perdidos.',
+        'message.match_found': 'Você encontrou um documento que foi marcado como perdido! Clique para iniciar conversa com o dono.',
+        'message.welcome_demo': 'Bem-vindo! Você está usando a versão demo.',
+        
+        // Profile
+        'profile.title': 'Perfil do Usuário',
+        'profile.edit': 'Editar',
+        'profile.logout': 'Sair',
+        'profile.member_since': 'Membro desde:',
+        'profile.status.active': 'Ativo',
+        'profile.plan.free': 'Plano Grátis',
+        'profile.stats.documents': 'Documentos',
+        'profile.stats.points': 'Pontos',
+        'profile.stats.helped': 'Ajudou',
+        'profile.stats.lost': 'Perdidos',
+        'profile.actions.backup.title': 'Backup de Dados',
+        'profile.actions.backup.description': 'Faça backup dos seus documentos',
+        'profile.actions.backup.button': 'Fazer Backup',
+        'profile.actions.notifications.title': 'Notificações',
+        'profile.actions.notifications.description': 'Gerencie suas preferências',
+        'profile.actions.notifications.button': 'Configurar',
+        'profile.actions.security.title': 'Segurança',
+        'profile.actions.security.description': 'Configurações de segurança',
+        'profile.actions.security.button': 'Configurar',
+        'profile.actions.upgrade.title': 'Upgrade Premium',
+        'profile.actions.upgrade.description': 'Desbloqueie recursos premium',
+        'profile.actions.upgrade.button': 'Atualizar',
+        'profile.achievements.title': 'Conquistas',
+        'profile.achievements.first_document': 'Primeiro Documento',
+        'profile.achievements.first_document_desc': 'Adicionou seu primeiro documento',
+        'profile.achievements.helper': 'Ajudante',
+        'profile.achievements.helper_desc': 'Ajude 5 pessoas a encontrar documentos',
+        'profile.achievements.superstar': 'Superstar',
+        'profile.achievements.superstar_desc': 'Alcance 1000 pontos',
+        'profile.activity.title': 'Atividade Recente',
+        'profile.activity.joined': 'Juntou-se ao FindMyDocs',
+
+        // Common
+        'common.select_type': 'Selecione o tipo de documento',
+        'common.required': 'obrigatório'
+    },
+    
+    en: {
+        // Navigation
+        'nav.home': 'Home',
+        'nav.report_lost': 'Report Lost',
+        'nav.report_found': 'Report Found',
+        'nav.reset': 'Reset',
+        
+        // Login
+        'login.title': 'FindMyDocs',
+        'login.subtitle': 'Lost and found document management system',
+        'login.demo_button': 'Login as Demo',
+        
+        // Welcome
+        'welcome.title': 'Welcome, Google User!',
+        'welcome.tips_title': 'Tips for Using FindMyDocs',
+        'welcome.points': 'Points',
+        'welcome.activity_points': 'Your Activity Points',
+        'welcome.earn_points': 'Earn 100 more points for a free document verification!',
+        'welcome.help_others': 'Earn points by helping others find their lost documents.',
+        'welcome.learn_more': 'Learn more',
+        'welcome.free_plan': 'Free Plan',
+        'welcome.current': 'Current',
+        'welcome.plan_description': 'Only ID card storage available',
+        'welcome.upgrade': 'Upgrade',
+        'welcome.add_document': 'Add New Document',
+        
+        // Tips
+        'tip.safe_location.title': 'Meet in Safe Locations',
+        'tip.safe_location.description': 'Always meet at police stations, government buildings, or public places when exchanging documents.',
+        'tip.verify_ownership.title': 'Verify Ownership',
+        'tip.verify_ownership.description': 'Ask for additional identification to verify ownership before returning documents.',
+        'tip.be_specific.title': 'Be Specific About Locations',
+        'tip.be_specific.description': 'When reporting lost or found documents, be as specific as possible about the location.',
+        'tip.report_immediately.title': 'Report Immediately',
+        'tip.report_immediately.description': 'Report lost or found documents as soon as possible to increase chances of recovery.',
+        'tip.photo_safety.title': 'Photo Safety',
+        'tip.photo_safety.description': 'When uploading document photos, cover or blur any personal information.',
+        'tip.earn_points.title': 'Earn More Points',
+        'tip.earn_points.description': 'Complete your profile, report found documents, and help others to earn more points.',
+        
+        // Documents
+        'documents.title': 'Your Documents',
+        'documents.total': 'total',
+        'documents.no_documents': 'No documents added yet',
+        'documents.add_first': 'Click "Add New Document" to add your first document.',
+        'documents.view': 'View',
+        'documents.edit': 'Edit',
+        'documents.mark_lost': 'Mark as Lost',
+        'documents.cancel_lost': 'Cancel Lost Status',
+        'documents.contact': 'Contact',
+        'documents.this_is_mine': 'This is mine',
+        'documents.verified_finder': 'Verified finder',
+        
+        // Document Modal
+        'document.modal_title': 'Document Details',
+        'document.modal_subtitle': 'Add your important document for safekeeping',
+        'document.type': 'Document Type',
+        'document.name': 'Document Name',
+        'document.number': 'Document Number',
+        'document.description': 'Description (optional)',
+        'document.upload_image': 'Upload Document Image/PDF',
+        'document.upload_text': 'Click to upload or drag and drop',
+        'document.upload_formats': 'Images (JPG, PNG) or PDF • Max 5MB each',
+        'document.security_title': 'Security Assurance',
+        'document.security_description': 'Your documents are encrypted and stored securely. Only you have access to them.',
+        'document.types_title': 'Document Types',
+        'document.types_description': 'Free accounts can only store ID cards. Upgrade to Premium for passports, driver\'s licenses, and bank cards.',
+        'document.cancel': 'Cancel',
+        'document.save': 'Save Document',
+        
+        // Lost Documents
+        'lost.title': 'Lost Documents',
+        'lost.report_button': 'Report Lost',
+        'lost.search_placeholder': 'Search documents...',
+        'lost.all_types': 'All Types',
+        'lost.recently_reported': 'Recently Reported as Lost',
+        'lost.documents_found': 'documents found',
+        'lost.no_documents': 'No lost documents reported',
+        'lost.be_first': 'Be the first to report a lost document.',
+        
+        // Lost Modal
+        'lost.modal_title': 'Report Lost',
+        'lost.document_type': 'Document Type',
+        'lost.document_name': 'Document Name',
+        'lost.where_lost': 'Where was it lost?',
+        'lost.location_placeholder': 'Enter the location where it was lost',
+        'lost.location_help': 'Be as specific as possible to help others find it',
+        'lost.additional_details': 'Additional details',
+        'lost.description_placeholder': 'Describe the document that was lost',
+        'lost.description_help': 'Include any visible information that might help identify the document',
+        'lost.contact_info': 'Your contact information',
+        'lost.contact_placeholder': '+258 00 000 0000',
+        'lost.contact_help': 'This will be shared with whoever finds the document',
+        'lost.report_button_submit': 'Report Lost',
+        
+        // Found Documents
+        'found.title': 'Found Documents',
+        'found.report_button': 'Report Found',
+        'found.recently_found': 'Recently Found Documents',
+        'found.no_documents': 'No found documents reported',
+        'found.help_others': 'Help others by reporting documents you have found.',
+        
+        // Found Modal
+        'found.modal_title': 'Report Found',
+        'found.tips_title': 'Tips for Found Document Reports',
+        'found.tips_description': 'Thank you for helping! Providing accurate details helps return documents to their owners faster.',
+        'found.where_found': 'Where did you find it?',
+        'found.location_placeholder': 'Enter the location where you found it',
+        'found.finder_contact': 'Your contact information',
+        'found.finder_contact_placeholder': '+258 00 000 0000',
+        'found.finder_contact_help': 'This will be shared with the document owner if they claim it',
+        'found.upload_image': 'Upload image (optional)',
+        'found.upload_help': 'A photo helps the owner identify their document',
+        'found.privacy_warning': 'Please protect privacy - blur or cover sensitive information in photos',
+        'found.report_button_submit': 'Submit Found Report',
+        
+        // Document Types
+        'type.bi': 'ID Card (Bilhete de Identidade)',
+        'type.passaporte': 'Passport',
+        'type.carta': 'Driver\'s License',
+        'type.outros': 'Others',
+        
+        // Status
+        'status.active': 'Active',
+        'status.lost': 'Lost',
+        'status.found': 'Found',
+        
+        // Chat
+        'chat.title': 'Chat',
+        'chat.placeholder': 'Type your message...',
+        'chat.send': 'Send',
+        
+        // Messages
+        'message.document_added': 'Document added successfully!',
+        'message.document_marked_lost': 'Document marked as lost successfully!',
+        'message.lost_reported': 'Lost document reported successfully!',
+        'message.found_reported': 'Found document reported successfully! Thank you for helping!',
+        'message.fill_required': 'Please fill in all required fields.',
+        'message.confirm_mark_lost': 'Are you sure you want to mark this document as lost? This will make it visible in the public lost documents feed.',
+        'message.match_found': 'You found a document that was marked as lost! Click to start conversation with the owner.',
+        'message.welcome_demo': 'Welcome! You are using the demo version.',
+        
+        // Profile
+        'profile.title': 'User Profile',
+        'profile.edit': 'Edit',
+        'profile.logout': 'Logout',
+        'profile.member_since': 'Member since:',
+        'profile.status.active': 'Active',
+        'profile.plan.free': 'Free Plan',
+        'profile.stats.documents': 'Documents',
+        'profile.stats.points': 'Points',
+        'profile.stats.helped': 'Helped',
+        'profile.stats.lost': 'Lost',
+        'profile.actions.backup.title': 'Data Backup',
+        'profile.actions.backup.description': 'Backup your documents',
+        'profile.actions.backup.button': 'Create Backup',
+        'profile.actions.notifications.title': 'Notifications',
+        'profile.actions.notifications.description': 'Manage your preferences',
+        'profile.actions.notifications.button': 'Configure',
+        'profile.actions.security.title': 'Security',
+        'profile.actions.security.description': 'Security settings',
+        'profile.actions.security.button': 'Configure',
+        'profile.actions.upgrade.title': 'Premium Upgrade',
+        'profile.actions.upgrade.description': 'Unlock premium features',
+        'profile.actions.upgrade.button': 'Upgrade',
+        'profile.achievements.title': 'Achievements',
+        'profile.achievements.first_document': 'First Document',
+        'profile.achievements.first_document_desc': 'Added your first document',
+        'profile.achievements.helper': 'Helper',
+        'profile.achievements.helper_desc': 'Help 5 people find documents',
+        'profile.achievements.superstar': 'Superstar',
+        'profile.achievements.superstar_desc': 'Reach 1000 points',
+        'profile.activity.title': 'Recent Activity',
+        'profile.activity.joined': 'Joined FindMyDocs',
+
+        // Common
+        'common.select_type': 'Select document type',
+        'common.required': 'required'
+    }
+};
+
+// Make translations available globally
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = translations;
+}
