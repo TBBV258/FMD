@@ -868,14 +868,12 @@ async function handleAddDocument(e) {
         id: generateId(),
         type: document.getElementById('document-type').value,
         name: document.getElementById('document-name').value,
-        number: document.getElementById('document-number').value,
         description: document.getElementById('document-description').value,
         status: 'active',
         dateAdded: new Date().toISOString()
     };
-    
     // Validate required fields
-    if (!newDocument.type || !newDocument.name || !newDocument.number) {
+    if (!newDocument.type || !newDocument.name) {
         showToast(t('message.fill_required') || 'Por favor, preencha todos os campos obrigatórios.', 'error');
         return;
     }
