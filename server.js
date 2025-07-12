@@ -1,3 +1,21 @@
+// Country prefix and flag info for contact (for frontend usage)
+const countryPrefixes = [
+    { code: 'MZ', name: 'Mozambique', prefix: '+258', flag: '🇲🇿' },
+    { code: 'PT', name: 'Portugal', prefix: '+351', flag: '🇵🇹' },
+    { code: 'BR', name: 'Brazil', prefix: '+55', flag: '🇧🇷' },
+    { code: 'ZA', name: 'South Africa', prefix: '+27', flag: '🇿🇦' },
+    { code: 'AO', name: 'Angola', prefix: '+244', flag: '🇦🇴' },
+    { code: 'US', name: 'United States', prefix: '+1', flag: '🇺🇸' },
+    { code: 'GB', name: 'United Kingdom', prefix: '+44', flag: '🇬🇧' },
+    { code: 'IN', name: 'India', prefix: '+91', flag: '🇮🇳' },
+    { code: 'FR', name: 'France', prefix: '+33', flag: '🇫🇷' },
+    { code: 'ES', name: 'Spain', prefix: '+34', flag: '🇪🇸' },
+    // Add more as needed
+];
+
+app.get('/api/country-prefixes', (req, res) => {
+    res.json(countryPrefixes);
+});
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
@@ -52,10 +70,46 @@ const upload = multer({
 
 // Simple demo authentication for now
 let currentDemoUser = null;
+let registeredUsers = [];
 
 // Auth endpoints
+
+// Register endpoint
+app.post('/api/auth/register', (req, res) => {
+    const { email, password, firstName, lastName } = req.body;
+    if (!email || !password || !firstName || !lastName) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+    if (registeredUsers.find(u => u.email === email)) {
+        return res.status(409).json({ error: 'User already exists' });
+    }
+    const newUser = {
+        id: 'user_' + Date.now(),
+        email,
+        password, // In production, hash this!
+        firstName,
+        lastName,
+        points: 0,
+        isPremium: false
+    };
+    registeredUsers.push(newUser);
+    currentDemoUser = { ...newUser };
+    res.json({ success: true, user: { ...newUser, password: undefined } });
+});
+
+// Login endpoint
+app.post('/api/auth/login', (req, res) => {
+    const { email, password } = req.body;
+    const user = registeredUsers.find(u => u.email === email && u.password === password);
+    if (!user) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    currentDemoUser = { ...user };
+    res.json({ success: true, user: { ...user, password: undefined } });
+});
+
+// Demo login
 app.post('/api/auth/demo', (req, res) => {
-    // Create or get demo user
     currentDemoUser = {
         id: 'demo_user_' + Date.now(),
         email: 'demo@example.com',
@@ -64,16 +118,22 @@ app.post('/api/auth/demo', (req, res) => {
         points: 0,
         isPremium: false
     };
-    
     res.json({
         success: true,
         user: currentDemoUser
     });
 });
 
+// Logout endpoint
+app.post('/api/auth/logout', (req, res) => {
+    currentDemoUser = null;
+    res.json({ success: true });
+});
+
 app.get('/api/auth/user', (req, res) => {
     if (currentDemoUser) {
-        res.json(currentDemoUser);
+        const { password, ...userNoPass } = currentDemoUser;
+        res.json(userNoPass);
     } else {
         res.status(401).json({ error: 'Not authenticated' });
     }

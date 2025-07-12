@@ -14,16 +14,23 @@
 .country-select {
     border: none;
     background: transparent;
-    font-size: 1em;
+    font-size: 1.2em;
     min-width: 48px;
     outline: none;
     cursor: pointer;
+    appearance: none;
+    padding-right: 8px;
 }
 .country-prefix {
     font-size: 1em;
     color: var(--primary-color);
     min-width: 44px;
     text-align: center;
+    margin-left: 2px;
+}
+/* Flag emoji for country select */
+.country-select option {
+    font-size: 1.2em;
 }
 .contact-input-group input[type="tel"] {
     border: none;
@@ -262,8 +269,8 @@ input, select, textarea {
 }
 
 .app-logo-small {
-    width: 30px;
-    height: 30px;
+    width: 100px;
+    height: 80px;
 }
 
 .nav-links {
@@ -1569,8 +1576,8 @@ input, select, textarea {
     }
     
     .app-logo {
-        width: 60px;
-        height: 60px;
+        width: 290px;
+        height: 200px;
     }
     
     .modal-header,

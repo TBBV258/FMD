@@ -21,6 +21,28 @@
                 <i class="fas fa-user"></i>
                 <span data-i18n="login.demo_button">Entrar como Demo</span>
             </button>
+            <form id="login-form">
+                <label for="login-country">País:</label>
+                <select id="login-country" name="country" required>
+                    <option value="">Selecione o país</option>
+                    <option value="AO" data-flag="🇦🇴" data-prefix="+244">🇦🇴 Angola (+244)</option>
+                    <option value="PT" data-flag="🇵🇹" data-prefix="+351">🇵🇹 Portugal (+351)</option>
+                    <option value="BR" data-flag="🇧🇷" data-prefix="+55">🇧🇷 Brasil (+55)</option>
+                    <option value="MZ" data-flag="🇲🇿" data-prefix="+258">🇲🇿 Moçambique (+258)</option>
+                    <option value="CV" data-flag="🇨🇻" data-prefix="+238">🇨🇻 Cabo Verde (+238)</option>
+                    <option value="ST" data-flag="🇸🇹" data-prefix="+239">🇸🇹 São Tomé (+239)</option>
+                    <option value="GW" data-flag="🇬🇼" data-prefix="+245">🇬🇼 Guiné-Bissau (+245)</option>
+                </select>
+                <label for="login-phone">Telefone:</label>
+                <div style="display:flex;align-items:center;gap:4px;">
+                    <span id="login-country-flag">🇦🇴</span>
+                    <span id="login-country-prefix">+244</span>
+                    <input type="tel" id="login-phone" name="phone" placeholder="Número de telefone" required style="flex:1;">
+                </div>
+                <label for="login-password">Senha:</label>
+                <input type="password" id="login-password" name="password" placeholder="Senha" required>
+                <button type="submit">Entrar / Registrar</button>
+            </form>
         </div>
     </section>
 
@@ -199,6 +221,23 @@
                         <option value="carta" data-i18n="type.carta">Carta de Condução</option>
                         <option value="outros" data-i18n="type.outros">Outros</option>
                     </select>
+                    <select id="filter-lost-country">
+                        <option value="" data-i18n="common.all_countries">Todos os Países</option>
+                        <option value="mz">Moçambique</option>
+                        <option value="za">África do Sul</option>
+                        <option value="zw">Zimbábue</option>
+                        <option value="other">Outro</option>
+                    </select>
+                    <select id="filter-lost-province">
+                        <option value="" data-i18n="common.all_provinces">Todas as Províncias</option>
+                        <option value="maputo">Maputo</option>
+                        <option value="matola">Matola</option>
+                        <option value="beira">Beira</option>
+                        <option value="nampula">Nampula</option>
+                        <option value="quelimane">Quelimane</option>
+                        <option value="tete">Tete</option>
+                        <option value="xai-xai">Xai-Xai</option>
+                    </select>
                 </div>
                 <div class="feed-header">
                     <h3 data-i18n="lost.recently_reported">Recentemente Reportados como Perdidos</h3>
@@ -223,6 +262,23 @@
                         <option value="carta" data-i18n="type.carta">Carta de Condução</option>
                         <option value="outros" data-i18n="type.outros">Outros</option>
                     </select>
+                    <select id="filter-found-country">
+                        <option value="" data-i18n="common.all_countries">Todos os Países</option>
+                        <option value="mz">Moçambique</option>
+                        <option value="za">África do Sul</option>
+                        <option value="zw">Zimbábue</option>
+                        <option value="other">Outro</option>
+                    </select>
+                    <select id="filter-found-province">
+                        <option value="" data-i18n="common.all_provinces">Todas as Províncias</option>
+                        <option value="maputo">Maputo</option>
+                        <option value="matola">Matola</option>
+                        <option value="beira">Beira</option>
+                        <option value="nampula">Nampula</option>
+                        <option value="quelimane">Quelimane</option>
+                        <option value="tete">Tete</option>
+                        <option value="xai-xai">Xai-Xai</option>
+                    </select>
                 </div>
                 <div class="feed-header">
                     <h3 data-i18n="found.recently_found">Documentos Encontrados Recentemente</h3>
@@ -234,7 +290,7 @@
             </section>
 
             <!-- Feed Section -->
-            <section id="feed" class="content-section">
+            <section id="perfil" class="content-section">
                 <div class="section-header">
                     <h2>Feed de Documentos - Moçambique</h2>
                     <div class="feed-filters">
@@ -248,6 +304,7 @@
                             <option value="maputo">Maputo</option>
                             <option value="matola">Matola</option>
                             <option value="beira">Beira</option>
+                    <button id="logout-btn" class="btn danger" style="margin-top:16px;"><i class="fas fa-sign-out-alt"></i> <span data-i18n="profile.logout">Sair</span></button>
                             <option value="nampula">Nampula</option>
                             <option value="quelimane">Quelimane</option>
                             <option value="tete">Tete</option>
@@ -282,10 +339,11 @@
                         <div class="profile-card">
                             <div class="profile-header">
                                 <div class="profile-avatar">
-                                    <img id="user-avatar" src="https://ui-avatars.com/api/?name=Google+User&background=2196F3&color=fff&size=120" alt="User Avatar" class="avatar-img">
-                                    <button id="change-avatar-btn" class="avatar-edit-btn">
-                                        <i class="fas fa-camera"></i>
-                                    </button>
+    <img id="user-avatar" src="https://ui-avatars.com/api/?name=Google+User&background=2196F3&color=fff&size=120" alt="User Avatar" class="avatar-img">
+    <input type="file" id="avatar-upload" accept="image/*" style="display:none">
+    <button id="change-avatar-btn" class="avatar-edit-btn" type="button" title="Alterar foto de perfil">
+        <i class="fas fa-camera"></i>
+    </button>
                                 </div>
                                 <div class="profile-info">
                                     <h3 id="user-name">Google User</h3>
@@ -485,7 +543,16 @@
                     <div class="form-group">
                         <label data-i18n="lost.contact_info">Suas informações de contato *</label>
                         <div class="contact-input-group">
-                            <select id="document-country" class="country-select"></select>
+                            <select id="document-country" class="country-select">
+                                <option value="">Selecione o país</option>
+                                <option value="AO" data-flag="🇦🇴" data-prefix="+244">🇦🇴 Angola (+244)</option>
+                                <option value="PT" data-flag="🇵🇹" data-prefix="+351">🇵🇹 Portugal (+351)</option>
+                                <option value="BR" data-flag="🇧🇷" data-prefix="+55">🇧🇷 Brasil (+55)</option>
+                                <option value="MZ" data-flag="🇲🇿" data-prefix="+258">🇲🇿 Moçambique (+258)</option>
+                                <option value="CV" data-flag="🇨🇻" data-prefix="+238">🇨🇻 Cabo Verde (+238)</option>
+                                <option value="ST" data-flag="🇸🇹" data-prefix="+239">🇸🇹 São Tomé (+239)</option>
+                                <option value="GW" data-flag="🇬🇼" data-prefix="+245">🇬🇼 Guiné-Bissau (+245)</option>
+                            </select>
                             <span id="document-prefix" class="country-prefix">+258</span>
                             <input type="tel" id="document-contact" required placeholder="" data-i18n-placeholder="common.contact_info_placeholder">
                             <i class="fas fa-phone"></i>
@@ -567,7 +634,16 @@
                     <div class="form-group">
                         <label data-i18n="lost.contact_info">Suas informações de contato *</label>
                         <div class="contact-input-group">
-                            <select id="lost-country" class="country-select"></select>
+                            <select id="lost-country" class="country-select">
+                                <option value="">Selecione o país</option>
+                                <option value="AO" data-flag="🇦🇴" data-prefix="+244">🇦🇴 Angola (+244)</option>
+                                <option value="PT" data-flag="🇵🇹" data-prefix="+351">🇵🇹 Portugal (+351)</option>
+                                <option value="BR" data-flag="🇧🇷" data-prefix="+55">🇧🇷 Brasil (+55)</option>
+                                <option value="MZ" data-flag="🇲🇿" data-prefix="+258">🇲🇿 Moçambique (+258)</option>
+                                <option value="CV" data-flag="🇨🇻" data-prefix="+238">🇨🇻 Cabo Verde (+238)</option>
+                                <option value="ST" data-flag="🇸🇹" data-prefix="+239">🇸🇹 São Tomé (+239)</option>
+                                <option value="GW" data-flag="🇬🇼" data-prefix="+245">🇬🇼 Guiné-Bissau (+245)</option>
+                            </select>
                             <span id="lost-prefix" class="country-prefix">+258</span>
                             <input type="tel" id="lost-contact" required placeholder="" data-i18n-placeholder="common.contact_info_placeholder">
                             <i class="fas fa-phone"></i>
@@ -641,7 +717,16 @@
                     <div class="form-group">
                         <label data-i18n="found.finder_contact">Suas informações de contato *</label>
                         <div class="contact-input-group">
-                            <select id="found-country" class="country-select"></select>
+                            <select id="found-country" class="country-select">
+                                <option value="">Selecione o país</option>
+                                <option value="AO" data-flag="🇦🇴" data-prefix="+244">🇦🇴 Angola (+244)</option>
+                                <option value="PT" data-flag="🇵🇹" data-prefix="+351">🇵🇹 Portugal (+351)</option>
+                                <option value="BR" data-flag="🇧🇷" data-prefix="+55">🇧🇷 Brasil (+55)</option>
+                                <option value="MZ" data-flag="🇲🇿" data-prefix="+258">🇲🇿 Moçambique (+258)</option>
+                                <option value="CV" data-flag="🇨🇻" data-prefix="+238">🇨🇻 Cabo Verde (+238)</option>
+                                <option value="ST" data-flag="🇸🇹" data-prefix="+239">🇸🇹 São Tomé (+239)</option>
+                                <option value="GW" data-flag="🇬🇼" data-prefix="+245">🇬🇼 Guiné-Bissau (+245)</option>
+                            </select>
                             <span id="found-prefix" class="country-prefix">+258</span>
                             <input type="tel" id="found-contact" required placeholder="" data-i18n-placeholder="common.contact_info_placeholder">
                             <i class="fas fa-phone"></i>
@@ -730,7 +815,39 @@
         </div>
     </div>
 
-    <!-- Toast Notifications -->
+
+    <!-- Login/Register Modal -->
+    <div id="auth-modal" class="modal">
+      <div class="modal-content login-container">
+        <span class="close" id="close-auth-modal">&times;</span>
+        <img src="logo.svg" alt="Logo" class="app-logo">
+        <h1 data-i18n="login.title">FindMyDocs</h1>
+        <p data-i18n="login.subtitle">Sistema de gestão de documentos perdidos e encontrados</p>
+        <form id="login-form">
+          <div class="form-group">
+            <input type="email" id="login-email" placeholder="Email" required>
+          </div>
+          <div class="form-group">
+            <input type="password" id="login-password" placeholder="Senha" required>
+          </div>
+          <button type="submit" class="btn primary" id="login-btn">Entrar</button>
+        </form>
+        <div style="margin: 16px 0;">ou</div>
+        <form id="register-form">
+          <div class="form-group">
+            <input type="text" id="register-name" placeholder="Nome" required>
+          </div>
+          <div class="form-group">
+            <input type="email" id="register-email" placeholder="Email" required>
+          </div>
+          <div class="form-group">
+            <input type="password" id="register-password" placeholder="Senha" required>
+          </div>
+          <button type="submit" class="btn success" id="register-btn">Registrar</button>
+        </form>
+      </div>
+    </div>
+
     <div id="toast-container" class="toast-container"></div>
 
     <!-- Scripts -->

@@ -1,3 +1,35 @@
+// País e prefixo nos formulários de contato
+function setupCountryPrefix(selectId, prefixId) {
+    const select = document.getElementById(selectId);
+    const prefix = document.getElementById(prefixId);
+    if (select && prefix) {
+        select.addEventListener('change', function() {
+            const selected = select.options[select.selectedIndex];
+            const p = selected.getAttribute('data-prefix') || '';
+            prefix.textContent = p;
+        });
+        // Default para Moçambique
+        select.value = 'MZ';
+        prefix.textContent = '+258';
+    }
+}
+
+setupCountryPrefix('document-country', 'document-prefix');
+setupCountryPrefix('lost-country', 'lost-prefix');
+setupCountryPrefix('found-country', 'found-prefix');
+// Logout
+const logoutBtn = document.getElementById('logout-btn');
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', function() {
+        Object.values(STORAGE_KEYS).forEach(key => {
+            localStorage.removeItem(key);
+        });
+        // Mantém idioma e tema
+        localStorage.setItem(STORAGE_KEYS.LANGUAGE, currentLanguage);
+        localStorage.setItem(STORAGE_KEYS.THEME, currentTheme);
+        location.reload();
+    });
+}
 // --- Navegação barra inferior mobile ---
 function setupBottomNavBar() {
     const navItems = document.querySelectorAll('#bottom-nav-bar .nav-item');
@@ -62,7 +94,72 @@ const addDocumentBtn = document.getElementById('add-document');
 const reportLostBtn = document.getElementById('report-lost-btn');
 const reportFoundBtn = document.getElementById('report-found-btn');
 
+// Profile avatar upload
+const avatarImg = document.getElementById('user-avatar');
+const avatarUpload = document.getElementById('avatar-upload');
+const changeAvatarBtn = document.getElementById('change-avatar-btn');
+
+if (changeAvatarBtn && avatarUpload && avatarImg) {
+    changeAvatarBtn.addEventListener('click', () => {
+        avatarUpload.click();
+    });
+    avatarUpload.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            showToast('Por favor, selecione uma imagem válida.', 'error');
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            showToast('Imagem muito grande. Máximo 5MB.', 'error');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            avatarImg.src = ev.target.result;
+            localStorage.setItem('profile_avatar', ev.target.result);
+            showToast('Foto de perfil atualizada!', 'success');
+        };
+        reader.readAsDataURL(file);
+    });
+    // Carregar avatar salvo
+    const savedAvatar = localStorage.getItem('profile_avatar');
+    if (savedAvatar) {
+        avatarImg.src = savedAvatar;
+    }
+}
+
 // Forms
+// Login/Register
+const loginForm = document.getElementById('login-form');
+const loginCountrySelect = document.getElementById('login-country');
+const loginCountryFlag = document.getElementById('login-country-flag');
+const loginCountryPrefix = document.getElementById('login-country-prefix');
+
+if (loginCountrySelect && loginCountryFlag && loginCountryPrefix) {
+    loginCountrySelect.addEventListener('change', function() {
+        const selected = loginCountrySelect.options[loginCountrySelect.selectedIndex];
+        const flag = selected.getAttribute('data-flag') || '';
+        const prefix = selected.getAttribute('data-prefix') || '';
+        loginCountryFlag.textContent = flag;
+        loginCountryPrefix.textContent = prefix;
+    });
+    // Set default to Angola
+    loginCountrySelect.value = 'AO';
+    loginCountryFlag.textContent = '🇦🇴';
+    loginCountryPrefix.textContent = '+244';
+}
+
+if (loginForm) {
+    loginForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        // Aqui você pode implementar lógica de autenticação/registro
+        // Exemplo: salvar login no localStorage e mostrar app
+        localStorage.setItem('findmydocs_is_logged_in', 'true');
+        showApp();
+        showToast('Login/Register efetuado com sucesso!', 'success');
+    });
+}
 const documentForm = document.getElementById('document-form');
 const lostForm = document.getElementById('lost-form');
 const foundForm = document.getElementById('found-form');
@@ -1220,51 +1317,63 @@ window.reportFound = function(docId) {
 function setupSearchFunctionality() {
     const searchLost = document.getElementById('search-lost');
     const filterLostType = document.getElementById('filter-lost-type');
+    const filterLostCountry = document.getElementById('filter-lost-country');
+    const filterLostProvince = document.getElementById('filter-lost-province');
     const searchFound = document.getElementById('search-found');
     const filterFoundType = document.getElementById('filter-found-type');
-    
-    if (searchLost && filterLostType) {
+    const filterFoundCountry = document.getElementById('filter-found-country');
+    const filterFoundProvince = document.getElementById('filter-found-province');
+
+    if (searchLost && filterLostType && filterLostCountry && filterLostProvince) {
         searchLost.addEventListener('input', filterLostDocuments);
         filterLostType.addEventListener('change', filterLostDocuments);
+        filterLostCountry.addEventListener('change', filterLostDocuments);
+        filterLostProvince.addEventListener('change', filterLostDocuments);
     }
-    
-    if (searchFound && filterFoundType) {
+
+    if (searchFound && filterFoundType && filterFoundCountry && filterFoundProvince) {
         searchFound.addEventListener('input', filterFoundDocuments);
         filterFoundType.addEventListener('change', filterFoundDocuments);
+        filterFoundCountry.addEventListener('change', filterFoundDocuments);
+        filterFoundProvince.addEventListener('change', filterFoundDocuments);
     }
 }
 
 function filterLostDocuments() {
     const searchTerm = document.getElementById('search-lost').value.toLowerCase();
     const typeFilter = document.getElementById('filter-lost-type').value;
-    
+    const countryFilter = document.getElementById('filter-lost-country').value;
+    const provinceFilter = document.getElementById('filter-lost-province').value;
+
     const lostDocuments = getLostDocuments();
     const filteredDocs = lostDocuments.filter(doc => {
         const matchesSearch = doc.name.toLowerCase().includes(searchTerm) || 
-                             doc.location.toLowerCase().includes(searchTerm) ||
+                             (doc.location && doc.location.toLowerCase().includes(searchTerm)) ||
                              (doc.description && doc.description.toLowerCase().includes(searchTerm));
         const matchesType = !typeFilter || doc.type === typeFilter;
-        
-        return matchesSearch && matchesType;
+        const matchesCountry = !countryFilter || (doc.country && doc.country === countryFilter);
+        const matchesProvince = !provinceFilter || (doc.province && doc.province === provinceFilter);
+        return matchesSearch && matchesType && matchesCountry && matchesProvince;
     });
-    
     displayFilteredLostDocuments(filteredDocs);
 }
 
 function filterFoundDocuments() {
     const searchTerm = document.getElementById('search-found').value.toLowerCase();
     const typeFilter = document.getElementById('filter-found-type').value;
-    
+    const countryFilter = document.getElementById('filter-found-country').value;
+    const provinceFilter = document.getElementById('filter-found-province').value;
+
     const foundDocuments = getFoundDocuments();
     const filteredDocs = foundDocuments.filter(doc => {
         const matchesSearch = doc.name.toLowerCase().includes(searchTerm) || 
-                             doc.location.toLowerCase().includes(searchTerm) ||
+                             (doc.location && doc.location.toLowerCase().includes(searchTerm)) ||
                              (doc.description && doc.description.toLowerCase().includes(searchTerm));
         const matchesType = !typeFilter || doc.type === typeFilter;
-        
-        return matchesSearch && matchesType;
+        const matchesCountry = !countryFilter || (doc.country && doc.country === countryFilter);
+        const matchesProvince = !provinceFilter || (doc.province && doc.province === provinceFilter);
+        return matchesSearch && matchesType && matchesCountry && matchesProvince;
     });
-    
     displayFilteredFoundDocuments(filteredDocs);
 }
 
