@@ -1003,10 +1003,31 @@ function getDocumentTypeName(type) {
 window.viewDocument = function(docId) {
     const documents = getDocuments();
     const doc = documents.find(d => d.id === docId);
-    if (doc) {
-        showToast(`Visualizando documento: ${doc.name} (${doc.number})`, 'info');
-    }
+    if (!doc) return;
+    const modal = document.getElementById('view-document-modal');
+    const body = document.getElementById('view-document-body');
+    if (!modal || !body) return;
+    body.innerHTML = `
+        <p><strong>Tipo:</strong> ${getDocumentTypeName(doc.type)}</p>
+        <p><strong>Nome/Dados:</strong> ${doc.name || ''}</p>
+        ${doc.number ? `<p><strong>Número:</strong> ${doc.number}</p>` : ''}
+        ${doc.description ? `<p><strong>Descrição:</strong> ${doc.description}</p>` : ''}
+        <p><strong>Status:</strong> ${doc.status}</p>
+        <p><strong>Adicionado em:</strong> ${formatDate(doc.dateAdded)}</p>
+    `;
+    modal.classList.add('active');
 };
+
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('view-document-modal');
+    const closeBtn = document.getElementById('close-view-document');
+    if (modal && closeBtn) {
+        closeBtn.onclick = () => modal.classList.remove('active');
+        window.onclick = function(event) {
+            if (event.target === modal) modal.classList.remove('active');
+        };
+    }
+});
 
 window.markAsLost = function(docId) {
     if (confirm(t('message.confirm_mark_lost') || 'Tem certeza de que deseja marcar este documento como perdido?')) {
