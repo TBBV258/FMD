@@ -92,11 +92,48 @@
                 </div>
             </nav>
 
-            <!-- Welcome Message with Tips -->
-            <div id="welcome-tips" class="welcome-section">
-                <h2 data-i18n="welcome.title">Bem-vindo, Google User!</h2>
-                
-    </div>
+            <!-- Home/Inicio Section -->
+            <section id="documentos" class="content-section active">
+                <div class="section-header">
+                    <h2 data-i18n="documents.title">Seus Documentos</h2>
+                    <span id="document-count" class="document-count">0 total</span>
+                </div>
+                <div id="welcome-tips" class="welcome-section">
+                    <div class="quick-actions" style="display:flex;gap:12px;margin-bottom:16px;">
+                        <button class="btn primary" onclick="document.querySelector('.nav-item[data-nav-target=\'relatar-perda\']').click()">
+                            <i class="fas fa-search-minus"></i> Reportar Documento Perdido
+                        </button>
+                        <button class="btn success" onclick="document.querySelector('.nav-item[data-nav-target=\'relatar-encontrado\']').click()">
+                            <i class="fas fa-search-plus"></i> Reportar Documento Encontrado
+                        </button>
+                    </div>
+                    <div class="mobile-upload-tip" style="margin-bottom:12px;color:#b85c00;font-size:0.95em;">
+                        <i class="fas fa-exclamation-triangle"></i> Para enviar fotos pelo app, permita acesso à câmera e arquivos quando solicitado. Se não aparecer, ative manualmente nas permissões do app.
+                    </div>
+                    <h2 data-i18n="welcome.title">Bem-vindo, Google User!</h2>
+                    <div class="tip-card">
+                        <i class="fas fa-clock"></i>
+                        <h4 data-i18n="tip.report_immediately.title">Report Immediately</h4>
+                        <p data-i18n="tip.report_immediately.description">Report lost or found documents as soon as possible to increase chances of recovery.</p>
+                        <button class="tip-close">&times;</button>
+                    </div>
+                    <div class="tip-card">
+                        <i class="fas fa-camera"></i>
+                        <h4 data-i18n="tip.photo_safety.title">Photo Safety</h4>
+                        <p data-i18n="tip.photo_safety.description">When uploading document photos, cover or blur any personal information.</p>
+                        <button class="tip-close">&times;</button>
+                    </div>
+                    <div class="tip-card">
+                        <i class="fas fa-star"></i>
+                        <h4 data-i18n="tip.earn_points.title">Earn More Points</h4>
+                        <p data-i18n="tip.earn_points.description">Complete your profile, report found documents, and help others to earn more points.</p>
+                        <button class="tip-close">&times;</button>
+                    </div>
+                </div>
+                <div id="documents-grid" class="documents-grid">
+                    <!-- Documents will be populated by JavaScript -->
+                </div>
+            </section>
 
     <!-- Bottom Navigation Bar (global) -->
     <footer id="bottom-nav-bar">
@@ -121,25 +158,7 @@
             <span data-i18n="nav.profile">Perfil</span>
         </a>
     </footer>
-                            <i class="fas fa-clock"></i>
-                            <h4 data-i18n="tip.report_immediately.title">Report Immediately</h4>
-                            <p data-i18n="tip.report_immediately.description">Report lost or found documents as soon as possible to increase chances of recovery.</p>
-                            <button class="tip-close">&times;</button>
-                        </div>
-                        <div class="tip-card">
-                            <i class="fas fa-camera"></i>
-                            <h4 data-i18n="tip.photo_safety.title">Photo Safety</h4>
-                            <p data-i18n="tip.photo_safety.description">When uploading document photos, cover or blur any personal information.</p>
-                            <button class="tip-close">&times;</button>
-                        </div>
-                        <div class="tip-card">
-                            <i class="fas fa-star"></i>
-                            <h4 data-i18n="tip.earn_points.title">Earn More Points</h4>
-                            <p data-i18n="tip.earn_points.description">Complete your profile, report found documents, and help others to earn more points.</p>
-                            <button class="tip-close">&times;</button>
-                        </div>
-                    </div>
-                </div>
+                         
 
 
 
