@@ -1,3 +1,26 @@
+// Respostas automáticas inteligentes simples para chat de documento
+function getSmartReply(message) {
+    const msg = message.toLowerCase();
+    if (msg.includes('perdi') || msg.includes('perdido')) {
+        return 'Sinto muito pelo ocorrido! Você pode reportar um documento perdido na aba "Perdidos" ou clicando no botão de ação rápida na tela inicial.';
+    }
+    if (msg.includes('encontrei') || msg.includes('achado')) {
+        return 'Ótimo gesto! Para reportar um documento encontrado, acesse a aba "Encontrados" ou use o botão de ação rápida na tela inicial.';
+    }
+    if (msg.includes('como funciona')) {
+        return 'O FindMyDocs permite cadastrar, buscar e reportar documentos perdidos ou encontrados. Use o menu inferior para navegar.';
+    }
+    if (msg.includes('contato') || msg.includes('ajuda')) {
+        return 'Se precisar de suporte, envie um email para suporte@findmydocs.com ou utilize este chat.';
+    }
+    if (msg.includes('olá') || msg.includes('oi')) {
+        return 'Olá! Como posso ajudar você hoje?';
+    }
+    if (msg.includes('obrigado') || msg.includes('valeu')) {
+        return 'De nada! Qualquer dúvida, estou por aqui.';
+    }
+    return 'Recebido! Se precisar de algo mais específico, me envie mais detalhes.';
+}
 // País e prefixo nos formulários de contato
 function setupCountryPrefix(selectId, prefixId) {
     const select = document.getElementById(selectId);
@@ -1499,6 +1522,22 @@ function sendMessage() {
     
     // Add points for engagement
     addUserPoints(2);
+
+    // Resposta automática inteligente (simula assistente virtual)
+    setTimeout(() => {
+        const reply = getSmartReply(message);
+        const botMessageData = {
+            id: generateId(),
+            documentId: currentChatDocument,
+            sender: 'FindMyDocsBot',
+            message: reply,
+            timestamp: new Date().toISOString()
+        };
+        const messages = getChatMessages();
+        messages.push(botMessageData);
+        localStorage.setItem(STORAGE_KEYS.CHAT_MESSAGES, JSON.stringify(messages));
+        loadChatMessages(currentChatDocument);
+    }, 800);
 }
 
 function getChatMessages() {
