@@ -141,31 +141,7 @@
                     </div>
                 </div>
 
-                <!-- Activity Points Section -->
-                <div class="points-section">
-                    <h3 data-i18n="welcome.points">Pontos</h3>
-                    <div class="points-display">
-                        <span class="points-label" data-i18n="welcome.activity_points">Your Activity Points</span>
-                        <div class="points-value">
-                            <span id="user-points">0</span> / 100
-                        </div>
-                    </div>
-                    <p data-i18n="welcome.earn_points">Earn 100 more points for a free document verification!</p>
-                    <p class="points-subtitle" data-i18n="welcome.help_others">Ganhe pontos ajudando outras pessoas a encontrarem seus documentos perdidos.</p>
-                    <button class="learn-more-btn">
-                        <i class="fas fa-info-circle"></i>
-                        <span data-i18n="welcome.learn_more">Saber mais</span>
-                    </button>
-                </div>
 
-                <!-- Plan Section -->
-                <div class="plan-section">
-                    <div class="plan-card">
-                        <h4><span data-i18n="welcome.free_plan">Plano Grátis</span> <span class="plan-badge" data-i18n="welcome.current">Atual</span></h4>
-                        <p data-i18n="welcome.plan_description">Apenas armazenamento de carteira de identidade disponível</p>
-                        <button class="btn primary upgrade-btn" data-i18n="welcome.upgrade">Atualizar</button>
-                    </div>
-                </div>
 
                 <!-- Add Document Button -->
                 <button id="add-document" class="btn-add-document">
@@ -541,7 +517,7 @@
                     <div class="form-group">
                         <label data-i18n="document.upload_image">Enviar Imagem/PDF/Documento</label>
                         <div class="file-upload-area">
-                            <input type="file" id="document-image" multiple accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/zip,application/x-zip-compressed,.doc,.docx,.xls,.xlsx,.zip,.rar,.txt,.csv" capture="environment">
+<input type="file" id="document-image" multiple accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/zip,application/x-zip-compressed,.doc,.docx,.xls,.xlsx,.zip,.rar,.txt,.csv" capture="environment" onclick="this.removeAttribute('capture');this.setAttribute('capture','environment');">
                             <div class="file-upload-text">
                                 <i class="fas fa-cloud-upload-alt"></i>
                                 <p data-i18n="document.upload_text">Clique para enviar, arraste e solte, ou use a câmera</p>
@@ -632,7 +608,7 @@
                     <div class="form-group">
                         <label data-i18n="lost.upload_files">Enviar fotos/documentos (opcional)</label>
                         <div class="file-upload-area">
-                            <input type="file" id="lost-document-files" multiple accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/zip,application/x-zip-compressed,.doc,.docx,.xls,.xlsx,.zip,.rar,.txt,.csv" capture="environment">
+<input type="file" id="lost-document-files" multiple accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/zip,application/x-zip-compressed,.doc,.docx,.xls,.xlsx,.zip,.rar,.txt,.csv" capture="environment" onclick="this.removeAttribute('capture');this.setAttribute('capture','environment');">
                             <div class="file-upload-text">
                                 <i class="fas fa-camera"></i>
                                 <p data-i18n="lost.upload_help">Adicione fotos, PDFs ou arquivos que possam ajudar a identificar o documento. Você pode usar a câmera do celular.</p>
@@ -715,7 +691,7 @@
                     <div class="form-group">
                         <label data-i18n="found.upload_image">Enviar imagem/arquivo (opcional)</label>
                         <div class="file-upload-area">
-                            <input type="file" id="found-image" multiple accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/zip,application/x-zip-compressed,.doc,.docx,.xls,.xlsx,.zip,.rar,.txt,.csv" capture="environment">
+<input type="file" id="found-image" multiple accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/zip,application/x-zip-compressed,.doc,.docx,.xls,.xlsx,.zip,.rar,.txt,.csv" capture="environment" onclick="this.removeAttribute('capture');this.setAttribute('capture','environment');">
                             <div class="file-upload-text">
                                 <i class="fas fa-camera"></i>
                                 <p data-i18n="found.upload_help">Uma foto, PDF ou arquivo ajuda o proprietário a identificar seu documento. Você pode usar a câmera do celular.</p>
