@@ -1,8 +1,18 @@
 // Translations for the FindMyDocs application
 const translations = {
     pt: {
+        'document.upload_camera_hint': 'Você pode tirar uma foto do documento usando a câmera do seu dispositivo.',
+        'lost.upload_camera_hint': 'Você pode tirar uma foto do documento usando a câmera do seu dispositivo.',
+        'found.upload_camera_hint': 'Você pode tirar uma foto do documento usando a câmera do seu dispositivo.',
         // Navigation
         'nav.home': 'Início',
+        'nav.my_docs': 'Meus Docs',
+        'nav.lost': 'Perdidos',
+        'nav.found': 'Encontrados',
+        'nav.profile': 'Perfil',
+        'document.type.diri': 'Diri',
+        'document.data_number_label': 'Dados/Número do Documento',
+        'common.contact_info_placeholder': 'Digite seu número de telefone',
         'nav.report_lost': 'Relatar Perda',
         'nav.report_found': 'Relatar Encontrado',
         'nav.reset': 'Reset',
@@ -62,7 +72,7 @@ const translations = {
         'document.description': 'Descrição (opcional)',
         'document.upload_image': 'Enviar Imagem/PDF do Documento',
         'document.upload_text': 'Clique para enviar ou arraste e solte',
-        'document.upload_formats': 'Imagens (JPG, PNG) ou PDF • Máx 5MB cada',
+        'document.upload_formats': 'Imagens (JPG, PNG), PDF, DOC, XLS, ZIP, TXT • Máx 5MB cada',
         'document.security_title': 'Garantia de Segurança',
         'document.security_description': 'Seus documentos são criptografados e armazenados com segurança. Apenas você tem acesso a eles.',
         'document.types_title': 'Tipos de Documentos',
@@ -121,6 +131,7 @@ const translations = {
         'type.passaporte': 'Passaporte',
         'type.carta': 'Carta de Condução',
         'type.outros': 'Outros',
+        'type.diri': 'Diri',
         
         // Status
         'status.active': 'Ativo',
@@ -181,8 +192,18 @@ const translations = {
     },
     
     en: {
+        'document.upload_camera_hint': 'You can take a photo of the document using your device camera.',
+        'lost.upload_camera_hint': 'You can take a photo of the document using your device camera.',
+        'found.upload_camera_hint': 'You can take a photo of the document using your device camera.',
         // Navigation
         'nav.home': 'Home',
+        'nav.my_docs': 'My Docs',
+        'nav.lost': 'Lost',
+        'nav.found': 'Found',
+        'nav.profile': 'Profile',
+        'document.type.diri': 'Diri',
+        'document.data_number_label': 'Data/Document Number',
+        'common.contact_info_placeholder': 'Enter your phone number',
         'nav.report_lost': 'Report Lost',
         'nav.report_found': 'Report Found',
         'nav.reset': 'Reset',
@@ -242,7 +263,7 @@ const translations = {
         'document.description': 'Description (optional)',
         'document.upload_image': 'Upload Document Image/PDF',
         'document.upload_text': 'Click to upload or drag and drop',
-        'document.upload_formats': 'Images (JPG, PNG) or PDF • Max 5MB each',
+        'document.upload_formats': 'Images (JPG, PNG), PDF, DOC, XLS, ZIP, TXT • Max 5MB each',
         'document.security_title': 'Security Assurance',
         'document.security_description': 'Your documents are encrypted and stored securely. Only you have access to them.',
         'document.types_title': 'Document Types',
@@ -301,6 +322,7 @@ const translations = {
         'type.passaporte': 'Passport',
         'type.carta': 'Driver\'s License',
         'type.outros': 'Others',
+        'type.diri': 'Diri',
         
         // Status
         'status.active': 'Active',

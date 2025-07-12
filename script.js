@@ -1,3 +1,47 @@
+// --- Navegação barra inferior mobile ---
+function setupBottomNavBar() {
+    const navItems = document.querySelectorAll('#bottom-nav-bar .nav-item');
+    const sectionMap = {
+        'documentos': 'documentos',
+        'feed': 'feed',
+        'relatar-perda': 'relatar-perda',
+        'relatar-encontrado': 'relatar-encontrado',
+        'perfil': 'perfil'
+    };
+    navItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            navItems.forEach(i => i.classList.remove('active'));
+            this.classList.add('active');
+            // Esconde todas as seções
+            document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
+            // Mostra a seção correspondente
+            const target = this.getAttribute('data-nav-target');
+            if (sectionMap[target]) {
+                const sec = document.getElementById(sectionMap[target]);
+                if (sec) sec.classList.add('active');
+            }
+            // Esconde dicas de boas-vindas se não for documentos
+            if (typeof welcomeTips !== 'undefined' && welcomeTips) {
+                welcomeTips.style.display = (target === 'documentos') ? 'block' : 'none';
+            }
+        });
+    });
+    // Sincroniza estado inicial
+    const activeSection = document.querySelector('.content-section.active');
+    if (activeSection) {
+        const id = activeSection.id;
+        navItems.forEach(i => i.classList.remove('active'));
+        const match = Array.from(navItems).find(i => i.getAttribute('data-nav-target') === id);
+        if (match) match.classList.add('active');
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupBottomNavBar);
+} else {
+    setupBottomNavBar();
+}
 // DOM Elements
 const loginSection = document.getElementById('login-section');
 const appSection = document.getElementById('app-section');
@@ -640,88 +684,82 @@ function setLanguage(lang) {
 
 // File upload functionality
 function setupFileUpload() {
+    // Document upload
     const fileInput = document.getElementById('document-image');
     const uploadedFilesDiv = document.getElementById('uploaded-files');
     let uploadedFiles = [];
-    
-    if (!fileInput || !uploadedFilesDiv) return;
-    
-    // File upload area click handler
-    const fileUploadArea = fileInput.closest('.file-upload-area');
-    if (fileUploadArea) {
-        fileUploadArea.addEventListener('click', () => {
-            fileInput.click();
+    if (fileInput && uploadedFilesDiv) {
+        const fileUploadArea = fileInput.closest('.file-upload-area');
+        if (fileUploadArea) {
+            fileUploadArea.addEventListener('click', () => fileInput.click());
+        }
+        fileInput.addEventListener('change', (e) => handleFileInputChange(e, uploadedFiles, uploadedFilesDiv));
+        document.querySelectorAll('.modal .close, #cancel-document').forEach(btn => {
+            btn.addEventListener('click', () => {
+                uploadedFiles.length = 0;
+                displayUploadedFiles(uploadedFiles, uploadedFilesDiv);
+                if (fileInput) fileInput.value = '';
+            });
         });
     }
-    
-    fileInput.addEventListener('change', (e) => {
-        const files = Array.from(e.target.files);
-        
-        files.forEach(file => {
-            // Check file size (5MB limit)
-            if (file.size > 5 * 1024 * 1024) {
-                showToast(`Arquivo ${file.name} é muito grande. Tamanho máximo é 5MB.`, 'error');
-                return;
-            }
-            
-            // Add to uploaded files array
-            const fileData = {
-                id: generateId(),
-                name: file.name,
-                size: file.size,
-                type: file.type,
-                data: null
-            };
-            
-            // Read file as base64
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                fileData.data = e.target.result;
-                uploadedFiles.push(fileData);
-                displayUploadedFiles();
-            };
-            reader.readAsDataURL(file);
+
+    // Lost document upload
+    const lostFileInput = document.getElementById('lost-document-files');
+    if (lostFileInput) {
+        lostFileInput.addEventListener('change', (e) => {
+            // Optionally handle lost document file uploads here
         });
+    }
+
+    // Found document upload
+    const foundFileInput = document.getElementById('found-image');
+    if (foundFileInput) {
+        foundFileInput.addEventListener('change', (e) => {
+            // Optionally handle found document file uploads here
+        });
+    }
+}
+
+function handleFileInputChange(e, uploadedFiles, uploadedFilesDiv) {
+    const files = Array.from(e.target.files);
+    files.forEach(file => {
+        if (file.size > 5 * 1024 * 1024) {
+            showToast(`Arquivo ${file.name} é muito grande. Tamanho máximo é 5MB.`, 'error');
+            return;
+        }
+        const fileData = {
+            id: generateId(),
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            data: null
+        };
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            fileData.data = ev.target.result;
+            uploadedFiles.push(fileData);
+            displayUploadedFiles(uploadedFiles, uploadedFilesDiv);
+        };
+        reader.readAsDataURL(file);
     });
-    
-    function displayUploadedFiles() {
-        uploadedFilesDiv.innerHTML = '';
-        
-        uploadedFiles.forEach(file => {
-            const fileDiv = document.createElement('div');
-            fileDiv.className = 'uploaded-file';
-            fileDiv.innerHTML = `
-                <div class="file-info">
-                    <i class="fas fa-file"></i>
-                    <span>${file.name}</span>
-                    <span class="file-size">(${(file.size / 1024).toFixed(1)} KB)</span>
-                </div>
-                <button class="remove-file" onclick="removeUploadedFile('${file.id}')">
-                    <i class="fas fa-times"></i>
-                </button>
-            `;
-            uploadedFilesDiv.appendChild(fileDiv);
-        });
-    }
-    
-    // Make removeUploadedFile available globally
-    window.removeUploadedFile = function(fileId) {
-        uploadedFiles = uploadedFiles.filter(file => file.id !== fileId);
-        displayUploadedFiles();
-    };
-    
-    // Make getUploadedFiles available globally
-    window.getUploadedFiles = function() {
-        return uploadedFiles;
-    };
-    
-    // Clear uploaded files when modal closes
-    document.querySelectorAll('.modal .close, #cancel-document').forEach(btn => {
-        btn.addEventListener('click', () => {
-            uploadedFiles = [];
-            displayUploadedFiles();
-            if (fileInput) fileInput.value = '';
-        });
+}
+
+function displayUploadedFiles(uploadedFiles, uploadedFilesDiv) {
+    uploadedFilesDiv.innerHTML = '';
+    uploadedFiles.forEach(file => {
+        const fileDiv = document.createElement('div');
+        fileDiv.className = 'uploaded-file';
+        fileDiv.innerHTML = `
+            <div class="file-info">
+                <i class="fas fa-file"></i>
+                <span>${file.name}</span>
+                <span class="file-size">(${(file.size / 1024).toFixed(1)} KB)</span>
+            </div>
+            <button class="remove-file" onclick="removeUploadedFile('${file.id}')">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        uploadedFilesDiv.appendChild(fileDiv);
     });
 }
 
@@ -936,7 +974,7 @@ async function handleReportLost(e) {
     formData.append('document_name', document.getElementById('lost-document-name').value);
     formData.append('location_lost', document.getElementById('lost-location').value);
     formData.append('description', document.getElementById('lost-description').value);
-    formData.append('contact_info', document.getElementById('lost-contact').value);
+    formData.append('contact_info', getFullPhone('lost-country', 'lost-prefix', 'lost-contact'));
     
     // Add files from lost document form
     const fileInput = document.getElementById('lost-document-files');
@@ -1066,7 +1104,7 @@ function handleReportFound(e) {
         name: document.getElementById('found-document-name').value,
         location: document.getElementById('found-location').value,
         description: document.getElementById('found-description').value,
-        contact: document.getElementById('found-contact').value,
+        contact: getFullPhone('found-country', 'found-prefix', 'found-contact'),
         status: 'found',
         dateReported: new Date().toISOString(),
         reportedBy: currentUser

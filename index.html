@@ -55,6 +55,30 @@
                         <span data-i18n="nav.report_found">Relatar Encontrado</span>
                     </button>
                     <button class="nav-link" data-section="perfil">
+    <!-- Bottom Navigation Bar -->
+    <footer id="bottom-nav-bar">
+        <a href="#" class="nav-item active" data-nav-target="documentos">
+            <i class="fas fa-home"></i>
+            <span data-i18n="nav.home">Início</span>
+        </a>
+        <a href="#" class="nav-item" data-nav-target="feed">
+            <i class="fas fa-list"></i>
+            <span data-i18n="nav.my_docs">Meus Docs</span>
+        </a>
+        <a href="#" class="nav-item" data-nav-target="relatar-perda">
+            <i class="fas fa-search-minus"></i>
+            <span data-i18n="nav.lost">Perdidos</span>
+        </a>
+        <a href="#" class="nav-item" data-nav-target="relatar-encontrado">
+            <i class="fas fa-search-plus"></i>
+            <span data-i18n="nav.found">Encontrados</span>
+        </a>
+        <a href="#" class="nav-item" data-nav-target="perfil">
+            <i class="fas fa-user"></i>
+            <span data-i18n="nav.profile">Perfil</span>
+        </a>
+    </footer>
+
                         <i class="fas fa-user"></i>
                         Perfil
                     </button>
@@ -72,28 +96,31 @@
             <div id="welcome-tips" class="welcome-section">
                 <h2 data-i18n="welcome.title">Bem-vindo, Google User!</h2>
                 
-                <div class="tips-container">
-                    <h3 data-i18n="welcome.tips_title">Tips for Using Find My Document</h3>
-                    <div class="tips-grid">
-                        <div class="tip-card">
-                            <i class="fas fa-shield-alt"></i>
-                            <h4 data-i18n="tip.safe_location.title">Meet in Safe Locations</h4>
-                            <p data-i18n="tip.safe_location.description">Always meet at police stations, government buildings, or public places when exchanging documents.</p>
-                            <button class="tip-close">&times;</button>
-                        </div>
-                        <div class="tip-card">
-                            <i class="fas fa-check-circle"></i>
-                            <h4 data-i18n="tip.verify_ownership.title">Verify Ownership</h4>
-                            <p data-i18n="tip.verify_ownership.description">Ask for additional identification to verify ownership before returning documents.</p>
-                            <button class="tip-close">&times;</button>
-                        </div>
-                        <div class="tip-card">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <h4 data-i18n="tip.be_specific.title">Be Specific About Locations</h4>
-                            <p data-i18n="tip.be_specific.description">When reporting lost or found documents, be as specific as possible about the location.</p>
-                            <button class="tip-close">&times;</button>
-                        </div>
-                        <div class="tip-card">
+    </div>
+
+    <!-- Bottom Navigation Bar (global) -->
+    <footer id="bottom-nav-bar">
+        <a href="#" class="nav-item active" data-nav-target="documentos">
+            <i class="fas fa-home"></i>
+            <span data-i18n="nav.home">Início</span>
+        </a>
+        <a href="#" class="nav-item" data-nav-target="feed">
+            <i class="fas fa-list"></i>
+            <span data-i18n="nav.my_docs">Meus Docs</span>
+        </a>
+        <a href="#" class="nav-item" data-nav-target="relatar-perda">
+            <i class="fas fa-search-minus"></i>
+            <span data-i18n="nav.lost">Perdidos</span>
+        </a>
+        <a href="#" class="nav-item" data-nav-target="relatar-encontrado">
+            <i class="fas fa-search-plus"></i>
+            <span data-i18n="nav.found">Encontrados</span>
+        </a>
+        <a href="#" class="nav-item" data-nav-target="perfil">
+            <i class="fas fa-user"></i>
+            <span data-i18n="nav.profile">Perfil</span>
+        </a>
+    </footer>
                             <i class="fas fa-clock"></i>
                             <h4 data-i18n="tip.report_immediately.title">Report Immediately</h4>
                             <p data-i18n="tip.report_immediately.description">Report lost or found documents as soon as possible to increase chances of recovery.</p>
@@ -153,39 +180,30 @@
                     <h2 data-i18n="documents.title">Seus Documentos</h2>
                     <span id="document-count" class="document-count">0 total</span>
                 </div>
-
                 <div id="documents-grid" class="documents-grid">
                     <!-- Documents will be populated by JavaScript -->
                 </div>
             </section>
 
-            <!-- Lost Documents Feed Section -->
+            <!-- Lost Documents Section -->
             <section id="relatar-perda" class="content-section">
                 <div class="section-header">
                     <h2 data-i18n="lost.title">Documentos Perdidos</h2>
-                    <button id="report-lost-btn" class="btn primary">
-                        <i class="fas fa-plus"></i>
-                        <span data-i18n="lost.report_button">Reportar Perda</span>
-                    </button>
                 </div>
-
-                <!-- Search Bar -->
                 <div class="search-bar">
-                    <input type="text" id="search-lost" data-i18n-placeholder="lost.search_placeholder" placeholder="Search documents...">
+                    <input type="text" id="search-lost" data-i18n-placeholder="lost.search_placeholder" placeholder="Buscar documentos...">
                     <select id="filter-lost-type">
-                        <option value="" data-i18n="lost.all_types">All Types</option>
+                        <option value="" data-i18n="lost.all_types">Todos os Tipos</option>
                         <option value="bi" data-i18n="type.bi">BI (Bilhete de Identidade)</option>
                         <option value="passaporte" data-i18n="type.passaporte">Passaporte</option>
                         <option value="carta" data-i18n="type.carta">Carta de Condução</option>
                         <option value="outros" data-i18n="type.outros">Outros</option>
                     </select>
                 </div>
-
                 <div class="feed-header">
                     <h3 data-i18n="lost.recently_reported">Recentemente Reportados como Perdidos</h3>
                     <span id="lost-count" class="document-count">0 <span data-i18n="lost.documents_found">documentos encontrados</span></span>
                 </div>
-
                 <div id="lost-documents-grid" class="documents-grid">
                     <!-- Lost documents will be populated by JavaScript -->
                 </div>
@@ -195,29 +213,21 @@
             <section id="relatar-encontrado" class="content-section">
                 <div class="section-header">
                     <h2 data-i18n="found.title">Documentos Encontrados</h2>
-                    <button id="report-found-btn" class="btn primary">
-                        <i class="fas fa-plus"></i>
-                        <span data-i18n="found.report_button">Reportar Encontrado</span>
-                    </button>
                 </div>
-
-                <!-- Search Bar -->
                 <div class="search-bar">
-                    <input type="text" id="search-found" data-i18n-placeholder="lost.search_placeholder" placeholder="Search documents...">
+                    <input type="text" id="search-found" data-i18n-placeholder="lost.search_placeholder" placeholder="Buscar documentos...">
                     <select id="filter-found-type">
-                        <option value="" data-i18n="lost.all_types">All Types</option>
+                        <option value="" data-i18n="lost.all_types">Todos os Tipos</option>
                         <option value="bi" data-i18n="type.bi">BI (Bilhete de Identidade)</option>
                         <option value="passaporte" data-i18n="type.passaporte">Passaporte</option>
                         <option value="carta" data-i18n="type.carta">Carta de Condução</option>
                         <option value="outros" data-i18n="type.outros">Outros</option>
                     </select>
                 </div>
-
                 <div class="feed-header">
                     <h3 data-i18n="found.recently_found">Documentos Encontrados Recentemente</h3>
                     <span id="found-count" class="document-count">0 <span data-i18n="lost.documents_found">documentos encontrados</span></span>
                 </div>
-
                 <div id="found-documents-grid" class="documents-grid">
                     <!-- Found documents will be populated by JavaScript -->
                 </div>
@@ -457,18 +467,14 @@
                             <option value="bi" data-i18n="type.bi">BI (Bilhete de Identidade)</option>
                             <option value="passaporte" data-i18n="type.passaporte">Passaporte</option>
                             <option value="carta" data-i18n="type.carta">Carta de Condução</option>
+                            <option value="diri" data-i18n="document.type.diri">Diri</option>
                             <option value="outros" data-i18n="type.outros">Outros</option>
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <label data-i18n="document.name">Nome do Documento *</label>
-                        <input type="text" id="document-name" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label data-i18n="document.number">Número do Documento *</label>
-                        <input type="text" id="document-number" required>
+                        <label data-i18n="document.data_number_label">Dados/Número do Documento *</label>
+                        <input type="text" id="document-name" required placeholder="Dados/Número do Documento" data-i18n-placeholder="document.data_number_label">
                     </div>
 
                     <div class="form-group">
@@ -477,16 +483,28 @@
                     </div>
 
                     <div class="form-group">
-                        <label data-i18n="document.upload_image">Enviar Imagem/PDF do Documento</label>
+                        <label data-i18n="lost.contact_info">Suas informações de contato *</label>
+                        <div class="contact-input-group">
+                            <select id="document-country" class="country-select"></select>
+                            <span id="document-prefix" class="country-prefix">+258</span>
+                            <input type="tel" id="document-contact" required placeholder="" data-i18n-placeholder="common.contact_info_placeholder">
+                            <i class="fas fa-phone"></i>
+                        </div>
+                        <small data-i18n="lost.contact_help">Isso será compartilhado com quem encontrar o documento</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label data-i18n="document.upload_image">Enviar Imagem/PDF/Documento</label>
                         <div class="file-upload-area">
-                            <input type="file" id="document-image" multiple accept="image/*,application/pdf">
+                            <input type="file" id="document-image" multiple accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/zip,application/x-zip-compressed,.doc,.docx,.xls,.xlsx,.zip,.rar,.txt,.csv" capture="environment">
                             <div class="file-upload-text">
                                 <i class="fas fa-cloud-upload-alt"></i>
-                                <p data-i18n="document.upload_text">Clique para enviar ou arraste e solte</p>
-                                <small data-i18n="document.upload_formats">Imagens (JPG, PNG) ou PDF • Máx 5MB cada</small>
+                                <p data-i18n="document.upload_text">Clique para enviar, arraste e solte, ou use a câmera</p>
+                                <small data-i18n="document.upload_formats">Imagens (JPG, PNG), PDF, DOC, XLS, ZIP • Máx 5MB cada</small>
                             </div>
                         </div>
                         <div id="uploaded-files"></div>
+                        <small data-i18n="document.upload_camera_hint">Você pode tirar uma foto do documento usando a câmera do seu dispositivo.</small>
                     </div>
 
                     <div class="security-info">
@@ -524,13 +542,14 @@
                             <option value="bi" data-i18n="type.bi">BI (Bilhete de Identidade)</option>
                             <option value="passaporte" data-i18n="type.passaporte">Passaporte</option>
                             <option value="carta" data-i18n="type.carta">Carta de Condução</option>
+                            <option value="diri" data-i18n="document.type.diri">Diri</option>
                             <option value="outros" data-i18n="type.outros">Outros</option>
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <label data-i18n="lost.document_name">Nome do Documento *</label>
-                        <input type="text" id="lost-document-name" required>
+                        <label data-i18n="document.data_number_label">Dados/Número do Documento *</label>
+                        <input type="text" id="lost-document-name" required placeholder="Dados/Número do Documento" data-i18n-placeholder="document.data_number_label">
                     </div>
 
                     <div class="form-group">
@@ -547,20 +566,26 @@
 
                     <div class="form-group">
                         <label data-i18n="lost.contact_info">Suas informações de contato *</label>
-                        <input type="text" id="lost-contact" data-i18n-placeholder="lost.contact_placeholder" placeholder="+258 00 000 0000" required>
+                        <div class="contact-input-group">
+                            <select id="lost-country" class="country-select"></select>
+                            <span id="lost-prefix" class="country-prefix">+258</span>
+                            <input type="tel" id="lost-contact" required placeholder="" data-i18n-placeholder="common.contact_info_placeholder">
+                            <i class="fas fa-phone"></i>
+                        </div>
                         <small data-i18n="lost.contact_help">Isso será compartilhado com quem encontrar o documento</small>
                     </div>
 
                     <div class="form-group">
                         <label data-i18n="lost.upload_files">Enviar fotos/documentos (opcional)</label>
                         <div class="file-upload-area">
-                            <input type="file" id="lost-document-files" multiple accept="image/*,application/pdf">
+                            <input type="file" id="lost-document-files" multiple accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/zip,application/x-zip-compressed,.doc,.docx,.xls,.xlsx,.zip,.rar,.txt,.csv" capture="environment">
                             <div class="file-upload-text">
                                 <i class="fas fa-camera"></i>
-                                <p data-i18n="lost.upload_help">Adicione fotos que possam ajudar a identificar o documento</p>
-                                <small data-i18n="lost.upload_formats">Imagens (JPG, PNG) ou PDF • Máx 5MB cada</small>
+                                <p data-i18n="lost.upload_help">Adicione fotos, PDFs ou arquivos que possam ajudar a identificar o documento. Você pode usar a câmera do celular.</p>
+                                <small data-i18n="lost.upload_formats">Imagens (JPG, PNG), PDF, DOC, XLS, ZIP • Máx 5MB cada</small>
                             </div>
                         </div>
+                        <small data-i18n="lost.upload_camera_hint">Você pode tirar uma foto do documento usando a câmera do seu dispositivo.</small>
                     </div>
 
                     <div class="modal-actions">
@@ -593,13 +618,14 @@
                             <option value="bi" data-i18n="type.bi">BI (Bilhete de Identidade)</option>
                             <option value="passaporte" data-i18n="type.passaporte">Passaporte</option>
                             <option value="carta" data-i18n="type.carta">Carta de Condução</option>
+                            <option value="diri" data-i18n="document.type.diri">Diri</option>
                             <option value="outros" data-i18n="type.outros">Outros</option>
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <label data-i18n="lost.document_name">Nome do Documento *</label>
-                        <input type="text" id="found-document-name" required>
+                        <label data-i18n="document.data_number_label">Dados/Número do Documento *</label>
+                        <input type="text" id="found-document-name" required placeholder="Dados/Número do Documento" data-i18n-placeholder="document.data_number_label">
                     </div>
 
                     <div class="form-group">
@@ -614,20 +640,27 @@
 
                     <div class="form-group">
                         <label data-i18n="found.finder_contact">Suas informações de contato *</label>
-                        <input type="text" id="found-contact" data-i18n-placeholder="found.finder_contact_placeholder" placeholder="+258 00 000 0000" required>
+                        <div class="contact-input-group">
+                            <select id="found-country" class="country-select"></select>
+                            <span id="found-prefix" class="country-prefix">+258</span>
+                            <input type="tel" id="found-contact" required placeholder="" data-i18n-placeholder="common.contact_info_placeholder">
+                            <i class="fas fa-phone"></i>
+                        </div>
                         <small data-i18n="found.finder_contact_help">Isso será compartilhado com o proprietário do documento caso ele o reivindique</small>
                     </div>
 
                     <div class="form-group">
-                        <label data-i18n="found.upload_image">Enviar imagem (opcional)</label>
+                        <label data-i18n="found.upload_image">Enviar imagem/arquivo (opcional)</label>
                         <div class="file-upload-area">
-                            <input type="file" id="found-image" accept="image/*">
+                            <input type="file" id="found-image" multiple accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/zip,application/x-zip-compressed,.doc,.docx,.xls,.xlsx,.zip,.rar,.txt,.csv" capture="environment">
                             <div class="file-upload-text">
                                 <i class="fas fa-camera"></i>
-                                <p data-i18n="found.upload_help">Uma foto ajuda o proprietário a identificar seu documento</p>
+                                <p data-i18n="found.upload_help">Uma foto, PDF ou arquivo ajuda o proprietário a identificar seu documento. Você pode usar a câmera do celular.</p>
+                                <small data-i18n="found.upload_formats">Imagens (JPG, PNG), PDF, DOC, XLS, ZIP • Máx 5MB cada</small>
                             </div>
                         </div>
                         <small class="privacy-warning" data-i18n="found.privacy_warning">Por favor, proteja a privacidade - desfoque ou cubra informações sensíveis em fotos</small>
+                        <small data-i18n="found.upload_camera_hint">Você pode tirar uma foto do documento usando a câmera do seu dispositivo.</small>
                     </div>
 
                     <div class="modal-actions">
