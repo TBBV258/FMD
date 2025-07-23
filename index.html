@@ -1,15 +1,3 @@
-    <!-- Modal de Visualização de Documento -->
-    <div id="view-document-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Detalhes do Documento</h2>
-                <span class="close" id="close-view-document">&times;</span>
-            </div>
-            <div class="modal-body" id="view-document-body">
-                <!-- Conteúdo preenchido via JS -->
-            </div>
-        </div>
-    </div>
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -21,40 +9,45 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Supabase -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" class="loading-spinner">
+        <div class="spinner"></div>
+        <p>Carregando...</p>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
     <!-- Login Section -->
     <section id="login-section">
         <div class="login-container">
-            <img src="logofmd.jpg" alt="FindMyDocs Logo" class="app-logo">
+            <div class="app-logo-container">
+                <img src="logofmd.jpg" alt="FindMyDocs Logo" class="app-logo">
+            </div>
             <h1>FindMyDocs</h1>
             <p data-i18n="login.subtitle">Sistema de gestão de documentos perdidos e encontrados</p>
-            <button id="demo-login" class="btn primary">
+            
+            <button id="demo-login" class="btn primary" type="button">
                 <i class="fas fa-user"></i>
                 <span data-i18n="login.demo_button">Entrar como Demo</span>
             </button>
-            <form id="login-form">
-                <label for="login-country">País:</label>
-                <select id="login-country" name="country" required>
-                    <option value="">Selecione o país</option>
-                    <option value="AO" data-flag="🇦🇴" data-prefix="+244">🇦🇴 Angola (+244)</option>
-                    <option value="PT" data-flag="🇵🇹" data-prefix="+351">🇵🇹 Portugal (+351)</option>
-                    <option value="BR" data-flag="🇧🇷" data-prefix="+55">🇧🇷 Brasil (+55)</option>
-                    <option value="MZ" data-flag="🇲🇿" data-prefix="+258">🇲🇿 Moçambique (+258)</option>
-                    <option value="CV" data-flag="🇨🇻" data-prefix="+238">🇨🇻 Cabo Verde (+238)</option>
-                    <option value="ST" data-flag="🇸🇹" data-prefix="+239">🇸🇹 São Tomé (+239)</option>
-                    <option value="GW" data-flag="🇬🇼" data-prefix="+245">🇬🇼 Guiné-Bissau (+245)</option>
-                </select>
-                <label for="login-phone">Telefone:</label>
-                <div style="display:flex;align-items:center;gap:4px;">
-                    <span id="login-country-flag">🇦🇴</span>
-                    <span id="login-country-prefix">+244</span>
-                    <input type="tel" id="login-phone" name="phone" placeholder="Número de telefone" required style="flex:1;">
-                </div>
-                <label for="login-password">Senha:</label>
-                <input type="password" id="login-password" name="password" placeholder="Senha" required>
-                <button type="submit">Entrar / Registrar</button>
-            </form>
+            
+            <div style="margin: 16px 0; color: #666; font-size: 0.9em;">ou</div>
+            
+            <div class="auth-buttons">
+                <button id="show-login" class="btn secondary" type="button">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span data-i18n="login.login_button">Entrar</span>
+                </button>
+                <button id="show-register" class="btn primary" type="button">
+                    <i class="fas fa-user-plus"></i>
+                    <span data-i18n="login.register_button">Registrar</span>
+                </button>
+            </div>
         </div>
     </section>
 
@@ -64,131 +57,110 @@
             <!-- Navigation -->
             <nav class="navbar">
                 <div class="nav-brand">
-                    <img src="logofmd.jpg" alt="FindMyDocs" class="app-logo-small">
+                    <img src="logofmd.jpg" alt="FindMyDocs Logo" class="app-logo-small">
                     FindMyDocs
                 </div>
                 <div class="nav-links">
-                    <select id="language-selector" class="language-selector">
+                    <select id="language-selector" class="language-selector" aria-label="Selecionar idioma">
                         <option value="pt">🇵🇹 Português</option>
                         <option value="en">🇬🇧 English</option>
                     </select>
-                    <button class="nav-link active" data-section="documentos">
+                    <button class="nav-link active" data-section="documentos" aria-label="Início">
                         <i class="fas fa-home"></i>
                         <span data-i18n="nav.home">Início</span>
                     </button>
-                    <button class="nav-link" data-section="feed">
+                    <button class="nav-link" data-section="feed" aria-label="Feed">
                         <i class="fas fa-list"></i>
                         Feed
                     </button>
-                    <button class="nav-link" data-section="relatar-perda">
+                    <button class="nav-link" data-section="relatar-perda" aria-label="Relatar Perda">
                         <i class="fas fa-search"></i>
                         <span data-i18n="nav.report_lost">Relatar Perda</span>
                     </button>
-                    <button class="nav-link" data-section="relatar-encontrado">
+                    <button class="nav-link" data-section="relatar-encontrado" aria-label="Relatar Encontrado">
                         <i class="fas fa-bell"></i>
                         <span data-i18n="nav.report_found">Relatar Encontrado</span>
                     </button>
-                    <button class="nav-link" data-section="perfil">
-  
-
+                    <button class="nav-link" data-section="perfil" aria-label="Perfil">
                         <i class="fas fa-user"></i>
                         Perfil
                     </button>
-                    <button id="theme-toggle" class="btn secondary small">
+                    <button id="theme-toggle" class="btn secondary small" aria-label="Alternar tema">
                         <i class="fas fa-moon"></i>
                     </button>
-                    <button id="reset-app" class="btn danger small">
+                    <button id="reset-app" class="btn danger small" aria-label="Resetar aplicação">
                         <i class="fas fa-redo"></i>
                         <span data-i18n="nav.reset">Reset</span>
                     </button>
                 </div>
             </nav>
 
-            <!-- Home/Inicio Section -->
+            <!-- Home/Documentos Section -->
             <section id="documentos" class="content-section active">
                 <div class="section-header">
                     <h2 data-i18n="documents.title">Seus Documentos</h2>
                     <span id="document-count" class="document-count">0 total</span>
                 </div>
+                
                 <div id="welcome-tips" class="welcome-section">
-                    <div class="quick-actions" style="display:flex;gap:12px;margin-bottom:16px;">
-                        <button class="btn primary" onclick="document.querySelector('.nav-item[data-nav-target=\'relatar-perda\']').click()">
-                            <i class="fas fa-search-minus"></i> Reportar Documento Perdido
+                    <div class="quick-actions">
+                        <button class="btn primary" onclick="showSection('relatar-perda')">
+                            <i class="fas fa-search-minus"></i> 
+                            <span data-i18n="nav.report_lost">Reportar Documento Perdido</span>
                         </button>
-                        <button class="btn success" onclick="document.querySelector('.nav-item[data-nav-target=\'relatar-encontrado\']').click()">
-                            <i class="fas fa-search-plus"></i> Reportar Documento Encontrado
+                        <button class="btn success" onclick="showSection('relatar-encontrado')">
+                            <i class="fas fa-search-plus"></i> 
+                            <span data-i18n="nav.report_found">Reportar Documento Encontrado</span>
                         </button>
                     </div>
-                    <div class="mobile-upload-tip" style="margin-bottom:12px;color:#b85c00;font-size:0.95em;">
-                        <i class="fas fa-exclamation-triangle"></i> Para enviar fotos pelo app, permita acesso à câmera e arquivos quando solicitado. Se não aparecer, ative manualmente nas permissões do app.
+                    
+                    <div class="mobile-upload-tip">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        <span data-i18n="tips.mobile_upload">Para enviar fotos pelo app, permita acesso à câmera e arquivos quando solicitado.</span>
                     </div>
-                    <h2 data-i18n="welcome.title">Bem-vindo, Google User!</h2>
+                    
+                    <h2 id="welcome-user-name" data-i18n="welcome.title">Bem-vindo!</h2>
+                    
                     <div class="tip-card">
                         <i class="fas fa-clock"></i>
-                        <h4 data-i18n="tip.report_immediately.title">Report Immediately</h4>
-                        <p data-i18n="tip.report_immediately.description">Report lost or found documents as soon as possible to increase chances of recovery.</p>
-                        <button class="tip-close">&times;</button>
+                        <h4 data-i18n="tip.report_immediately.title">Reporte Imediatamente</h4>
+                        <p data-i18n="tip.report_immediately.description">Reporte documentos perdidos ou encontrados o mais rápido possível para aumentar as chances de recuperação.</p>
+                        <button class="tip-close" aria-label="Fechar dica">&times;</button>
                     </div>
+                    
                     <div class="tip-card">
                         <i class="fas fa-camera"></i>
-                        <h4 data-i18n="tip.photo_safety.title">Photo Safety</h4>
-                        <p data-i18n="tip.photo_safety.description">When uploading document photos, cover or blur any personal information.</p>
-                        <button class="tip-close">&times;</button>
+                        <h4 data-i18n="tip.photo_safety.title">Segurança de Fotos</h4>
+                        <p data-i18n="tip.photo_safety.description">Ao enviar fotos de documentos, cubra ou desfoque qualquer informação pessoal.</p>
+                        <button class="tip-close" aria-label="Fechar dica">&times;</button>
                     </div>
+                    
                     <div class="tip-card">
                         <i class="fas fa-star"></i>
-                        <h4 data-i18n="tip.earn_points.title">Earn More Points</h4>
-                        <p data-i18n="tip.earn_points.description">Complete your profile, report found documents, and help others to earn more points.</p>
-                        <button class="tip-close">&times;</button>
+                        <h4 data-i18n="tip.earn_points.title">Ganhe Mais Pontos</h4>
+                        <p data-i18n="tip.earn_points.description">Complete seu perfil, reporte documentos encontrados e ajude outros para ganhar mais pontos.</p>
+                        <button class="tip-close" aria-label="Fechar dica">&times;</button>
                     </div>
                 </div>
+                
                 <div id="documents-grid" class="documents-grid">
                     <!-- Documents will be populated by JavaScript -->
                 </div>
-            </section>
-
-    <!-- Bottom Navigation Bar (global) -->
-    <footer id="bottom-nav-bar">
-        <a href="#" class="nav-item active" data-nav-target="documentos">
-            <i class="fas fa-home"></i>
-            <span data-i18n="nav.home">Início</span>
-        </a>
-        <a href="#" class="nav-item" data-nav-target="feed">
-            <i class="fas fa-list"></i>
-            <span data-i18n="nav.my_docs">FEED</span>
-        </a>
-        <a href="#" class="nav-item" data-nav-target="relatar-perda">
-            <i class="fas fa-search-minus"></i>
-            <span data-i18n="nav.lost">Perdidos</span>
-        </a>
-        <a href="#" class="nav-item" data-nav-target="relatar-encontrado">
-            <i class="fas fa-search-plus"></i>
-            <span data-i18n="nav.found">Encontrados</span>
-        </a>
-        <a href="#" class="nav-item" data-nav-target="perfil">
-            <i class="fas fa-user"></i>
-            <span data-i18n="nav.profile">Perfil</span>
-        </a>
-    </footer>
-                         
-
-
-
+                
                 <!-- Add Document Button -->
-                <button id="add-document" class="btn-add-document">
+                <button id="add-document" class="btn-add-document" aria-label="Adicionar novo documento">
                     <i class="fas fa-plus"></i>
                     <span data-i18n="welcome.add_document">Adicionar Novo Documento</span>
                 </button>
-            </div>
+            </section>
 
-            <!-- Documents Section (Your Documents) -->
-            <section id="documentos" class="content-section active">
+            <!-- Feed Section -->
+            <section id="feed" class="content-section">
                 <div class="section-header">
-                    <h2 data-i18n="documents.title">Seus Documentos</h2>
-                    <span id="document-count" class="document-count">0 total</span>
+                    <h2>Feed de Documentos</h2>
                 </div>
-                <div id="documents-grid" class="documents-grid">
-                    <!-- Documents will be populated by JavaScript -->
+                <div id="feed-content" class="feed-content">
+                    <!-- Feed items will be populated by JavaScript -->
                 </div>
             </section>
 
@@ -196,38 +168,44 @@
             <section id="relatar-perda" class="content-section">
                 <div class="section-header">
                     <h2 data-i18n="lost.title">Documentos Perdidos</h2>
+                    <button id="report-lost-btn" class="btn primary">
+                        <i class="fas fa-plus"></i>
+                        <span data-i18n="lost.report_button">Reportar Perda</span>
+                    </button>
                 </div>
+                
                 <div class="search-bar">
                     <input type="text" id="search-lost" data-i18n-placeholder="lost.search_placeholder" placeholder="Buscar documentos...">
-                    <select id="filter-lost-type">
+                    <select id="filter-lost-type" aria-label="Filtrar por tipo">
                         <option value="" data-i18n="lost.all_types">Todos os Tipos</option>
                         <option value="bi" data-i18n="type.bi">BI (Bilhete de Identidade)</option>
                         <option value="passaporte" data-i18n="type.passaporte">Passaporte</option>
                         <option value="carta" data-i18n="type.carta">Carta de Condução</option>
+                        <option value="diri" data-i18n="type.diri">Diri</option>
                         <option value="outros" data-i18n="type.outros">Outros</option>
                     </select>
-                    <select id="filter-lost-country">
+                    <select id="filter-lost-country" aria-label="Filtrar por país">
                         <option value="" data-i18n="common.all_countries">Todos os Países</option>
+                        <option value="ao">Angola</option>
                         <option value="mz">Moçambique</option>
-                        <option value="za">África do Sul</option>
-                        <option value="zw">Zimbábue</option>
+                        <option value="pt">Portugal</option>
+                        <option value="br">Brasil</option>
                         <option value="other">Outro</option>
                     </select>
-                    <select id="filter-lost-province">
+                    <select id="filter-lost-province" aria-label="Filtrar por província">
                         <option value="" data-i18n="common.all_provinces">Todas as Províncias</option>
                         <option value="maputo">Maputo</option>
-                        <option value="matola">Matola</option>
-                        <option value="beira">Beira</option>
-                        <option value="nampula">Nampula</option>
-                        <option value="quelimane">Quelimane</option>
-                        <option value="tete">Tete</option>
-                        <option value="xai-xai">Xai-Xai</option>
+                        <option value="luanda">Luanda</option>
+                        <option value="porto">Porto</option>
+                        <option value="sao-paulo">São Paulo</option>
                     </select>
                 </div>
+                
                 <div class="feed-header">
                     <h3 data-i18n="lost.recently_reported">Recentemente Reportados como Perdidos</h3>
-                    <span id="lost-count" class="document-count">0 <span data-i18n="lost.documents_found">documentos encontrados</span></span>
+                    <span id="lost-count" class="count-badge">0 documentos</span>
                 </div>
+                
                 <div id="lost-documents-grid" class="documents-grid">
                     <!-- Lost documents will be populated by JavaScript -->
                 </div>
@@ -237,69 +215,39 @@
             <section id="relatar-encontrado" class="content-section">
                 <div class="section-header">
                     <h2 data-i18n="found.title">Documentos Encontrados</h2>
+                    <button id="report-found-btn" class="btn primary">
+                        <i class="fas fa-plus"></i>
+                        <span data-i18n="found.report_button">Reportar Encontrado</span>
+                    </button>
                 </div>
+                
                 <div class="search-bar">
-                    <input type="text" id="search-found" data-i18n-placeholder="lost.search_placeholder" placeholder="Buscar documentos...">
-                    <select id="filter-found-type">
-                        <option value="" data-i18n="lost.all_types">Todos os Tipos</option>
+                    <input type="text" id="search-found" data-i18n-placeholder="found.search_placeholder" placeholder="Buscar documentos...">
+                    <select id="filter-found-type" aria-label="Filtrar por tipo">
+                        <option value="" data-i18n="found.all_types">Todos os Tipos</option>
                         <option value="bi" data-i18n="type.bi">BI (Bilhete de Identidade)</option>
                         <option value="passaporte" data-i18n="type.passaporte">Passaporte</option>
                         <option value="carta" data-i18n="type.carta">Carta de Condução</option>
+                        <option value="diri" data-i18n="type.diri">Diri</option>
                         <option value="outros" data-i18n="type.outros">Outros</option>
                     </select>
-                    <select id="filter-found-country">
+                    <select id="filter-found-country" aria-label="Filtrar por país">
                         <option value="" data-i18n="common.all_countries">Todos os Países</option>
+                        <option value="ao">Angola</option>
                         <option value="mz">Moçambique</option>
-                        <option value="za">África do Sul</option>
-                        <option value="zw">Zimbábue</option>
+                        <option value="pt">Portugal</option>
+                        <option value="br">Brasil</option>
                         <option value="other">Outro</option>
                     </select>
-                    <select id="filter-found-province">
-                        <option value="" data-i18n="common.all_provinces">Todas as Províncias</option>
-                        <option value="maputo">Maputo</option>
-                        <option value="matola">Matola</option>
-                        <option value="beira">Beira</option>
-                        <option value="nampula">Nampula</option>
-                        <option value="quelimane">Quelimane</option>
-                        <option value="tete">Tete</option>
-                        <option value="xai-xai">Xai-Xai</option>
-                    </select>
                 </div>
+                
                 <div class="feed-header">
                     <h3 data-i18n="found.recently_found">Documentos Encontrados Recentemente</h3>
-                    <span id="found-count" class="document-count">0 <span data-i18n="lost.documents_found">documentos encontrados</span></span>
+                    <span id="found-count" class="count-badge">0 documentos</span>
                 </div>
+                
                 <div id="found-documents-grid" class="documents-grid">
                     <!-- Found documents will be populated by JavaScript -->
-                </div>
-            </section>
-
-            <!-- Feed Section -->
-            <section id="feed" class="content-section">
-                <div class="section-header">
-                    <h2>Feed de Documentos - Moçambique</h2>
-                    <div class="feed-filters">
-                        <select id="feed-filter">
-                            <option value="all">Todos</option>
-                            <option value="lost">Perdidos</option>
-                            <option value="found">Encontrados</option>
-                        </select>
-                        <select id="feed-location">
-                            <option value="all">Todas as Províncias</option>
-                            <option value="maputo">Maputo</option>
-                            <option value="matola">Matola</option>
-                            <option value="beira">Beira</option>
-                    <button id="logout-btn" class="btn danger" style="margin-top:16px;"><i class="fas fa-sign-out-alt"></i> <span data-i18n="profile.logout">Sair</span></button>
-                            <option value="nampula">Nampula</option>
-                            <option value="quelimane">Quelimane</option>
-                            <option value="tete">Tete</option>
-                            <option value="xai-xai">Xai-Xai</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div id="feed-grid" class="documents-grid">
-                    <!-- Feed will be populated by JavaScript -->
                 </div>
             </section>
 
@@ -307,182 +255,37 @@
             <section id="perfil" class="content-section">
                 <div class="section-header">
                     <h2 data-i18n="profile.title">Perfil do Usuário</h2>
-                    <div class="profile-actions">
-                        <button id="edit-profile-btn" class="btn secondary small">
-                            <i class="fas fa-edit"></i>
-                            <span data-i18n="profile.edit">Editar</span>
-                        </button>
-                        <button id="logout-btn" class="btn danger small">
-                            <i class="fas fa-sign-out-alt"></i>
-                            <span data-i18n="profile.logout">Sair</span>
-                        </button>
-                    </div>
+                    <button id="logout-btn" class="btn danger">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span data-i18n="profile.logout">Sair</span>
+                    </button>
                 </div>
                 
-                <div class="profile-content">
-                    <div class="profile-main">
-                        <div class="profile-card">
-                            <div class="profile-header">
-                                <div class="profile-avatar">
-    <img id="user-avatar" src="https://ui-avatars.com/api/?name=Google+User&background=2196F3&color=fff&size=120" alt="User Avatar" class="avatar-img">
-    <input type="file" id="avatar-upload" accept="image/*" style="display:none">
-    <button id="change-avatar-btn" class="avatar-edit-btn" type="button" title="Alterar foto de perfil">
-        <i class="fas fa-camera"></i>
-    </button>
-                                </div>
-                                <div class="profile-info">
-                                    <h3 id="user-name">Google User</h3>
-                                    <p class="user-email">demo@findmydocs.com</p>
-                                    <p class="member-since">
-                                        <i class="fas fa-calendar"></i>
-                                        <span data-i18n="profile.member_since">Membro desde:</span> 
-                                        <span id="member-since"></span>
-                                    </p>
-                                    <div class="user-status">
-                                        <span class="status-badge active">
-                                            <i class="fas fa-circle"></i>
-                                            <span data-i18n="profile.status.active">Ativo</span>
-                                        </span>
-                                        <span class="plan-badge free">
-                                            <i class="fas fa-star"></i>
-                                            <span data-i18n="profile.plan.free">Plano Grátis</span>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                            
+                <div class="profile-container">
+                    <div class="profile-header">
+                        <div class="profile-avatar">
+                            <img id="user-avatar" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNDUiIGZpbGw9IiMyMTk2RjMiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjM1IiByPSIxNSIgZmlsbD0id2hpdGUiLz48cGF0aCBkPSJNMjAgODUgQzIwIDcwIDMzIDYwIDUwIDYwIEM2NyA2MCA4MCA3MCA4MCA4NSIgZmlsbD0id2hpdGUiLz48L3N2Zz4=" alt="Avatar">
+                            <button id="change-avatar-btn" class="change-avatar-btn">
+                                <i class="fas fa-camera"></i>
+                            </button>
+                            <input type="file" id="avatar-upload" accept="image/*" style="display: none;">
+                        </div>
+                        
+                        <div class="profile-info">
+                            <h3 id="profile-name">Usuário</h3>
+                            <p id="profile-email">email@exemplo.com</p>
                             <div class="profile-stats">
-                                <div class="stat-card">
-                                    <div class="stat-icon">
-                                        <i class="fas fa-file-alt"></i>
-                                    </div>
-                                    <div class="stat-info">
-                                        <span class="stat-number" id="profile-documents">0</span>
-                                        <span class="stat-label" data-i18n="profile.stats.documents">Documentos</span>
-                                    </div>
+                                <div class="stat">
+                                    <span class="stat-value" id="profile-documents">0</span>
+                                    <span class="stat-label" data-i18n="profile.stats.documents">Documentos</span>
                                 </div>
-                                <div class="stat-card">
-                                    <div class="stat-icon">
-                                        <i class="fas fa-star"></i>
-                                    </div>
-                                    <div class="stat-info">
-                                        <span class="stat-number" id="profile-points">0</span>
-                                        <span class="stat-label" data-i18n="profile.stats.points">Pontos</span>
-                                    </div>
+                                <div class="stat">
+                                    <span class="stat-value" id="profile-points">0</span>
+                                    <span class="stat-label" data-i18n="profile.stats.points">Pontos</span>
                                 </div>
-                                <div class="stat-card">
-                                    <div class="stat-icon">
-                                        <i class="fas fa-hands-helping"></i>
-                                    </div>
-                                    <div class="stat-info">
-                                        <span class="stat-number" id="profile-helped">0</span>
-                                        <span class="stat-label" data-i18n="profile.stats.helped">Ajudou</span>
-                                    </div>
-                                </div>
-                                <div class="stat-card">
-                                    <div class="stat-icon">
-                                        <i class="fas fa-search"></i>
-                                    </div>
-                                    <div class="stat-info">
-                                        <span class="stat-number" id="profile-lost">0</span>
-                                        <span class="stat-label" data-i18n="profile.stats.lost">Perdidos</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="profile-actions-grid">
-                            <div class="action-card">
-                                <div class="action-icon">
-                                    <i class="fas fa-upload"></i>
-                                </div>
-                                <div class="action-content">
-                                    <h4 data-i18n="profile.actions.backup.title">Backup de Dados</h4>
-                                    <p data-i18n="profile.actions.backup.description">Faça backup dos seus documentos</p>
-                                    <button class="btn secondary small" id="backup-data-btn">
-                                        <span data-i18n="profile.actions.backup.button">Fazer Backup</span>
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div class="action-card">
-                                <div class="action-icon">
-                                    <i class="fas fa-bell"></i>
-                                </div>
-                                <div class="action-content">
-                                    <h4 data-i18n="profile.actions.notifications.title">Notificações</h4>
-                                    <p data-i18n="profile.actions.notifications.description">Gerencie suas preferências</p>
-                                    <button class="btn secondary small" id="notification-settings-btn">
-                                        <span data-i18n="profile.actions.notifications.button">Configurar</span>
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div class="action-card">
-                                <div class="action-icon">
-                                    <i class="fas fa-shield-alt"></i>
-                                </div>
-                                <div class="action-content">
-                                    <h4 data-i18n="profile.actions.security.title">Segurança</h4>
-                                    <p data-i18n="profile.actions.security.description">Configurações de segurança</p>
-                                    <button class="btn secondary small" id="security-settings-btn">
-                                        <span data-i18n="profile.actions.security.button">Configurar</span>
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div class="action-card">
-                                <div class="action-icon">
-                                    <i class="fas fa-crown"></i>
-                                </div>
-                                <div class="action-content">
-                                    <h4 data-i18n="profile.actions.upgrade.title">Upgrade Premium</h4>
-                                    <p data-i18n="profile.actions.upgrade.description">Desbloqueie recursos premium</p>
-                                    <button class="btn primary small upgrade-btn">
-                                        <span data-i18n="profile.actions.upgrade.button">Atualizar</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="profile-sidebar">
-                        <div class="achievements-card">
-                            <h4 data-i18n="profile.achievements.title">Conquistas</h4>
-                            <div class="achievements-list">
-                                <div class="achievement earned">
-                                    <i class="fas fa-medal"></i>
-                                    <div class="achievement-info">
-                                        <span data-i18n="profile.achievements.first_document">Primeiro Documento</span>
-                                        <small data-i18n="profile.achievements.first_document_desc">Adicionou seu primeiro documento</small>
-                                    </div>
-                                </div>
-                                <div class="achievement locked">
-                                    <i class="fas fa-trophy"></i>
-                                    <div class="achievement-info">
-                                        <span data-i18n="profile.achievements.helper">Ajudante</span>
-                                        <small data-i18n="profile.achievements.helper_desc">Ajude 5 pessoas a encontrar documentos</small>
-                                    </div>
-                                </div>
-                                <div class="achievement locked">
-                                    <i class="fas fa-star"></i>
-                                    <div class="achievement-info">
-                                        <span data-i18n="profile.achievements.superstar">Superstar</span>
-                                        <small data-i18n="profile.achievements.superstar_desc">Alcance 1000 pontos</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="recent-activity-card">
-                            <h4 data-i18n="profile.activity.title">Atividade Recente</h4>
-                            <div class="activity-list" id="recent-activity-list">
-                                <div class="activity-item">
-                                    <i class="fas fa-plus-circle"></i>
-                                    <div class="activity-info">
-                                        <span data-i18n="profile.activity.joined">Juntou-se ao FindMyDocs</span>
-                                        <small class="activity-time">Hoje</small>
-                                    </div>
+                                <div class="stat">
+                                    <span class="stat-value" id="profile-helped">0</span>
+                                    <span class="stat-label" data-i18n="profile.stats.helped">Ajudou</span>
                                 </div>
                             </div>
                         </div>
@@ -496,249 +299,121 @@
     <div id="document-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 data-i18n="document.modal_title">Detalhes do Documento</h2>
-                <span class="close">&times;</span>
+                <h3 data-i18n="document.modal_title">Adicionar Documento</h3>
+                <button class="modal-close" aria-label="Fechar">&times;</button>
             </div>
-            <div class="modal-body">
-                <p data-i18n="document.modal_subtitle">Adicione seu documento importante para proteção</p>
+            <form id="document-form">
+                <label for="document-type" data-i18n="document.type">Tipo de Documento:</label>
+                <select id="document-type" name="type" required>
+                    <option value="bi" data-i18n="type.bi">BI (Bilhete de Identidade)</option>
+                    <option value="passaporte" data-i18n="type.passaporte">Passaporte</option>
+                    <option value="carta" data-i18n="type.carta">Carta de Condução</option>
+                    <option value="diri" data-i18n="type.diri">Diri</option>
+                    <option value="outros" data-i18n="type.outros">Outros</option>
+                </select>
                 
-                <form id="document-form">
-                    <div class="form-group">
-                        <label data-i18n="document.type">Tipo de Documento *</label>
-                        <select id="document-type" required>
-                            <option value="" data-i18n="common.select_type">Selecione o tipo de documento</option>
-                            <option value="bi" data-i18n="type.bi">BI (Bilhete de Identidade)</option>
-                            <option value="passaporte" data-i18n="type.passaporte">Passaporte</option>
-                            <option value="carta" data-i18n="type.carta">Carta de Condução</option>
-                            <option value="diri" data-i18n="document.type.diri">Diri</option>
-                            <option value="outros" data-i18n="type.outros">Outros</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label data-i18n="document.data_number_label">Dados/Número do Documento *</label>
-                        <input type="text" id="document-name" required placeholder="Dados/Número do Documento" data-i18n-placeholder="document.data_number_label">
-                    </div>
-
-                    <div class="form-group">
-                        <label data-i18n="document.description">Descrição (opcional)</label>
-                        <textarea id="document-description" rows="3"></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label data-i18n="lost.contact_info">Suas informações de contato *</label>
-                        <div class="contact-input-group">
-                            <select id="document-country" class="country-select">
-                                <option value="">Selecione o país</option>
-                                <option value="AO" data-flag="🇦🇴" data-prefix="+244">🇦🇴 Angola (+244)</option>
-                                <option value="PT" data-flag="🇵🇹" data-prefix="+351">🇵🇹 Portugal (+351)</option>
-                                <option value="BR" data-flag="🇧🇷" data-prefix="+55">🇧🇷 Brasil (+55)</option>
-                                <option value="MZ" data-flag="🇲🇿" data-prefix="+258">🇲🇿 Moçambique (+258)</option>
-                                <option value="CV" data-flag="🇨🇻" data-prefix="+238">🇨🇻 Cabo Verde (+238)</option>
-                                <option value="ST" data-flag="🇸🇹" data-prefix="+239">🇸🇹 São Tomé (+239)</option>
-                                <option value="GW" data-flag="🇬🇼" data-prefix="+245">🇬🇼 Guiné-Bissau (+245)</option>
-                            </select>
-                            <span id="document-prefix" class="country-prefix">+258</span>
-                            <input type="tel" id="document-contact" required placeholder="" data-i18n-placeholder="common.contact_info_placeholder">
-                            <i class="fas fa-phone"></i>
-                        </div>
-                        <small data-i18n="lost.contact_help">Isso será compartilhado com quem encontrar o documento</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label data-i18n="document.upload_image">Enviar Imagem/PDF/Documento</label>
-                        <div class="file-upload-area">
-<input type="file" id="document-image" multiple accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/zip,application/x-zip-compressed,.doc,.docx,.xls,.xlsx,.zip,.rar,.txt,.csv" capture="environment" onclick="this.removeAttribute('capture');this.setAttribute('capture','environment');">
-                            <div class="file-upload-text">
-                                <i class="fas fa-cloud-upload-alt"></i>
-                                <p data-i18n="document.upload_text">Clique para enviar, arraste e solte, ou use a câmera</p>
-                                <small data-i18n="document.upload_formats">Imagens (JPG, PNG), PDF, DOC, XLS, ZIP • Máx 5MB cada</small>
-                            </div>
-                        </div>
-                        <div id="uploaded-files"></div>
-                        <small data-i18n="document.upload_camera_hint">Você pode tirar uma foto do documento usando a câmera do seu dispositivo.</small>
-                    </div>
-
-                    <div class="security-info">
-                        <h4 data-i18n="document.security_title">Garantia de Segurança</h4>
-                        <p data-i18n="document.security_description">Seus documentos são criptografados e armazenados com segurança. Apenas você tem acesso a eles.</p>
-                    </div>
-
-                    <div class="document-types-info">
-                        <h4 data-i18n="document.types_title">Tipos de Documentos</h4>
-                        <p data-i18n="document.types_description">Contas gratuitas podem apenas armazenar carteiras de identidade. Atualize para Premium para passaportes, carteiras de motorista e cartões bancários.</p>
-                    </div>
-
-                    <div class="modal-actions">
-                        <button type="button" id="cancel-document" class="btn secondary" data-i18n="document.cancel">Cancelar</button>
-                        <button type="submit" class="btn primary" data-i18n="document.save">Salvar Documento</button>
-                    </div>
-                </form>
-            </div>
+                <label for="document-name" data-i18n="document.name">Nome do Documento:</label>
+                <input type="text" id="document-name" name="name" required placeholder="Nome do documento">
+                
+                <label for="document-number" data-i18n="document.number">Número do Documento:</label>
+                <input type="text" id="document-number" name="number" required placeholder="Número do documento">
+                
+                <label for="document-description" data-i18n="document.description">Descrição:</label>
+                <textarea id="document-description" name="description" placeholder="Descrição opcional"></textarea>
+                
+                <label for="document-image" data-i18n="document.upload_image">Imagem do Documento:</label>
+                <input type="file" id="document-image" name="image" accept="image/*">
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn secondary" onclick="closeModal('document-modal')" data-i18n="document.cancel">Cancelar</button>
+                    <button type="submit" class="btn primary" data-i18n="document.save">Salvar</button>
+                </div>
+            </form>
         </div>
     </div>
 
-    <!-- Lost Document Modal -->
+    <!-- Lost Modal -->
     <div id="lost-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 data-i18n="lost.modal_title">Reportar Perda</h2>
-                <span class="close">&times;</span>
+                <h3 data-i18n="lost.modal_title">Reportar Documento Perdido</h3>
+                <button class="modal-close" aria-label="Fechar">&times;</button>
             </div>
-            <div class="modal-body">
-                <form id="lost-form">
-                    <div class="form-group">
-                        <label data-i18n="lost.document_type">Tipo de Documento *</label>
-                        <select id="lost-document-type" required>
-                            <option value="" data-i18n="common.select_type">Selecione o tipo de documento</option>
-                            <option value="bi" data-i18n="type.bi">BI (Bilhete de Identidade)</option>
-                            <option value="passaporte" data-i18n="type.passaporte">Passaporte</option>
-                            <option value="carta" data-i18n="type.carta">Carta de Condução</option>
-                            <option value="diri" data-i18n="document.type.diri">Diri</option>
-                            <option value="outros" data-i18n="type.outros">Outros</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label data-i18n="document.data_number_label">Dados/Número do Documento *</label>
-                        <input type="text" id="lost-document-name" required placeholder="Dados/Número do Documento" data-i18n-placeholder="document.data_number_label">
-                    </div>
-
-                    <div class="form-group">
-                        <label data-i18n="lost.where_lost">Onde foi perdido? *</label>
-                        <input type="text" id="lost-location" data-i18n-placeholder="lost.location_placeholder" placeholder="Digite o local onde foi perdido" required>
-                        <small data-i18n="lost.location_help">Seja o mais específico possível para ajudar outros a encontrá-lo</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label data-i18n="lost.additional_details">Detalhes adicionais</label>
-                        <textarea id="lost-description" data-i18n-placeholder="lost.description_placeholder" placeholder="Descreva o documento que foi perdido" rows="3"></textarea>
-                        <small data-i18n="lost.description_help">Inclua qualquer informação visível que possa ajudar a identificar o documento</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label data-i18n="lost.contact_info">Suas informações de contato *</label>
-                        <div class="contact-input-group">
-                            <select id="lost-country" class="country-select">
-                                <option value="">Selecione o país</option>
-                                <option value="AO" data-flag="🇦🇴" data-prefix="+244">🇦🇴 Angola (+244)</option>
-                                <option value="PT" data-flag="🇵🇹" data-prefix="+351">🇵🇹 Portugal (+351)</option>
-                                <option value="BR" data-flag="🇧🇷" data-prefix="+55">🇧🇷 Brasil (+55)</option>
-                                <option value="MZ" data-flag="🇲🇿" data-prefix="+258">🇲🇿 Moçambique (+258)</option>
-                                <option value="CV" data-flag="🇨🇻" data-prefix="+238">🇨🇻 Cabo Verde (+238)</option>
-                                <option value="ST" data-flag="🇸🇹" data-prefix="+239">🇸🇹 São Tomé (+239)</option>
-                                <option value="GW" data-flag="🇬🇼" data-prefix="+245">🇬🇼 Guiné-Bissau (+245)</option>
-                            </select>
-                            <span id="lost-prefix" class="country-prefix">+258</span>
-                            <input type="tel" id="lost-contact" required placeholder="" data-i18n-placeholder="common.contact_info_placeholder">
-                            <i class="fas fa-phone"></i>
-                        </div>
-                        <small data-i18n="lost.contact_help">Isso será compartilhado com quem encontrar o documento</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label data-i18n="lost.upload_files">Enviar fotos/documentos (opcional)</label>
-                        <div class="file-upload-area">
-<input type="file" id="lost-document-files" multiple accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/zip,application/x-zip-compressed,.doc,.docx,.xls,.xlsx,.zip,.rar,.txt,.csv" capture="environment" onclick="this.removeAttribute('capture');this.setAttribute('capture','environment');">
-                            <div class="file-upload-text">
-                                <i class="fas fa-camera"></i>
-                                <p data-i18n="lost.upload_help">Adicione fotos, PDFs ou arquivos que possam ajudar a identificar o documento. Você pode usar a câmera do celular.</p>
-                                <small data-i18n="lost.upload_formats">Imagens (JPG, PNG), PDF, DOC, XLS, ZIP • Máx 5MB cada</small>
-                            </div>
-                        </div>
-                        <small data-i18n="lost.upload_camera_hint">Você pode tirar uma foto do documento usando a câmera do seu dispositivo.</small>
-                    </div>
-
-                    <div class="modal-actions">
-                        <button type="button" id="cancel-lost" class="btn secondary" data-i18n="document.cancel">Cancelar</button>
-                        <button type="submit" class="btn primary" data-i18n="lost.report_button_submit">Reportar Perda</button>
-                    </div>
-                </form>
-            </div>
+            <form id="lost-form">
+                <label for="lost-type" data-i18n="lost.document_type">Tipo de Documento:</label>
+                <select id="lost-type" name="type" required>
+                    <option value="bi" data-i18n="type.bi">BI (Bilhete de Identidade)</option>
+                    <option value="passaporte" data-i18n="type.passaporte">Passaporte</option>
+                    <option value="carta" data-i18n="type.carta">Carta de Condução</option>
+                    <option value="diri" data-i18n="type.diri">Diri</option>
+                    <option value="outros" data-i18n="type.outros">Outros</option>
+                </select>
+                
+                <label for="lost-name" data-i18n="lost.document_name">Nome do Documento:</label>
+                <input type="text" id="lost-name" name="name" required placeholder="Nome do documento">
+                
+                <label for="lost-location" data-i18n="lost.where_lost">Onde foi perdido?</label>
+                <input type="text" id="lost-location" name="location" required placeholder="Local onde foi perdido">
+                
+                <label for="lost-description" data-i18n="lost.additional_details">Detalhes adicionais:</label>
+                <textarea id="lost-description" name="description" placeholder="Descreva o documento perdido" required></textarea>
+                
+                <label for="lost-contact" data-i18n="lost.contact_info">Informações de contato:</label>
+                <input type="tel" id="lost-contact" name="contact" required placeholder="+244 000 000 000">
+                
+                <label for="lost-image" data-i18n="document.upload_image">Imagem do Documento (opcional):</label>
+                <input type="file" id="lost-image" name="image" accept="image/*">
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn secondary" onclick="closeModal('lost-modal')" data-i18n="document.cancel">Cancelar</button>
+                    <button type="submit" class="btn primary" data-i18n="lost.report_button_submit">Reportar Perda</button>
+                </div>
+            </form>
         </div>
     </div>
 
-    <!-- Found Document Modal -->
+    <!-- Found Modal -->
     <div id="found-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 data-i18n="found.modal_title">Reportar Encontrado</h2>
-                <span class="close">&times;</span>
+                <h3 data-i18n="found.modal_title">Reportar Documento Encontrado</h3>
+                <button class="modal-close" aria-label="Fechar">&times;</button>
             </div>
-            <div class="modal-body">
-                <div class="tips-section">
-                    <h3 data-i18n="found.tips_title">Dicas para Relatos de Documentos Encontrados</h3>
-                    <p data-i18n="found.tips_description">Obrigado por ajudar! Fornecer detalhes precisos ajuda a devolver documentos aos seus donos mais rapidamente.</p>
+            <form id="found-form">
+                <label for="found-type" data-i18n="found.document_type">Tipo de Documento:</label>
+                <select id="found-type" name="type" required>
+                    <option value="bi" data-i18n="type.bi">BI (Bilhete de Identidade)</option>
+                    <option value="passaporte" data-i18n="type.passaporte">Passaporte</option>
+                    <option value="carta" data-i18n="type.carta">Carta de Condução</option>
+                    <option value="diri" data-i18n="type.diri">Diri</option>
+                    <option value="outros" data-i18n="type.outros">Outros</option>
+                </select>
+                
+                <label for="found-name" data-i18n="found.document_name">Nome no Documento:</label>
+                <input type="text" id="found-name" name="name" required placeholder="Nome encontrado no documento">
+                
+                <label for="found-location" data-i18n="found.where_found">Onde foi encontrado?</label>
+                <input type="text" id="found-location" name="location" required placeholder="Local onde foi encontrado">
+                
+                <label for="found-description" data-i18n="found.additional_details">Detalhes adicionais:</label>
+                <textarea id="found-description" name="description" placeholder="Descreva o documento encontrado" required></textarea>
+                
+                <label for="found-contact" data-i18n="found.finder_contact">Suas informações de contato:</label>
+                <input type="tel" id="found-contact" name="contact" required placeholder="+244 000 000 000">
+                
+                <label for="found-image" data-i18n="found.upload_image">Imagem do Documento:</label>
+                <input type="file" id="found-image" name="image" accept="image/*" required>
+                
+                <div class="privacy-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span data-i18n="found.privacy_warning">Por favor, proteja a privacidade - desfoque ou cubra informações sensíveis em fotos</span>
                 </div>
-
-                <form id="found-form">
-                    <div class="form-group">
-                        <label data-i18n="lost.document_type">Tipo de Documento *</label>
-                        <select id="found-document-type" required>
-                            <option value="" data-i18n="common.select_type">Selecione o tipo de documento</option>
-                            <option value="bi" data-i18n="type.bi">BI (Bilhete de Identidade)</option>
-                            <option value="passaporte" data-i18n="type.passaporte">Passaporte</option>
-                            <option value="carta" data-i18n="type.carta">Carta de Condução</option>
-                            <option value="diri" data-i18n="document.type.diri">Diri</option>
-                            <option value="outros" data-i18n="type.outros">Outros</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label data-i18n="document.data_number_label">Dados/Número do Documento *</label>
-                        <input type="text" id="found-document-name" required placeholder="Dados/Número do Documento" data-i18n-placeholder="document.data_number_label">
-                    </div>
-
-                    <div class="form-group">
-                        <label data-i18n="found.where_found">Onde você o encontrou? *</label>
-                        <input type="text" id="found-location" data-i18n-placeholder="found.location_placeholder" placeholder="Digite o local onde você o encontrou" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label data-i18n="lost.additional_details">Detalhes adicionais</label>
-                        <textarea id="found-description" data-i18n-placeholder="lost.description_placeholder" placeholder="Descreva o documento que foi encontrado" rows="3"></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label data-i18n="found.finder_contact">Suas informações de contato *</label>
-                        <div class="contact-input-group">
-                            <select id="found-country" class="country-select">
-                                <option value="">Selecione o país</option>
-                                <option value="AO" data-flag="🇦🇴" data-prefix="+244">🇦🇴 Angola (+244)</option>
-                                <option value="PT" data-flag="🇵🇹" data-prefix="+351">🇵🇹 Portugal (+351)</option>
-                                <option value="BR" data-flag="🇧🇷" data-prefix="+55">🇧🇷 Brasil (+55)</option>
-                                <option value="MZ" data-flag="🇲🇿" data-prefix="+258">🇲🇿 Moçambique (+258)</option>
-                                <option value="CV" data-flag="🇨🇻" data-prefix="+238">🇨🇻 Cabo Verde (+238)</option>
-                                <option value="ST" data-flag="🇸🇹" data-prefix="+239">🇸🇹 São Tomé (+239)</option>
-                                <option value="GW" data-flag="🇬🇼" data-prefix="+245">🇬🇼 Guiné-Bissau (+245)</option>
-                            </select>
-                            <span id="found-prefix" class="country-prefix">+258</span>
-                            <input type="tel" id="found-contact" required placeholder="" data-i18n-placeholder="common.contact_info_placeholder">
-                            <i class="fas fa-phone"></i>
-                        </div>
-                        <small data-i18n="found.finder_contact_help">Isso será compartilhado com o proprietário do documento caso ele o reivindique</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label data-i18n="found.upload_image">Enviar imagem/arquivo (opcional)</label>
-                        <div class="file-upload-area">
-<input type="file" id="found-image" multiple accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/zip,application/x-zip-compressed,.doc,.docx,.xls,.xlsx,.zip,.rar,.txt,.csv" capture="environment" onclick="this.removeAttribute('capture');this.setAttribute('capture','environment');">
-                            <div class="file-upload-text">
-                                <i class="fas fa-camera"></i>
-                                <p data-i18n="found.upload_help">Uma foto, PDF ou arquivo ajuda o proprietário a identificar seu documento. Você pode usar a câmera do celular.</p>
-                                <small data-i18n="found.upload_formats">Imagens (JPG, PNG), PDF, DOC, XLS, ZIP • Máx 5MB cada</small>
-                            </div>
-                        </div>
-                        <small class="privacy-warning" data-i18n="found.privacy_warning">Por favor, proteja a privacidade - desfoque ou cubra informações sensíveis em fotos</small>
-                        <small data-i18n="found.upload_camera_hint">Você pode tirar uma foto do documento usando a câmera do seu dispositivo.</small>
-                    </div>
-
-                    <div class="modal-actions">
-                        <button type="button" id="cancel-found" class="btn secondary" data-i18n="document.cancel">Cancelar</button>
-                        <button type="submit" class="btn primary" data-i18n="found.report_button_submit">Enviar Relato de Encontrado</button>
-                    </div>
-                </form>
-            </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn secondary" onclick="closeModal('found-modal')" data-i18n="document.cancel">Cancelar</button>
+                    <button type="submit" class="btn primary" data-i18n="found.report_button_submit">Enviar Relato</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -746,10 +421,10 @@
     <div id="chat-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 data-i18n="chat.title">Chat</h2>
-                <span class="close">&times;</span>
+                <h3 data-i18n="chat.title">Chat</h3>
+                <button class="modal-close" aria-label="Fechar">&times;</button>
             </div>
-            <div class="modal-body">
+            <div class="chat-container">
                 <div id="chat-messages" class="chat-messages">
                     <!-- Messages will be populated by JavaScript -->
                 </div>
@@ -757,86 +432,105 @@
                     <input type="text" id="chat-input-field" data-i18n-placeholder="chat.placeholder" placeholder="Digite sua mensagem...">
                     <button id="send-message" class="btn primary">
                         <i class="fas fa-paper-plane"></i>
-                        <span data-i18n="chat.send">Enviar</span>
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Upgrade Modal -->
-    <div id="upgrade-modal" class="modal">
+    <!-- View Document Modal -->
+    <div id="view-document-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Upgrade para Premium</h2>
-                <span class="close">&times;</span>
+                <h3 data-i18n="document.view_title">Detalhes do Documento</h3>
+                <button class="modal-close" aria-label="Fechar">&times;</button>
             </div>
-            <div class="modal-body">
-                <div class="pricing-cards">
-                    <div class="pricing-card">
-                        <h3>Plano Mensal</h3>
-                        <div class="price">$1<span>/mês</span></div>
-                        <ul>
-                            <li>Documentos ilimitados</li>
-                            <li>Todos os tipos de documentos</li>
-                            <li>Suporte prioritário</li>
-                        </ul>
-                        <button class="btn primary">Escolher Mensal</button>
-                    </div>
-                    <div class="pricing-card featured">
-                        <h3>Plano Anual</h3>
-                        <div class="price">$10<span>/ano</span></div>
-                        <div class="discount">20% de desconto</div>
-                        <ul>
-                            <li>Documentos ilimitados</li>
-                            <li>Todos os tipos de documentos</li>
-                            <li>Suporte prioritário</li>
-                            <li>Backup em nuvem</li>
-                        </ul>
-                        <button class="btn primary">Escolher Anual</button>
-                    </div>
-                </div>
+            <div id="view-document-content">
+                <!-- Document details will be populated by JavaScript -->
             </div>
         </div>
     </div>
 
-
-    <!-- Login/Register Modal -->
-    <div id="auth-modal" class="modal">
-      <div class="modal-content login-container">
-        <span class="close" id="close-auth-modal">&times;</span>
-        <img src="logo.svg" alt="Logo" class="app-logo">
-        <h1 data-i18n="login.title">FindMyDocs</h1>
-        <p data-i18n="login.subtitle">Sistema de gestão de documentos perdidos e encontrados</p>
-        <form id="login-form">
-          <div class="form-group">
-            <input type="email" id="login-email" placeholder="Email" required>
-          </div>
-          <div class="form-group">
-            <input type="password" id="login-password" placeholder="Senha" required>
-          </div>
-          <button type="submit" class="btn primary" id="login-btn">Entrar</button>
-        </form>
-        <div style="margin: 16px 0;">ou</div>
-        <form id="register-form">
-          <div class="form-group">
-            <input type="text" id="register-name" placeholder="Nome" required>
-          </div>
-          <div class="form-group">
-            <input type="email" id="register-email" placeholder="Email" required>
-          </div>
-          <div class="form-group">
-            <input type="password" id="register-password" placeholder="Senha" required>
-          </div>
-          <button type="submit" class="btn success" id="register-btn">Registrar</button>
-        </form>
-      </div>
+    <!-- Login Modal -->
+    <div id="login-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 data-i18n="login.login_title">Entrar</h3>
+                <button class="modal-close" aria-label="Fechar">&times;</button>
+            </div>
+            <form id="login-form">
+                <label for="login-email" data-i18n="common.email">Email:</label>
+                <input type="email" id="login-email" name="email" required 
+                       data-i18n-placeholder="common.email_placeholder" placeholder="Digite seu email">
+                
+                <label for="login-password" data-i18n="common.password">Senha:</label>
+                <input type="password" id="login-password" name="password" required 
+                       data-i18n-placeholder="common.password_placeholder" placeholder="Digite sua senha">
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn secondary" onclick="closeModal('login-modal')" data-i18n="common.cancel">Cancelar</button>
+                    <button type="submit" class="btn primary" data-i18n="login.login_button">Entrar</button>
+                </div>
+            </form>
+        </div>
     </div>
 
-    <div id="toast-container" class="toast-container"></div>
+    <!-- Register Modal -->
+    <div id="register-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 data-i18n="login.register_title">Criar Conta</h3>
+                <button class="modal-close" aria-label="Fechar">&times;</button>
+            </div>
+            <form id="register-form">
+                <label for="register-name" data-i18n="common.name">Nome:</label>
+                <input type="text" id="register-name" name="name" required 
+                       data-i18n-placeholder="common.name_placeholder" placeholder="Digite seu nome completo">
+                
+                <label for="register-email" data-i18n="common.email">Email:</label>
+                <input type="email" id="register-email" name="email" required 
+                       data-i18n-placeholder="common.email_placeholder" placeholder="Digite seu email">
+                
+                <label for="register-country" data-i18n="common.country">País:</label>
+                <select id="register-country" name="country" required>
+                    <option value="">Selecione o país</option>
+                    <option value="AO" data-flag="🇦🇴" data-prefix="+244">🇦🇴 Angola (+244)</option>
+                    <option value="PT" data-flag="🇵🇹" data-prefix="+351">🇵🇹 Portugal (+351)</option>
+                    <option value="BR" data-flag="🇧🇷" data-prefix="+55">🇧🇷 Brasil (+55)</option>
+                    <option value="MZ" data-flag="🇲🇿" data-prefix="+258">🇲🇿 Moçambique (+258)</option>
+                    <option value="CV" data-flag="🇨🇻" data-prefix="+238">🇨🇻 Cabo Verde (+238)</option>
+                    <option value="ST" data-flag="🇸🇹" data-prefix="+239">🇸🇹 São Tomé (+239)</option>
+                    <option value="GW" data-flag="🇬🇼" data-prefix="+245">🇬🇼 Guiné-Bissau (+245)</option>
+                    <option value="ZA" data-flag="🇿🇦" data-prefix="+27">🇿🇦 África do Sul (+27)</option>
+                </select>
+                
+                <label for="register-phone" data-i18n="common.phone">Telefone:</label>
+                <div class="contact-input-group">
+                    <span id="register-country-flag">🇦🇴</span>
+                    <span id="register-country-prefix">+244</span>
+                    <input type="tel" id="register-phone" name="phone" required 
+                           data-i18n-placeholder="common.contact_info_placeholder" placeholder="Digite seu número">
+                </div>
+                
+                <label for="register-password" data-i18n="common.password">Senha:</label>
+                <input type="password" id="register-password" name="password" required 
+                       data-i18n-placeholder="common.password_placeholder" placeholder="Crie uma senha segura">
+                
+                <label for="register-confirm-password" data-i18n="common.confirm_password">Confirmar Senha:</label>
+                <input type="password" id="register-confirm-password" name="confirmPassword" required 
+                       data-i18n-placeholder="common.confirm_password_placeholder" placeholder="Confirme sua senha">
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn secondary" onclick="closeModal('register-modal')" data-i18n="common.cancel">Cancelar</button>
+                    <button type="submit" class="btn primary" data-i18n="login.register_button">Criar Conta</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- Scripts -->
     <script src="translations.js"></script>
+    <script src="supabase-service.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
