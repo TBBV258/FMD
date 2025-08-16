@@ -1,36 +1,27 @@
-// Country prefix and flag info for contact (for frontend usage)
-const countryPrefixes = [
-    { code: 'MZ', name: 'Mozambique', prefix: '+258', flag: '🇲🇿' },
-    { code: 'PT', name: 'Portugal', prefix: '+351', flag: '🇵🇹' },
-    { code: 'BR', name: 'Brazil', prefix: '+55', flag: '🇧🇷' },
-    { code: 'ZA', name: 'South Africa', prefix: '+27', flag: '🇿🇦' },
-    { code: 'AO', name: 'Angola', prefix: '+244', flag: '🇦🇴' },
-    { code: 'US', name: 'United States', prefix: '+1', flag: '🇺🇸' },
-    { code: 'GB', name: 'United Kingdom', prefix: '+44', flag: '🇬🇧' },
-    { code: 'IN', name: 'India', prefix: '+91', flag: '🇮🇳' },
-    { code: 'FR', name: 'France', prefix: '+33', flag: '🇫🇷' },
-    { code: 'ES', name: 'Spain', prefix: '+34', flag: '🇪🇸' },
-    // Add more as needed
-];
-
-app.get('/api/country-prefixes', (req, res) => {
-    res.json(countryPrefixes);
-});
 const express = require('express');
-const multer = require('multer');
+const cors = require('cors');
 const path = require('path');
+const multer = require('multer');
 const fs = require('fs');
-const { v4: uuidv4 } = require('uuid');
-
-// Import our database storage
-const { storage } = require('./server/storage.ts');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+
+// Initialize Supabase client
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+    console.error('Missing Supabase configuration. Please set SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
+    process.exit(1);
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(cors());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.static('.'));
 
 // Create uploads directory if it doesn't exist
@@ -40,7 +31,7 @@ if (!fs.existsSync(uploadsDir)) {
 }
 
 // Configure multer for file uploads
-const storage_multer = multer.diskStorage({
+const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, 'uploads/');
     },
@@ -51,7 +42,7 @@ const storage_multer = multer.diskStorage({
 });
 
 const upload = multer({ 
-    storage: storage_multer,
+    storage: storage,
     limits: {
         fileSize: 5 * 1024 * 1024 // 5MB limit
     },
@@ -68,134 +59,160 @@ const upload = multer({
     }
 });
 
-// Simple demo authentication for now
-let currentDemoUser = null;
-let registeredUsers = [];
+// Auth middleware
+const requireAuth = async (req, res, next) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader) {
+            return res.status(401).json({ error: 'No authorization header' });
+        }
 
-// Auth endpoints
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user }, error } = await supabase.auth.getUser(token);
+        
+        if (error || !user) {
+            return res.status(401).json({ error: 'Invalid token' });
+        }
 
-// Register endpoint
-app.post('/api/auth/register', (req, res) => {
-    const { email, password, firstName, lastName } = req.body;
-    if (!email || !password || !firstName || !lastName) {
-        return res.status(400).json({ error: 'Missing required fields' });
+        req.user = user;
+        next();
+    } catch (error) {
+        console.error('Auth middleware error:', error);
+        res.status(401).json({ error: 'Authentication failed' });
     }
-    if (registeredUsers.find(u => u.email === email)) {
-        return res.status(409).json({ error: 'User already exists' });
-    }
-    const newUser = {
-        id: 'user_' + Date.now(),
-        email,
-        password, // In production, hash this!
-        firstName,
-        lastName,
-        points: 0,
-        isPremium: false
-    };
-    registeredUsers.push(newUser);
-    currentDemoUser = { ...newUser };
-    res.json({ success: true, user: { ...newUser, password: undefined } });
+};
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Login endpoint
-app.post('/api/auth/login', (req, res) => {
-    const { email, password } = req.body;
-    const user = registeredUsers.find(u => u.email === email && u.password === password);
-    if (!user) {
-        return res.status(401).json({ error: 'Invalid credentials' });
-    }
-    currentDemoUser = { ...user };
-    res.json({ success: true, user: { ...user, password: undefined } });
-});
-
-// Demo login
-app.post('/api/auth/demo', (req, res) => {
-    currentDemoUser = {
-        id: 'demo_user_' + Date.now(),
-        email: 'demo@example.com',
-        firstName: 'Demo',
-        lastName: 'User',
-        points: 0,
-        isPremium: false
-    };
+// Configuration endpoint for frontend
+app.get('/api/config', (req, res) => {
     res.json({
-        success: true,
-        user: currentDemoUser
+        supabaseUrl: supabaseUrl,
+        supabaseKey: supabaseKey
     });
 });
 
-// Logout endpoint
-app.post('/api/auth/logout', (req, res) => {
-    currentDemoUser = null;
-    res.json({ success: true });
-});
-
-app.get('/api/auth/user', (req, res) => {
-    if (currentDemoUser) {
-        const { password, ...userNoPass } = currentDemoUser;
-        res.json(userNoPass);
-    } else {
-        res.status(401).json({ error: 'Not authenticated' });
-    }
-});
-
 // Document endpoints
-app.get('/api/documents', async (req, res) => {
+app.get('/api/documents', requireAuth, async (req, res) => {
     try {
-        if (!currentDemoUser) {
-            return res.status(401).json({ error: 'Not authenticated' });
-        }
-        
-        // For demo, return empty array for now
-        // In real app: const documents = await storage.getUserDocuments(currentDemoUser.id);
-        const documents = [];
-        res.json(documents);
+        const { data, error } = await supabase
+            .from('documents')
+            .select('*')
+            .eq('user_id', req.user.id)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        res.json(data || []);
     } catch (error) {
         console.error('Error fetching documents:', error);
         res.status(500).json({ error: 'Failed to fetch documents' });
     }
 });
 
-app.post('/api/documents', upload.array('files', 5), async (req, res) => {
+app.post('/api/documents', requireAuth, upload.array('files', 5), async (req, res) => {
     try {
-        if (!currentDemoUser) {
-            return res.status(401).json({ error: 'Not authenticated' });
-        }
-
-        const { type, name, number, description } = req.body;
+        const { type, name, number, description, status = 'normal', location, contact_info } = req.body;
         
-        if (!type || !name || !number) {
+        if (!type || !name) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
-        // Process uploaded files
-        const files = req.files ? req.files.map(file => ({
-            id: uuidv4(),
-            filename: file.filename,
-            originalName: file.originalname,
-            path: file.path,
-            size: file.size,
-            mimetype: file.mimetype
-        })) : [];
+        // Check free plan limits for normal documents
+        if (status === 'normal') {
+            const { data: userProfile } = await supabase
+                .from('users')
+                .select('is_premium')
+                .eq('id', req.user.id)
+                .single();
 
+            if (!userProfile?.is_premium) {
+                const { data: existingDocs } = await supabase
+                    .from('documents')
+                    .select('id')
+                    .eq('user_id', req.user.id)
+                    .eq('status', 'normal');
+
+                if (existingDocs && existingDocs.length >= 1) {
+                    return res.status(403).json({ 
+                        error: 'Free plan limit reached. Upgrade to Premium for unlimited documents.',
+                        needsUpgrade: true 
+                    });
+                }
+            }
+        }
+
+        // Process uploaded files
+        let files = [];
+        if (req.files && req.files.length > 0) {
+            for (const file of req.files) {
+                try {
+                    // Upload to Supabase Storage
+                    const fileName = `${Date.now()}_${file.originalname}`;
+                    const { data: uploadData, error: uploadError } = await supabase.storage
+                        .from('documents')
+                        .upload(fileName, fs.readFileSync(file.path), {
+                            contentType: file.mimetype,
+                            cacheControl: '3600'
+                        });
+
+                    if (uploadError) throw uploadError;
+
+                    // Get public URL
+                    const { data: { publicUrl } } = supabase.storage
+                        .from('documents')
+                        .getPublicUrl(fileName);
+
+                    files.push({
+                        id: fileName,
+                        filename: fileName,
+                        originalName: file.originalname,
+                        size: file.size,
+                        mimetype: file.mimetype,
+                        url: publicUrl
+                    });
+
+                    // Clean up local file
+                    fs.unlinkSync(file.path);
+                } catch (fileError) {
+                    console.error('Error uploading file:', fileError);
+                    // Continue with other files
+                }
+            }
+        }
+
+        // Create document record
         const documentData = {
-            id: 'doc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-            userId: currentDemoUser.id,
+            user_id: req.user.id,
             type,
             name,
-            number,
+            number: number || null,
             description: description || null,
-            status: 'active',
-            files,
-            dateAdded: new Date().toISOString()
+            status,
+            location: location || null,
+            contact_info: contact_info || null,
+            files: files.length > 0 ? files : null,
+            created_at: new Date().toISOString()
         };
 
-        // For demo, just return success
-        // In real app: const document = await storage.createDocument(documentData);
-        
+        const { data, error } = await supabase
+            .from('documents')
+            .insert([documentData])
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        // Award points for reporting found documents
+        if (status === 'found') {
+            await awardPoints(req.user.id, 50, 'Found document reported');
+        }
+
         res.json({
             success: true,
-            document: documentData
+            document: data
         });
     } catch (error) {
         console.error('Error creating document:', error);
@@ -203,117 +220,402 @@ app.post('/api/documents', upload.array('files', 5), async (req, res) => {
     }
 });
 
-// Lost documents endpoints
+app.put('/api/documents/:id', requireAuth, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+
+        // Verify ownership
+        const { data: document, error: fetchError } = await supabase
+            .from('documents')
+            .select('user_id')
+            .eq('id', id)
+            .single();
+
+        if (fetchError || !document) {
+            return res.status(404).json({ error: 'Document not found' });
+        }
+
+        if (document.user_id !== req.user.id) {
+            return res.status(403).json({ error: 'Not authorized' });
+        }
+
+        const { data, error } = await supabase
+            .from('documents')
+            .update({ ...updates, updated_at: new Date().toISOString() })
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) throw error;
+        res.json(data);
+    } catch (error) {
+        console.error('Error updating document:', error);
+        res.status(500).json({ error: 'Failed to update document' });
+    }
+});
+
+app.delete('/api/documents/:id', requireAuth, async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Verify ownership
+        const { data: document, error: fetchError } = await supabase
+            .from('documents')
+            .select('user_id, files')
+            .eq('id', id)
+            .single();
+
+        if (fetchError || !document) {
+            return res.status(404).json({ error: 'Document not found' });
+        }
+
+        if (document.user_id !== req.user.id) {
+            return res.status(403).json({ error: 'Not authorized' });
+        }
+
+        // Delete files from storage
+        if (document.files && Array.isArray(document.files)) {
+            for (const file of document.files) {
+                try {
+                    await supabase.storage
+                        .from('documents')
+                        .remove([file.filename]);
+                } catch (fileError) {
+                    console.error('Error deleting file:', fileError);
+                }
+            }
+        }
+
+        const { error } = await supabase
+            .from('documents')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting document:', error);
+        res.status(500).json({ error: 'Failed to delete document' });
+    }
+});
+
+// Feed endpoints
 app.get('/api/lost-documents', async (req, res) => {
     try {
-        // For demo, return mock data for Mozambique
-        const mockLostDocuments = [
-            {
-                id: 'lost_1',
-                userId: 'user_1',
-                documentType: 'bi',
-                documentName: 'Bilhete de Identidade',
-                locationLost: 'Maputo Centro, próximo ao Mercado Central',
-                description: 'BI com número começando em 123456789',
-                contactInfo: '+258 84 123 4567',
-                status: 'lost',
-                dateReported: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-                files: []
-            },
-            {
-                id: 'lost_2',
-                userId: 'user_2',
-                documentType: 'passaporte',
-                documentName: 'Passaporte Moçambicano',
-                locationLost: 'Aeroporto Internacional de Maputo',
-                description: 'Passaporte azul, perdido na área de check-in',
-                contactInfo: '+258 87 987 6543',
-                status: 'lost',
-                dateReported: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-                files: []
-            }
-        ];
+        const { type, search, limit = 50 } = req.query;
         
-        res.json(mockLostDocuments);
+        let query = supabase
+            .from('documents')
+            .select(`
+                *,
+                users (
+                    first_name,
+                    last_name
+                )
+            `)
+            .eq('status', 'lost')
+            .order('created_at', { ascending: false })
+            .limit(parseInt(limit));
+
+        if (type) {
+            query = query.eq('type', type);
+        }
+
+        if (search) {
+            query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%,location.ilike.%${search}%`);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        
+        res.json(data || []);
     } catch (error) {
         console.error('Error fetching lost documents:', error);
         res.status(500).json({ error: 'Failed to fetch lost documents' });
     }
 });
 
-app.post('/api/lost-documents', upload.array('files', 5), async (req, res) => {
-    try {
-        if (!currentDemoUser) {
-            return res.status(401).json({ error: 'Not authenticated' });
-        }
-
-        const { document_type, document_name, location_lost, description, contact_info } = req.body;
-        
-        if (!document_type || !document_name || !location_lost || !contact_info) {
-            return res.status(400).json({ error: 'Missing required fields' });
-        }
-
-        // Process uploaded files
-        const files = req.files ? req.files.map(file => ({
-            id: uuidv4(),
-            filename: file.filename,
-            originalName: file.originalname,
-            path: file.path,
-            size: file.size,
-            mimetype: file.mimetype
-        })) : [];
-
-        const lostDocumentData = {
-            id: 'lost_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-            userId: currentDemoUser.id,
-            documentType: document_type,
-            documentName: document_name,
-            locationLost: location_lost,
-            description: description || null,
-            contactInfo: contact_info,
-            status: 'lost',
-            files,
-            dateReported: new Date().toISOString()
-        };
-
-        // For demo, just return success
-        // In real app: const lostDocument = await storage.createLostDocument(lostDocumentData);
-        
-        res.json({
-            success: true,
-            lostDocument: lostDocumentData
-        });
-    } catch (error) {
-        console.error('Error creating lost document:', error);
-        res.status(500).json({ error: 'Failed to report lost document' });
-    }
-});
-
-// Found documents endpoints
 app.get('/api/found-documents', async (req, res) => {
     try {
-        // For demo, return mock data for Mozambique
-        const mockFoundDocuments = [
-            {
-                id: 'found_1',
-                userId: 'user_3',
-                documentType: 'carta',
-                documentName: 'Carta de Condução',
-                locationFound: 'Matola, perto da estação de comboios',
-                description: 'Carta de condução encontrada no chão',
-                contactInfo: '+258 82 555 1234',
-                status: 'found',
-                dateReported: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-                files: []
-            }
-        ];
+        const { type, search, limit = 50 } = req.query;
         
-        res.json(mockFoundDocuments);
+        let query = supabase
+            .from('documents')
+            .select(`
+                *,
+                users (
+                    first_name,
+                    last_name
+                )
+            `)
+            .eq('status', 'found')
+            .order('created_at', { ascending: false })
+            .limit(parseInt(limit));
+
+        if (type) {
+            query = query.eq('type', type);
+        }
+
+        if (search) {
+            query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%,location.ilike.%${search}%`);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        
+        res.json(data || []);
     } catch (error) {
         console.error('Error fetching found documents:', error);
         res.status(500).json({ error: 'Failed to fetch found documents' });
     }
 });
+
+// Chat endpoints
+app.get('/api/chats/:documentId', requireAuth, async (req, res) => {
+    try {
+        const { documentId } = req.params;
+
+        const { data, error } = await supabase
+            .from('chats')
+            .select(`
+                *,
+                sender:users!chats_sender_id_fkey(id, first_name, last_name),
+                receiver:users!chats_receiver_id_fkey(id, first_name, last_name)
+            `)
+            .eq('document_id', documentId)
+            .or(`sender_id.eq.${req.user.id},receiver_id.eq.${req.user.id}`)
+            .order('created_at', { ascending: true });
+
+        if (error) throw error;
+        res.json(data || []);
+    } catch (error) {
+        console.error('Error fetching chat messages:', error);
+        res.status(500).json({ error: 'Failed to fetch chat messages' });
+    }
+});
+
+app.post('/api/chats', requireAuth, async (req, res) => {
+    try {
+        const { document_id, receiver_id, message } = req.body;
+
+        if (!document_id || !receiver_id || !message) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        const chatData = {
+            document_id,
+            sender_id: req.user.id,
+            receiver_id,
+            message,
+            created_at: new Date().toISOString()
+        };
+
+        const { data, error } = await supabase
+            .from('chats')
+            .insert([chatData])
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        // Create notification for receiver
+        await createNotification(receiver_id, 'new_message', 'Nova mensagem', 
+            `Você recebeu uma nova mensagem sobre um documento`, { chat_id: data.id });
+
+        res.json(data);
+    } catch (error) {
+        console.error('Error creating chat message:', error);
+        res.status(500).json({ error: 'Failed to send message' });
+    }
+});
+
+// User profile endpoints
+app.get('/api/profile', requireAuth, async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', req.user.id)
+            .single();
+
+        if (error && error.code === 'PGRST116') {
+            // User profile doesn't exist, create it
+            const newProfile = {
+                id: req.user.id,
+                email: req.user.email,
+                first_name: req.user.user_metadata?.first_name || '',
+                last_name: req.user.user_metadata?.last_name || '',
+                points: 0,
+                is_premium: false,
+                created_at: new Date().toISOString()
+            };
+
+            const { data: createdProfile, error: createError } = await supabase
+                .from('users')
+                .insert([newProfile])
+                .select()
+                .single();
+
+            if (createError) throw createError;
+            return res.json(createdProfile);
+        }
+
+        if (error) throw error;
+        res.json(data);
+    } catch (error) {
+        console.error('Error fetching profile:', error);
+        res.status(500).json({ error: 'Failed to fetch profile' });
+    }
+});
+
+app.put('/api/profile', requireAuth, async (req, res) => {
+    try {
+        const updates = req.body;
+        delete updates.id; // Prevent ID changes
+        delete updates.email; // Prevent email changes through this endpoint
+
+        const { data, error } = await supabase
+            .from('users')
+            .update({ ...updates, updated_at: new Date().toISOString() })
+            .eq('id', req.user.id)
+            .select()
+            .single();
+
+        if (error) throw error;
+        res.json(data);
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        res.status(500).json({ error: 'Failed to update profile' });
+    }
+});
+
+// Notifications endpoints
+app.get('/api/notifications', requireAuth, async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('notifications')
+            .select('*')
+            .eq('user_id', req.user.id)
+            .order('created_at', { ascending: false })
+            .limit(50);
+
+        if (error) throw error;
+        res.json(data || []);
+    } catch (error) {
+        console.error('Error fetching notifications:', error);
+        res.status(500).json({ error: 'Failed to fetch notifications' });
+    }
+});
+
+app.put('/api/notifications/:id/read', requireAuth, async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const { error } = await supabase
+            .from('notifications')
+            .update({ read: true, updated_at: new Date().toISOString() })
+            .eq('id', id)
+            .eq('user_id', req.user.id);
+
+        if (error) throw error;
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error marking notification as read:', error);
+        res.status(500).json({ error: 'Failed to mark notification as read' });
+    }
+});
+
+// Avatar upload endpoint
+app.post('/api/upload-avatar', requireAuth, upload.single('avatar'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+
+        // Upload to Supabase Storage
+        const fileName = `avatars/${req.user.id}_${Date.now()}.${req.file.originalname.split('.').pop()}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('avatars')
+            .upload(fileName, fs.readFileSync(req.file.path), {
+                contentType: req.file.mimetype,
+                cacheControl: '3600'
+            });
+
+        if (uploadError) throw uploadError;
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(fileName);
+
+        // Update user profile
+        const { error: updateError } = await supabase
+            .from('users')
+            .update({ avatar_url: publicUrl, updated_at: new Date().toISOString() })
+            .eq('id', req.user.id);
+
+        if (updateError) throw updateError;
+
+        // Clean up local file
+        fs.unlinkSync(req.file.path);
+
+        res.json({ avatar_url: publicUrl });
+    } catch (error) {
+        console.error('Error uploading avatar:', error);
+        res.status(500).json({ error: 'Failed to upload avatar' });
+    }
+});
+
+// Utility functions
+async function awardPoints(userId, points, reason) {
+    try {
+        const { data: user, error: fetchError } = await supabase
+            .from('users')
+            .select('points')
+            .eq('id', userId)
+            .single();
+
+        if (fetchError) throw fetchError;
+
+        const newPoints = (user.points || 0) + points;
+
+        const { error: updateError } = await supabase
+            .from('users')
+            .update({ points: newPoints, updated_at: new Date().toISOString() })
+            .eq('id', userId);
+
+        if (updateError) throw updateError;
+
+        // Create notification
+        await createNotification(userId, 'points_awarded', 'Pontos Ganhos!', 
+            `Você ganhou ${points} pontos: ${reason}`, { points });
+    } catch (error) {
+        console.error('Error awarding points:', error);
+    }
+}
+
+async function createNotification(userId, type, title, message, data = null) {
+    try {
+        const notificationData = {
+            user_id: userId,
+            type,
+            title,
+            message,
+            data,
+            read: false,
+            created_at: new Date().toISOString()
+        };
+
+        const { error } = await supabase
+            .from('notifications')
+            .insert([notificationData]);
+
+        if (error) throw error;
+    } catch (error) {
+        console.error('Error creating notification:', error);
+    }
+}
 
 // Serve uploaded files
 app.use('/uploads', express.static('uploads'));
@@ -326,12 +628,23 @@ app.use((error, req, res, next) => {
         }
     }
     
-    console.error(error);
+    console.error('Server error:', error);
     res.status(500).json({ error: 'Internal server error' });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`FindMyDocs server running on port ${PORT}`);
+// 404 handler for API routes
+app.use('/api/*', (req, res) => {
+    res.status(404).json({ error: 'API endpoint not found' });
+});
+
+// Serve static files for any other routes
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.listen(5000, '0.0.0.0', () => {
+    console.log(`FindMyDocs server running on port 5000`);
+    console.log(`Supabase URL: ${supabaseUrl}`);
 });
 
 module.exports = app;

@@ -10,32 +10,26 @@ const translations = {
         'nav.report_lost': 'Relatar Perda',
         'nav.report_found': 'Relatar Encontrado',
         'nav.reset': 'Reset',
+        'nav.logout': 'Sair',
+        'nav.upgrade': 'Premium',
+        'nav.feed': 'Feed',
         
-        // Login
+        // Login & Auth
         'login.title': 'FindMyDocs',
         'login.subtitle': 'Sistema de gestão de documentos perdidos e encontrados',
-        'login.demo_button': 'Entrar como Demo',
+        'login.email': 'Email',
+        'login.password': 'Senha',
         'login.login_button': 'Entrar',
-        'login.register_button': 'Registrar',
-        'login.login_title': 'Entrar',
-        'login.register_title': 'Criar Conta',
-        'login.submit': 'Entrar / Registrar',
+        'login.signup_button': 'Criar Conta',
+        'login.google_button': 'Continuar com Google',
         
-        // Common
-        'common.country': 'País',
-        'common.phone': 'Telefone',
-        'common.password': 'Senha',
-        'common.name': 'Nome',
-        'common.email': 'Email',
-        'common.cancel': 'Cancelar',
-        'common.confirm_password': 'Confirmar Senha',
-        'common.contact_info_placeholder': 'Digite seu número',
-        'common.name_placeholder': 'Digite seu nome completo',
-        'common.email_placeholder': 'Digite seu email',
-        'common.password_placeholder': 'Digite sua senha',
-        'common.confirm_password_placeholder': 'Confirme sua senha',
-        'common.all_countries': 'Todos os Países',
-        'common.all_provinces': 'Todas as Províncias',
+        // Signup
+        'signup.title': 'Criar Conta',
+        'signup.first_name': 'Nome',
+        'signup.last_name': 'Sobrenome',
+        'signup.email': 'Email',
+        'signup.password': 'Senha (mín. 6 caracteres)',
+        'signup.create_button': 'Criar Conta',
         
         // Welcome
         'welcome.title': 'Bem-vindo!',
@@ -52,7 +46,6 @@ const translations = {
         'welcome.add_document': 'Adicionar Novo Documento',
         
         // Tips
-        'tips.mobile_upload': 'Para enviar fotos pelo app, permita acesso à câmera e arquivos quando solicitado.',
         'tip.safe_location.title': 'Encontre em Locais Seguros',
         'tip.safe_location.description': 'Sempre se encontre em delegacias, edifícios governamentais ou locais públicos ao trocar documentos.',
         'tip.verify_ownership.title': 'Verificar Propriedade',
@@ -68,39 +61,37 @@ const translations = {
         
         // Documents
         'documents.title': 'Seus Documentos',
+        'documents.add': 'Adicionar Documento',
         'documents.total': 'total',
         'documents.no_documents': 'Nenhum documento adicionado ainda',
-        'documents.add_first': 'Clique em "Adicionar Novo Documento" para adicionar seu primeiro documento.',
+        'documents.add_first': 'Clique em "Adicionar Documento" para começar',
         'documents.view': 'Ver',
         'documents.edit': 'Editar',
         'documents.mark_lost': 'Marcar como Perdido',
         'documents.cancel_lost': 'Cancelar Status de Perdido',
-        'documents.contact': 'Contato',
+        'documents.contact': 'Contatar',
         'documents.this_is_mine': 'Este é meu',
         'documents.verified_finder': 'Localizador verificado',
         
         // Document Modal
         'document.modal_title': 'Adicionar Documento',
-        'document.view_title': 'Detalhes do Documento',
         'document.modal_subtitle': 'Adicione seu documento importante para proteção',
         'document.type': 'Tipo de Documento',
-        'document.type_help': 'Selecione o tipo de documento que deseja adicionar',
         'document.name': 'Nome do Documento',
         'document.number': 'Número do Documento',
-        'document.data_number_label': 'Dados/Número do Documento',
-        'document.data_placeholder': 'Digite os dados ou número do documento',
         'document.description': 'Descrição (opcional)',
-        'document.description_placeholder': 'Adicione detalhes adicionais sobre o documento',
-        'document.upload_image': 'Enviar Imagem do Documento',
-        'document.upload_text': 'Clique para enviar ou arraste e solte',
-        'document.upload_formats': 'Imagens (JPG, PNG), PDF, DOC, XLS, ZIP, TXT • Máx 5MB cada',
-        'document.upload_camera_hint': 'Você pode tirar uma foto do documento usando a câmera do seu dispositivo.',
+        'document.upload_image': 'Enviar Arquivo',
+        'document.upload_text': 'Clique para enviar ou arraste arquivos',
+        'document.upload_formats': 'Imagens (JPG, PNG), PDF • Máx 5MB cada',
+        'document.upload_camera_hint': 'Você pode tirar uma foto usando a câmera',
         'document.security_title': 'Garantia de Segurança',
         'document.security_description': 'Seus documentos são criptografados e armazenados com segurança. Apenas você tem acesso a eles.',
         'document.types_title': 'Tipos de Documentos',
-        'document.types_description': 'Contas gratuitas podem apenas armazenar carteiras de identidade. Atualize para Premium para passaportes, carteiras de motorista e cartões bancários.',
+        'document.types_description': 'Contas gratuitas podem apenas armazenar bilhetes de identidade. Atualize para Premium para passaportes, carteiras de motorista e outros.',
         'document.cancel': 'Cancelar',
         'document.save': 'Salvar Documento',
+        'document.type.diri': 'Diri',
+        'document.data_number_label': 'Dados/Número do Documento',
         
         // Lost Documents
         'lost.title': 'Documentos Perdidos',
@@ -113,7 +104,7 @@ const translations = {
         'lost.be_first': 'Seja o primeiro a reportar um documento perdido.',
         
         // Lost Modal
-        'lost.modal_title': 'Reportar Documento Perdido',
+        'lost.modal_title': 'Reportar Perda',
         'lost.document_type': 'Tipo de Documento',
         'lost.document_name': 'Nome do Documento',
         'lost.where_lost': 'Onde foi perdido?',
@@ -126,45 +117,44 @@ const translations = {
         'lost.contact_placeholder': '+258 00 000 0000',
         'lost.contact_help': 'Isso será compartilhado com quem encontrar o documento',
         'lost.report_button_submit': 'Reportar Perda',
-        'lost.upload_camera_hint': 'Você pode tirar uma foto do documento usando a câmera do seu dispositivo.',
+        'lost.upload_camera_hint': 'Você pode tirar uma foto usando a câmera',
         
         // Found Documents
         'found.title': 'Documentos Encontrados',
         'found.report_button': 'Reportar Encontrado',
-        'found.search_placeholder': 'Buscar documentos...',
-        'found.all_types': 'Todos os Tipos',
         'found.recently_found': 'Documentos Encontrados Recentemente',
         'found.no_documents': 'Nenhum documento encontrado reportado',
         'found.help_others': 'Ajude outros reportando documentos que você encontrou.',
-        'found.document_name': 'Nome no Documento',
         
         // Found Modal
-        'found.modal_title': 'Reportar Documento Encontrado',
+        'found.modal_title': 'Reportar Encontrado',
         'found.document_type': 'Tipo de Documento',
+        'found.document_name': 'Nome do Documento',
+        'found.additional_details': 'Detalhes adicionais',
+        'found.description_placeholder': 'Descreva o documento encontrado',
         'found.tips_title': 'Dicas para Relatos de Documentos Encontrados',
         'found.tips_description': 'Obrigado por ajudar! Fornecer detalhes precisos ajuda a devolver documentos aos seus donos mais rapidamente.',
         'found.where_found': 'Onde você o encontrou?',
         'found.location_placeholder': 'Digite o local onde você o encontrou',
-        'found.additional_details': 'Detalhes adicionais',
-        'found.description_placeholder': 'Descreva o documento que você encontrou',
         'found.finder_contact': 'Suas informações de contato',
         'found.finder_contact_placeholder': '+258 00 000 0000',
         'found.finder_contact_help': 'Isso será compartilhado com o proprietário do documento caso ele o reivindique',
         'found.upload_image': 'Enviar imagem (opcional)',
         'found.upload_help': 'Uma foto ajuda o proprietário a identificar seu documento',
-        'found.upload_camera_hint': 'Você pode tirar uma foto do documento usando a câmera do seu dispositivo.',
         'found.privacy_warning': 'Por favor, proteja a privacidade - desfoque ou cubra informações sensíveis em fotos',
         'found.report_button_submit': 'Enviar Relato de Encontrado',
+        'found.upload_camera_hint': 'Você pode tirar uma foto usando a câmera',
         
         // Document Types
         'type.bi': 'BI (Bilhete de Identidade)',
         'type.passaporte': 'Passaporte',
         'type.carta': 'Carta de Condução',
-        'type.diri': 'Diri',
         'type.outros': 'Outros',
+        'type.diri': 'Diri',
         
         // Status
         'status.active': 'Ativo',
+        'status.normal': 'Normal',
         'status.lost': 'Perdido',
         'status.found': 'Encontrado',
         
@@ -173,15 +163,37 @@ const translations = {
         'chat.placeholder': 'Digite sua mensagem...',
         'chat.send': 'Enviar',
         
+        // Location
+        'location.title': 'Selecionar Localização',
+        'location.click_map': 'Clique no mapa para selecionar uma localização',
+        'location.confirm': 'Confirmar Localização',
+        
+        // Upgrade
+        'upgrade.title': 'Upgrade para Premium',
+        'upgrade.free_plan': 'Plano Grátis',
+        'upgrade.premium_plan': 'Premium',
+        'upgrade.free_feature1': '1 documento (apenas BI)',
+        'upgrade.free_feature2': 'Busca básica',
+        'upgrade.premium_feature1': 'Documentos ilimitados',
+        'upgrade.premium_feature2': 'Todos os tipos de documento',
+        'upgrade.premium_feature3': 'Chat prioritário',
+        'upgrade.premium_feature4': 'Notificações push',
+        'upgrade.button': 'Upgrade Agora',
+        
         // Messages
         'message.document_added': 'Documento adicionado com sucesso!',
         'message.document_marked_lost': 'Documento marcado como perdido com sucesso!',
         'message.lost_reported': 'Documento perdido reportado com sucesso!',
         'message.found_reported': 'Documento encontrado reportado com sucesso! Obrigado por ajudar!',
         'message.fill_required': 'Por favor, preencha todos os campos obrigatórios.',
+        'message.invalid_phone': 'Número de telefone inválido.',
+        'message.login_success': 'Login realizado com sucesso!',
         'message.confirm_mark_lost': 'Tem certeza de que deseja marcar este documento como perdido? Isso o tornará visível no feed público de documentos perdidos.',
         'message.match_found': 'Você encontrou um documento que foi marcado como perdido! Clique para iniciar conversa com o dono.',
         'message.welcome_demo': 'Bem-vindo! Você está usando a versão demo.',
+        'message.edit_document': 'Editar documento',
+        'message.view_document': 'Ver documento',
+        'message.unknown_action': 'Ação desconhecida.',
         
         // Profile
         'profile.title': 'Perfil do Usuário',
@@ -216,42 +228,17 @@ const translations = {
         'profile.activity.title': 'Atividade Recente',
         'profile.activity.joined': 'Juntou-se ao FindMyDocs',
 
-        // GPS and Location
-        'location.enabled': 'Localização ativada',
-        'location.not_supported': 'Geolocalização não suportada neste dispositivo',
-        'location.permission_denied': 'Permissão de localização negada',
-        'location.unavailable': 'Localização indisponível',
-        'location.timeout': 'Timeout ao obter localização',
-        'location.error_generic': 'Erro ao obter localização',
+        // Common
+        'common.select_type': 'Selecione o tipo de documento',
+        'common.required': 'obrigatório',
+        'common.loading': 'Carregando...',
+        'common.cancel': 'Cancelar',
+        'common.location': 'Localização',
+        'common.contact_info_placeholder': 'Digite seu número de telefone',
         
-        // Notifications
-        'notifications.enabled': 'Notificações ativadas',
-        'notifications.potential_found_title': 'Possível documento encontrado!',
-        'notifications.potential_lost_title': 'Possível correspondência para documento perdido!',
-        'notifications.potential_match_body': 'Encontramos um {type} com {score}% de similaridade',
-        'notifications.match_verified_title': 'Correspondência verificada!',
-        'notifications.match_verified_body': 'A correspondência do documento foi confirmada',
-        
-        // Verification
-        'verification.title': 'Verificação de Documento',
-        'verification.original_photo': 'Foto Original',
-        'verification.verification_photo': 'Foto de Verificação',
-        'verification.result': 'Resultado da Verificação',
-        'verification.match_score': 'Pontuação de Correspondência',
-        'verification.verified': 'Verificado',
-        'verification.not_verified': 'Não Verificado',
-        'verification.processing': 'Processando...',
-        
-        // Errors
-        'error.network': 'Erro de conexão. Verifique sua internet.',
-        'error.server': 'Erro do servidor. Tente novamente mais tarde.',
-        'error.validation': 'Por favor, verifique os dados inseridos.',
-        'error.unauthorized': 'Acesso não autorizado.',
-        'error.not_found': 'Item não encontrado.',
-        'error.file_too_large': 'Arquivo muito grande. Máximo 5MB.',
-        'error.invalid_file_type': 'Tipo de arquivo não suportado.',
-        'error.camera_permission': 'Permissão de câmera necessária.',
-        'error.location_permission': 'Permissão de localização necessária.'
+        // Placeholders
+        'placeholder.phone': 'Ex: 84 123 4567',
+        'placeholder.phone_example': 'Ex: +258 84 123 4567'
     },
     
     en: {
@@ -264,27 +251,33 @@ const translations = {
         'nav.report_lost': 'Report Lost',
         'nav.report_found': 'Report Found',
         'nav.reset': 'Reset',
+        'nav.logout': 'Logout',
+        'nav.upgrade': 'Premium',
+        'nav.feed': 'Feed',
         
-        // Login
+        // Login & Auth
         'login.title': 'FindMyDocs',
         'login.subtitle': 'Lost and found document management system',
-        'login.demo_button': 'Enter as Demo',
-        'login.submit': 'Login / Register',
+        'login.email': 'Email',
+        'login.password': 'Password',
+        'login.login_button': 'Login',
+        'login.signup_button': 'Create Account',
+        'login.google_button': 'Continue with Google',
         
-        // Common
-        'common.country': 'Country',
-        'common.phone': 'Phone',
-        'common.password': 'Password',
-        'common.contact_info_placeholder': 'Enter your number',
-        'common.all_countries': 'All Countries',
-        'common.all_provinces': 'All Provinces',
+        // Signup
+        'signup.title': 'Create Account',
+        'signup.first_name': 'First Name',
+        'signup.last_name': 'Last Name',
+        'signup.email': 'Email',
+        'signup.password': 'Password (min. 6 characters)',
+        'signup.create_button': 'Create Account',
         
         // Welcome
         'welcome.title': 'Welcome!',
         'welcome.tips_title': 'Tips for Using FindMyDocs',
         'welcome.points': 'Points',
         'welcome.activity_points': 'Your Activity Points',
-        'welcome.earn_points': 'Earn 100 points for a free document verification!',
+        'welcome.earn_points': 'Earn 100 more points for a free document verification!',
         'welcome.help_others': 'Earn points by helping others find their lost documents.',
         'welcome.learn_more': 'Learn more',
         'welcome.free_plan': 'Free Plan',
@@ -294,7 +287,6 @@ const translations = {
         'welcome.add_document': 'Add New Document',
         
         // Tips
-        'tips.mobile_upload': 'To upload photos via the app, allow camera and file access when prompted.',
         'tip.safe_location.title': 'Meet in Safe Locations',
         'tip.safe_location.description': 'Always meet at police stations, government buildings, or public places when exchanging documents.',
         'tip.verify_ownership.title': 'Verify Ownership',
@@ -310,9 +302,10 @@ const translations = {
         
         // Documents
         'documents.title': 'Your Documents',
+        'documents.add': 'Add Document',
         'documents.total': 'total',
         'documents.no_documents': 'No documents added yet',
-        'documents.add_first': 'Click "Add New Document" to add your first document.',
+        'documents.add_first': 'Click "Add Document" to get started',
         'documents.view': 'View',
         'documents.edit': 'Edit',
         'documents.mark_lost': 'Mark as Lost',
@@ -323,26 +316,23 @@ const translations = {
         
         // Document Modal
         'document.modal_title': 'Add Document',
-        'document.view_title': 'Document Details',
         'document.modal_subtitle': 'Add your important document for protection',
         'document.type': 'Document Type',
-        'document.type_help': 'Select the type of document you want to add',
         'document.name': 'Document Name',
         'document.number': 'Document Number',
-        'document.data_number_label': 'Document Data/Number',
-        'document.data_placeholder': 'Enter document data or number',
         'document.description': 'Description (optional)',
-        'document.description_placeholder': 'Add additional details about the document',
-        'document.upload_image': 'Upload Document Image',
-        'document.upload_text': 'Click to upload or drag and drop',
-        'document.upload_formats': 'Images (JPG, PNG), PDF, DOC, XLS, ZIP, TXT • Max 5MB each',
-        'document.upload_camera_hint': 'You can take a photo of the document using your device camera.',
+        'document.upload_image': 'Upload File',
+        'document.upload_text': 'Click to upload or drag and drop files',
+        'document.upload_formats': 'Images (JPG, PNG), PDF • Max 5MB each',
+        'document.upload_camera_hint': 'You can take a photo using your camera',
         'document.security_title': 'Security Guarantee',
         'document.security_description': 'Your documents are encrypted and stored securely. Only you have access to them.',
         'document.types_title': 'Document Types',
-        'document.types_description': 'Free accounts can only store ID cards. Upgrade to Premium for passports, driver licenses, and bank cards.',
+        'document.types_description': 'Free accounts can only store ID cards. Upgrade to Premium for passports, driver licenses, and more.',
         'document.cancel': 'Cancel',
         'document.save': 'Save Document',
+        'document.type.diri': 'Diri',
+        'document.data_number_label': 'Data/Document Number',
         
         // Lost Documents
         'lost.title': 'Lost Documents',
@@ -355,58 +345,57 @@ const translations = {
         'lost.be_first': 'Be the first to report a lost document.',
         
         // Lost Modal
-        'lost.modal_title': 'Report Lost Document',
+        'lost.modal_title': 'Report Lost',
         'lost.document_type': 'Document Type',
         'lost.document_name': 'Document Name',
         'lost.where_lost': 'Where was it lost?',
-        'lost.location_placeholder': 'Enter where it was lost',
+        'lost.location_placeholder': 'Enter the location where it was lost',
         'lost.location_help': 'Be as specific as possible to help others find it',
         'lost.additional_details': 'Additional details',
-        'lost.description_placeholder': 'Describe the lost document',
+        'lost.description_placeholder': 'Describe the document that was lost',
         'lost.description_help': 'Include any visible information that could help identify the document',
         'lost.contact_info': 'Your contact information',
         'lost.contact_placeholder': '+258 00 000 0000',
         'lost.contact_help': 'This will be shared with whoever finds the document',
         'lost.report_button_submit': 'Report Lost',
-        'lost.upload_camera_hint': 'You can take a photo of the document using your device camera.',
+        'lost.upload_camera_hint': 'You can take a photo using your camera',
         
         // Found Documents
         'found.title': 'Found Documents',
         'found.report_button': 'Report Found',
-        'found.search_placeholder': 'Search documents...',
-        'found.all_types': 'All Types',
         'found.recently_found': 'Recently Found Documents',
         'found.no_documents': 'No found documents reported',
         'found.help_others': 'Help others by reporting documents you found.',
-        'found.document_name': 'Name on Document',
         
         // Found Modal
-        'found.modal_title': 'Report Found Document',
+        'found.modal_title': 'Report Found',
         'found.document_type': 'Document Type',
+        'found.document_name': 'Document Name',
+        'found.additional_details': 'Additional details',
+        'found.description_placeholder': 'Describe the found document',
         'found.tips_title': 'Tips for Found Document Reports',
         'found.tips_description': 'Thank you for helping! Providing accurate details helps return documents to their owners faster.',
         'found.where_found': 'Where did you find it?',
-        'found.location_placeholder': 'Enter where you found it',
-        'found.additional_details': 'Additional details',
-        'found.description_placeholder': 'Describe the found document',
+        'found.location_placeholder': 'Enter the location where you found it',
         'found.finder_contact': 'Your contact information',
         'found.finder_contact_placeholder': '+258 00 000 0000',
         'found.finder_contact_help': 'This will be shared with the document owner if they claim it',
         'found.upload_image': 'Upload image (optional)',
         'found.upload_help': 'A photo helps the owner identify their document',
-        'found.upload_camera_hint': 'You can take a photo of the document using your device camera.',
         'found.privacy_warning': 'Please protect privacy - blur or cover sensitive information in photos',
         'found.report_button_submit': 'Submit Found Report',
+        'found.upload_camera_hint': 'You can take a photo using your camera',
         
         // Document Types
         'type.bi': 'ID Card',
         'type.passaporte': 'Passport',
-        'type.carta': 'Driver License',
-        'type.diri': 'Diri',
+        'type.carta': 'Driver\'s License',
         'type.outros': 'Others',
+        'type.diri': 'Diri',
         
         // Status
         'status.active': 'Active',
+        'status.normal': 'Normal',
         'status.lost': 'Lost',
         'status.found': 'Found',
         
@@ -415,15 +404,37 @@ const translations = {
         'chat.placeholder': 'Type your message...',
         'chat.send': 'Send',
         
+        // Location
+        'location.title': 'Select Location',
+        'location.click_map': 'Click on the map to select a location',
+        'location.confirm': 'Confirm Location',
+        
+        // Upgrade
+        'upgrade.title': 'Upgrade to Premium',
+        'upgrade.free_plan': 'Free Plan',
+        'upgrade.premium_plan': 'Premium',
+        'upgrade.free_feature1': '1 document (ID card only)',
+        'upgrade.free_feature2': 'Basic search',
+        'upgrade.premium_feature1': 'Unlimited documents',
+        'upgrade.premium_feature2': 'All document types',
+        'upgrade.premium_feature3': 'Priority chat',
+        'upgrade.premium_feature4': 'Push notifications',
+        'upgrade.button': 'Upgrade Now',
+        
         // Messages
         'message.document_added': 'Document added successfully!',
         'message.document_marked_lost': 'Document marked as lost successfully!',
         'message.lost_reported': 'Lost document reported successfully!',
         'message.found_reported': 'Found document reported successfully! Thank you for helping!',
         'message.fill_required': 'Please fill in all required fields.',
+        'message.invalid_phone': 'Invalid phone number.',
+        'message.login_success': 'Login successful!',
         'message.confirm_mark_lost': 'Are you sure you want to mark this document as lost? This will make it visible in the public lost documents feed.',
         'message.match_found': 'You found a document that was marked as lost! Click to start conversation with the owner.',
         'message.welcome_demo': 'Welcome! You are using the demo version.',
+        'message.edit_document': 'Edit document',
+        'message.view_document': 'View document',
+        'message.unknown_action': 'Unknown action.',
         
         // Profile
         'profile.title': 'User Profile',
@@ -458,46 +469,23 @@ const translations = {
         'profile.activity.title': 'Recent Activity',
         'profile.activity.joined': 'Joined FindMyDocs',
 
-        // GPS and Location
-        'location.enabled': 'Location enabled',
-        'location.not_supported': 'Geolocation not supported on this device',
-        'location.permission_denied': 'Location permission denied',
-        'location.unavailable': 'Location unavailable',
-        'location.timeout': 'Timeout getting location',
-        'location.error_generic': 'Error getting location',
+        // Common
+        'common.select_type': 'Select document type',
+        'common.required': 'required',
+        'common.loading': 'Loading...',
+        'common.cancel': 'Cancel',
+        'common.location': 'Location',
+        'common.contact_info_placeholder': 'Enter your phone number',
         
-        // Notifications
-        'notifications.enabled': 'Notifications enabled',
-        'notifications.potential_found_title': 'Potential document found!',
-        'notifications.potential_lost_title': 'Potential match for lost document!',
-        'notifications.potential_match_body': 'We found a {type} with {score}% similarity',
-        'notifications.match_verified_title': 'Match verified!',
-        'notifications.match_verified_body': 'Document match has been confirmed',
-        
-        // Verification
-        'verification.title': 'Document Verification',
-        'verification.original_photo': 'Original Photo',
-        'verification.verification_photo': 'Verification Photo',
-        'verification.result': 'Verification Result',
-        'verification.match_score': 'Match Score',
-        'verification.verified': 'Verified',
-        'verification.not_verified': 'Not Verified',
-        'verification.processing': 'Processing...',
-        
-        // Errors
-        'error.network': 'Connection error. Check your internet.',
-        'error.server': 'Server error. Try again later.',
-        'error.validation': 'Please check the entered data.',
-        'error.unauthorized': 'Unauthorized access.',
-        'error.not_found': 'Item not found.',
-        'error.file_too_large': 'File too large. Maximum 5MB.',
-        'error.invalid_file_type': 'Unsupported file type.',
-        'error.camera_permission': 'Camera permission required.',
-        'error.location_permission': 'Location permission required.'
+        // Placeholders
+        'placeholder.phone': 'e.g. 555 123 4567',
+        'placeholder.phone_example': 'e.g. +258 84 123 4567'
     }
 };
 
-// Export for use
+// Export translations
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = translations;
+} else {
+    window.translations = translations;
 }
