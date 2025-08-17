@@ -4,14 +4,15 @@ import { resolve } from 'path';
 
 export default defineConfig({
   plugins: [react()],
+  base: process.env.NODE_ENV === 'production' ? './' : '/',
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
     },
   },
   server: {
-    port: 5500,
-    strictPort: true, // This will fail if port 5500 is already in use
+    port: 5173,
+    strictPort: false, // Allow Vite to find an available port
     proxy: {
       '/api': {
         target: 'http://localhost:9000',
@@ -25,21 +26,13 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          router: ['react-router-dom'],
-          query: ['@tanstack/react-query'],
-          forms: ['react-hook-form', '@hookform/resolvers', 'zod'],
-          maps: ['leaflet', 'react-leaflet'],
-          supabase: ['@supabase/supabase-js'],
-        },
-      },
-    },
+    sourcemap: false,
+    // Remove manual chunks for now to fix the build issue
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom'],
   },
+  esbuild: {
+    logOverride: { 'this-is-undefined-in-esm': 'silent' }
+  }
 });

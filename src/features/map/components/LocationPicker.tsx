@@ -78,7 +78,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     }
   };
 
-  const handleMapClick = (event: MouseEvent) => {
+  const handleMapClick = () => {
     // In a real implementation, you'd convert screen coordinates to map coordinates
     // For now, we'll use placeholder coordinates
     const mockLocation = {

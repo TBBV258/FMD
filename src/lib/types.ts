@@ -1,36 +1,55 @@
 // Core entity types - preserving backend field names
-export type User = {
+export interface User {
   id: string;
   email: string;
-  first_name: string;
-  last_name: string;
-  points: number;
-  is_premium: boolean;
+  user_metadata?: {
+    first_name?: string;
+    last_name?: string;
+    phone?: string;
+    location?: string;
+    avatar_url?: string;
+  };
+  created_at?: string;
+  updated_at?: string;
+}
+
+// User profile from the users table
+export interface UserProfile {
+  id: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  location?: string;
+  points?: number;
+  is_premium?: boolean;
   avatar_url?: string;
-  created_at: string;
-  updated_at: string;
-};
+  document_count?: number;
+  helped_count?: number;
+  created_at?: string;
+  updated_at?: string;
+}
 
 export type DocumentType = 'bi' | 'passaporte' | 'carta' | 'outros';
 
 export type DocumentStatus = 'normal' | 'lost' | 'found';
 
-export type Document = {
-  id: string;
+export interface Document {
+  id?: string;
   user_id: string;
   type: DocumentType;
   name: string;
-  number?: string;
-  description?: string;
-  status: DocumentStatus;
+  number?: string | undefined; // Changed from string | null
+  description?: string | undefined; // Changed from string | null
+  status: 'normal' | 'lost' | 'found';
   location?: string;
   contact_info?: string;
-  files?: DocumentFile[];
+  files?: any[];
   latitude?: number;
   longitude?: number;
-  created_at: string;
-  updated_at: string;
-};
+  created_at?: string;
+  updated_at?: string;
+}
 
 export type DocumentFile = {
   id: string;
@@ -98,8 +117,8 @@ export type Language = 'pt' | 'en';
 export type Theme = 'light' | 'dark';
 
 export type AuthState = {
-  user: User | null;
-  profile: User | null;
+  user: any | null;
+  profile: UserProfile | null;
   isLoading: boolean;
   isAuthenticated: boolean;
 };
@@ -156,11 +175,11 @@ export type PaginatedResponse<T> = {
 
 // Service interfaces
 export interface AuthService {
-  signIn(email: string, password: string): Promise<{ user: User; session: any }>;
-  signUp(email: string, password: string, userData: any): Promise<{ user: User }>;
-  signInWithGoogle(): Promise<{ user: User; session: any }>;
+  signIn(email: string, password: string): Promise<{ user: any; session: any }>;
+  signUp(email: string, password: string, userData: any): Promise<{ user: any; session: any }>;
+  signInWithGoogle(): Promise<{ provider: string; url: string }>;
   signOut(): Promise<void>;
-  getCurrentUser(): Promise<User | null>;
+  getCurrentUser(): Promise<any | null>;
   onAuthStateChange(callback: (event: string, session: any) => void): () => void;
 }
 

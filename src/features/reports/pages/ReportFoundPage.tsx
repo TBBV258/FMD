@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, Upload, FileText, MapPin, User, X, Check } from 'lucide-react';
+import { Heart, Upload, FileText, MapPin, User, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -39,7 +39,7 @@ export const ReportFoundPage: React.FC = () => {
         user_id: user.id,
         type: data.type,
         name: data.name,
-        description: data.description || null,
+        description: data.description || undefined,
         location: data.location,
         contact_info: data.contact_info,
         status: 'found' as const,
@@ -52,17 +52,17 @@ export const ReportFoundPage: React.FC = () => {
       console.log('✅ ReportFoundPage: Found document created:', createdDocument);
 
       // Upload files if any
-      if (data.files.length > 0) {
+      if (data.files.length > 0 && createdDocument.id) {
         console.log('📤 ReportFoundPage: Uploading files for document ID:', createdDocument.id);
         const uploadedFiles = await storageService.uploadDocumentFiles(data.files, createdDocument.id);
         console.log('📤 ReportFoundPage: Files uploaded successfully:', uploadedFiles);
 
         // Update document with file information
-        console.log('🔄 ReportFoundPage: Updating found document with files');
+        console.log('🔄 ReportFoundPage: Updating document with files');
         const updatedDocument = await databaseAPI.updateDocument(createdDocument.id, { 
           files: uploadedFiles 
         });
-        console.log('✅ ReportFoundPage: Found document updated with files:', updatedDocument);
+        console.log('✅ ReportFoundPage: Document updated with files:', updatedDocument);
         return updatedDocument;
       }
 

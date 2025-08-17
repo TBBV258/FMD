@@ -1,16 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { User, AuthState } from '@/lib/types';
+import type { AuthState } from '@/lib/types';
 import { authService } from '@/lib/services/AuthService';
 import { databaseAPI } from '@/lib/api/database';
 
 export function useAuth() {
+  console.log('🎭 useAuth: Hook function called');
+  
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     profile: null,
     isLoading: true,
     isAuthenticated: false,
   });
+
+  console.log('🔧 useAuth: Initial auth state set:', authState);
 
   const queryClient = useQueryClient();
 
@@ -29,9 +33,12 @@ export function useAuth() {
   });
 
   useEffect(() => {
+    console.log('🔧 useAuth: useEffect for auth state listener triggered');
+    console.log('🔧 useAuth: Calling authService.onAuthStateChange...');
+    
     // Set up auth state listener
     const unsubscribe = authService.onAuthStateChange(async (event, session) => {
-      console.log('🔐 Auth state changed:', event, session);
+      console.log('🔐 useAuth: Auth state changed:', event, session);
 
       try {
         if (event === 'SIGNED_IN' && session?.user) {

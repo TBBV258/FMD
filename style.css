@@ -1,3 +1,21 @@
+/*
+DEPRECATED - OLD CSS VERSION OF FINDMYDOCS
+This file is no longer used and has been replaced by Tailwind CSS and modern CSS modules.
+
+The new version is located in the src/styles/ directory and uses:
+- Tailwind CSS for utility classes
+- CSS modules for component-specific styles
+- Modern CSS features and variables
+- Responsive design with mobile-first approach
+
+To run the new version:
+1. npm install
+2. npm run dev
+
+This file is kept for reference only and should not be loaded.
+*/
+
+/*
 /* Contact Input Group (Phone with flag/prefix) */
 .contact-input-group {
     display: flex;

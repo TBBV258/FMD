@@ -1,5 +1,6 @@
-import type { Document, User, Chat, Notification, DocumentFormData, LostReportFormData, FoundReportFormData } from '@/lib/types';
-import { authService, TABLES } from '@/lib/services/AuthService';
+import { authService } from '@/lib/services/AuthService';
+import type { User, UserProfile, Document, Chat, ChatMessage, Notification } from '@/lib/types';
+import { TABLES } from '@/lib/services/AuthService';
 
 class DatabaseAPI {
   // User functions - preserving existing logic
@@ -25,7 +26,7 @@ class DatabaseAPI {
     return data;
   }
 
-  async getUserProfile(userId: string): Promise<User> {
+  async getUserProfile(userId: string): Promise<UserProfile> {
     const client = authService.getClient();
     if (!client) throw new Error('Supabase client not initialized');
 
@@ -39,7 +40,7 @@ class DatabaseAPI {
     return data;
   }
 
-  async updateUserProfile(userId: string, updates: Partial<User>): Promise<User> {
+  async updateUserProfile(userId: string, updates: Partial<UserProfile>): Promise<UserProfile> {
     const client = authService.getClient();
     if (!client) throw new Error('Supabase client not initialized');
 

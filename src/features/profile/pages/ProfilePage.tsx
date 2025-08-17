@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { User, Settings, Bell, Shield, Download, Edit, Camera, Save, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, Bell, Shield, Download, Edit, Camera, Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -8,6 +8,7 @@ import { useTranslation } from '@/i18n';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { databaseAPI } from '@/lib/api/database';
 import { storageService } from '@/lib/services/StorageService';
+import type { UserProfile } from '@/lib/types';
 
 export const ProfilePage: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -16,11 +17,13 @@ export const ProfilePage: React.FC = () => {
   
   const [isEditing, setIsEditing] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [profileData, setProfileData] = useState({
-    first_name: user?.user_metadata?.first_name || '',
-    last_name: user?.user_metadata?.last_name || '',
-    phone: user?.user_metadata?.phone || '',
-    location: user?.user_metadata?.location || '',
+  const [profileData, setProfileData] = useState<Partial<UserProfile>>({
+    first_name: '',
+    last_name: '',
+    phone: '',
+    location: '',
+    points: 0,
+    is_premium: false,
   });
 
   console.log('👤 ProfilePage: Component rendered for user:', user?.email);
@@ -31,6 +34,18 @@ export const ProfilePage: React.FC = () => {
     queryFn: () => databaseAPI.getUserProfile(user?.id || ''),
     enabled: !!user?.id,
   });
+
+  // Update profile data when userProfile changes
+  useEffect(() => {
+    if (userProfile) {
+      setProfileData({
+        first_name: userProfile.first_name || '',
+        last_name: userProfile.last_name || '',
+        phone: userProfile.phone || '',
+        location: userProfile.location || '',
+      });
+    }
+  }, [userProfile]);
 
   // Update profile mutation
   const updateProfileMutation = useMutation({
@@ -116,10 +131,10 @@ export const ProfilePage: React.FC = () => {
   const handleCancelEdit = () => {
     setIsEditing(false);
     setProfileData({
-      first_name: user?.user_metadata?.first_name || '',
-      last_name: user?.user_metadata?.last_name || '',
-      phone: user?.user_metadata?.phone || '',
-      location: user?.user_metadata?.location || '',
+      first_name: userProfile?.first_name || '',
+      last_name: userProfile?.last_name || '',
+      phone: userProfile?.phone || '',
+      location: userProfile?.location || '',
     });
   };
 
@@ -129,7 +144,7 @@ export const ProfilePage: React.FC = () => {
   };
 
   const getAvatarUrl = () => {
-    return userProfile?.avatar_url || user?.user_metadata?.avatar_url || '';
+    return userProfile?.avatar_url || '';
   };
 
   if (isLoadingProfile) {

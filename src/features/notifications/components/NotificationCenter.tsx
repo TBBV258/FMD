@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Bell, X, Check, AlertTriangle, Info, MessageCircle, MapPin, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -6,7 +6,6 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { useTranslation } from '@/i18n';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { databaseAPI } from '@/lib/api/database';
-import type { Notification } from '@/lib/types';
 
 interface NotificationCenterProps {
   isOpen: boolean;
@@ -115,10 +114,10 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
     if (diffInMinutes < 1) {
       return t('notifications.just_now') || 'Agora mesmo';
     } else if (diffInMinutes < 60) {
-      return t('notifications.minutes_ago', { minutes: Math.floor(diffInMinutes) }) || `${Math.floor(diffInMinutes)}m atrás`;
+      return t('notifications.minutes_ago') || `${Math.floor(diffInMinutes)}m atrás`;
     } else if (diffInMinutes < 1440) {
       const hours = Math.floor(diffInMinutes / 60);
-      return t('notifications.hours_ago', { hours }) || `${hours}h atrás`;
+      return t('notifications.hours_ago') || `${hours}h atrás`;
     } else {
       return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
     }

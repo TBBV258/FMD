@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Filter, MapPin, Calendar, User, FileText, Eye, MessageCircle } from 'lucide-react';
+import { Search, Filter, MapPin, Calendar, FileText, Eye, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -55,7 +55,7 @@ export const FeedPage: React.FC = () => {
       return (
         doc.name.toLowerCase().includes(query) ||
         doc.description?.toLowerCase().includes(query) ||
-        doc.location.toLowerCase().includes(query)
+        doc.location?.toLowerCase().includes(query)
       );
     }
     
@@ -251,7 +251,7 @@ export const FeedPage: React.FC = () => {
                 <div className="flex items-center space-x-2 mb-4">
                   <Calendar className="w-4 h-4 text-gray-400" />
                   <span className="text-xs text-gray-500 dark:text-gray-400">
-                    {t('common.created_at')}: {formatDate(document.created_at)}
+                    {t('common.created_at')}: {document.created_at ? formatDate(document.created_at) : 'N/A'}
                   </span>
                 </div>
 

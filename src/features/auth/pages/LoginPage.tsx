@@ -10,7 +10,7 @@ export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signIn, signUp, signInWithGoogle, isAuthenticated, isLoading } = useAuth();
+  const { signIn, signInWithGoogle, isAuthenticated, isLoading } = useAuth();
 
   console.log('🔍 LoginPage: Component rendered');
 

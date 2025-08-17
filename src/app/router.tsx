@@ -61,9 +61,12 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 export const AppRouter: React.FC = () => {
+  console.log('🎭 AppRouter: Component function called');
+  
   const location = useLocation();
   
   console.log('🔍 AppRouter: Current location:', location.pathname);
+  console.log('🔍 AppRouter: Location object:', location);
 
   return (
     <Routes>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Search, Filter, Layers, Navigation, Info } from 'lucide-react';
+import { Search, Layers, Navigation, Info } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { useTranslation } from '@/i18n';
 import { useQuery } from '@tanstack/react-query';
 import { databaseAPI } from '@/lib/api/database';
-import type { Document, DocumentType } from '@/lib/types';
+import type { DocumentType } from '@/lib/types';
 
 type MapFilter = 'all' | 'lost' | 'found';
 type MapView = 'documents' | 'heatmap' | 'clusters';
@@ -138,16 +138,12 @@ export const MapPage: React.FC = () => {
   };
 
   const handleGoToUserLocation = () => {
-    if (userLocation) {
+    if (userLocation && mapRef.current) {
+      // In a real implementation, you'd pan the map to user location
       console.log('📍 MapPage: Going to user location:', userLocation);
-      // This would center the map on user's location
     } else {
       console.log('⚠️ MapPage: User location not available');
     }
-  };
-
-  const getStatusColor = (status: string) => {
-    return status === 'lost' ? 'text-red-600 bg-red-100' : 'text-green-600 bg-green-100';
   };
 
   const getStatusIcon = (status: string) => {

@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -21,11 +21,15 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public static getDerivedStateFromError(error: Error): State {
+    console.error('🚨 ErrorBoundary: getDerivedStateFromError called with:', error);
     return { hasError: true, error };
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo);
+    console.error('🚨 ErrorBoundary: componentDidCatch called');
+    console.error('🚨 ErrorBoundary: Error:', error);
+    console.error('🚨 ErrorBoundary: Error info:', errorInfo);
+    console.error('🚨 ErrorBoundary: Error stack:', error.stack);
     this.setState({ error, errorInfo });
   }
 
@@ -38,7 +42,10 @@ export class ErrorBoundary extends Component<Props, State> {
   };
 
   public render() {
+    console.log('🎭 ErrorBoundary: render called, hasError:', this.state.hasError);
+    
     if (this.state.hasError) {
+      console.log('🚨 ErrorBoundary: Rendering error state');
       if (this.props.fallback) {
         return this.props.fallback;
       }
@@ -92,6 +99,7 @@ export class ErrorBoundary extends Component<Props, State> {
       );
     }
 
+    console.log('✅ ErrorBoundary: Rendering children normally');
     return this.props.children;
   }
 }
