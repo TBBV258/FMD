@@ -52,8 +52,8 @@ export const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ isOpen, onCl
         user_id: user.id,
         type: data.type,
         name: data.name,
-        number: data.number || null,
-        description: data.description || null,
+        number: data.number || undefined,
+        description: data.description || undefined,
         status: 'normal' as const,
         created_at: new Date().toISOString(),
       };
@@ -63,7 +63,7 @@ export const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ isOpen, onCl
       console.log('✅ AddDocumentModal: Document created:', createdDocument);
 
       // Upload files if any
-      if (data.files.length > 0) {
+      if (data.files.length > 0 && createdDocument.id) {
         console.log('📤 AddDocumentModal: Uploading files for document ID:', createdDocument.id);
         const uploadedFiles = await storageService.uploadDocumentFiles(data.files, createdDocument.id);
         console.log('📤 AddDocumentModal: Files uploaded successfully:', uploadedFiles);

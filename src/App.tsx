@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppRouter } from './app/router';
@@ -26,12 +26,26 @@ const queryClient = new QueryClient({
 });
 
 function App() {
+  console.log('🎭 App: Component function called');
+  
   // Initialize Supabase
   useEffect(() => {
-    console.log('🔧 App: Initializing Supabase...');
+    console.log('🔧 App: useEffect for Supabase initialization triggered');
+    console.log('🔧 App: Calling initializeSupabase()...');
+    
     initializeSupabase()
-      .then(() => console.log('✅ App: Supabase initialized successfully'))
-      .catch((error) => console.error('❌ App: Failed to initialize Supabase:', error));
+      .then(() => {
+        console.log('✅ App: Supabase initialized successfully');
+        console.log('🔧 App: Supabase initialization complete, proceeding...');
+      })
+      .catch((error) => {
+        console.error('❌ App: Failed to initialize Supabase:', error);
+        console.error('❌ App: Error details:', {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        });
+      });
   }, []);
 
   // Set up theme detection

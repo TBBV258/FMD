@@ -44,8 +44,28 @@ describe('useAuth', () => {
   it('should handle sign in', async () => {
     vi.mocked(authService.onAuthStateChange).mockReturnValue(() => {});
     vi.mocked(authService.signIn).mockResolvedValue({
-      user: { id: '1', email: 'test@example.com' },
-      session: { access_token: 'token' },
+      user: { 
+        id: '1', 
+        email: 'test@example.com',
+        app_metadata: {},
+        user_metadata: {},
+        aud: 'authenticated',
+        created_at: '2023-01-01T00:00:00Z'
+      },
+      session: { 
+        access_token: 'token',
+        refresh_token: 'refresh',
+        expires_in: 3600,
+        token_type: 'bearer',
+        user: { 
+          id: '1', 
+          email: 'test@example.com',
+          app_metadata: {},
+          user_metadata: {},
+          aud: 'authenticated',
+          created_at: '2023-01-01T00:00:00Z'
+        }
+      },
     });
 
     const { result } = renderHook(() => useAuth());
@@ -60,7 +80,15 @@ describe('useAuth', () => {
   it('should handle sign up', async () => {
     vi.mocked(authService.onAuthStateChange).mockReturnValue(() => {});
     vi.mocked(authService.signUp).mockResolvedValue({
-      user: { id: '1', email: 'test@example.com' },
+      user: { 
+        id: '1', 
+        email: 'test@example.com',
+        app_metadata: {},
+        user_metadata: {},
+        aud: 'authenticated',
+        created_at: '2023-01-01T00:00:00Z'
+      },
+      session: null
     });
 
     const { result } = renderHook(() => useAuth());
@@ -94,8 +122,8 @@ describe('useAuth', () => {
   it('should handle Google sign in', async () => {
     vi.mocked(authService.onAuthStateChange).mockReturnValue(() => {});
     vi.mocked(authService.signInWithGoogle).mockResolvedValue({
-      user: { id: '1', email: 'test@example.com' },
-      session: { access_token: 'token' },
+      provider: 'google',
+      url: 'https://example.com/auth/callback'
     });
 
     const { result } = renderHook(() => useAuth());

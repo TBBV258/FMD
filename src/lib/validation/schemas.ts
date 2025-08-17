@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { DocumentType } from '@/lib/types';
+
 
 // Auth schemas
 export const loginSchema = z.object({

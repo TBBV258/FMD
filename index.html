@@ -29,6 +29,84 @@
     
     <title>FindMyDocs - Sistema de Gestão de Documentos</title>
     
+    <script>
+        console.log('📄 index.html: HTML document loaded');
+        console.log('🔍 index.html: Document ready state:', document.readyState);
+        
+        // Check root element multiple times
+        function checkRoot() {
+            const root = document.getElementById('root');
+            console.log('🔍 index.html: Root element check:', {
+                exists: !!root,
+                element: root,
+                innerHTML: root ? root.innerHTML.substring(0, 100) + '...' : 'N/A',
+                children: root ? root.children.length : 0
+            });
+        }
+        
+        // Check immediately
+        checkRoot();
+        
+        // Check when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('✅ index.html: DOM fully loaded');
+            checkRoot();
+        });
+        
+        // Check when page is fully loaded
+        window.addEventListener('load', () => {
+            console.log('✅ index.html: Page fully loaded');
+            console.log('🔍 index.html: All resources loaded');
+            checkRoot();
+        });
+        
+        // Check after a short delay
+        setTimeout(() => {
+            console.log('⏰ index.html: After 100ms delay');
+            checkRoot();
+        }, 100);
+        
+        // Check after a longer delay
+        setTimeout(() => {
+            console.log('⏰ index.html: After 500ms delay');
+            checkRoot();
+        }, 500);
+        
+        // Global error handlers
+        window.addEventListener('error', (event) => {
+            console.error('🚨 Global error caught:', {
+                message: event.message,
+                filename: event.filename,
+                lineno: event.lineno,
+                colno: event.colno,
+                error: event.error
+            });
+        });
+        
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('🚨 Unhandled promise rejection:', {
+                reason: event.reason,
+                promise: event.promise
+            });
+        });
+        
+        // Check if React scripts are loading
+        function checkScripts() {
+            const scripts = Array.from(document.scripts);
+            console.log('🔍 index.html: All scripts found:', scripts.map(s => ({
+                src: s.src || 'inline',
+                type: s.type,
+                async: s.async,
+                defer: s.defer
+            })));
+        }
+        
+        // Check scripts after page load
+        window.addEventListener('load', () => {
+            setTimeout(checkScripts, 100);
+        });
+    </script>
+    
     <style>
         /* Critical CSS for initial load */
         body {
@@ -102,6 +180,18 @@
         </div>
     </div>
     
+    <!-- Vite will automatically inject the correct script tags during build -->
     <script type="module" src="/src/main.tsx"></script>
+    
+    <script>
+        console.log('📄 index.html: About to close body tag');
+        console.log('🔍 index.html: Scripts that should be loaded:', document.scripts.length);
+        
+        // Check if Vite has injected any scripts
+        setTimeout(() => {
+            console.log('🔍 index.html: After timeout - Scripts loaded:', document.scripts.length);
+            console.log('🔍 index.html: Scripts:', Array.from(document.scripts).map(s => s.src || 'inline'));
+        }, 1000);
+    </script>
 </body>
 </html>

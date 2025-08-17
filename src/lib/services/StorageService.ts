@@ -16,7 +16,7 @@ class StorageServiceImpl implements StorageService {
       const fileName = `${documentId}/${Date.now()}_${index}.${fileExtension}`;
       console.log('📤 Storage: Uploading file:', file.name, 'as:', fileName);
       
-      const { data: uploadData, error: uploadError } = await client.storage
+      const { data: _uploadData, error: uploadError } = await client.storage
         .from(STORAGE_BUCKETS.DOCUMENTS)
         .upload(fileName, file, {
           contentType: file.type,

@@ -1,5 +1,5 @@
 import { authService } from './AuthService';
-import type { Chat, ChatMessage, Document, Notification } from '@/lib/types';
+
 
 export class RealtimeService {
   private subscriptions: Map<string, () => void> = new Map();

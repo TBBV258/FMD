@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, MessageCircle, User, FileText, MapPin, Calendar } from 'lucide-react';
+import { Send, MessageCircle, User } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useTranslation } from '@/i18n';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { databaseAPI } from '@/lib/api/database';
-import type { Chat, ChatMessage, Document } from '@/lib/types';
+import type { Chat } from '@/lib/types';
 
 export const ChatPage: React.FC = () => {
   const { user } = useAuth();

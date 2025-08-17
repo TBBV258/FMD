@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertTriangle, Upload, FileText, MapPin, User, X, Check } from 'lucide-react';
+import { AlertTriangle, Upload, FileText, MapPin, User, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -39,7 +39,7 @@ export const ReportLostPage: React.FC = () => {
         user_id: user.id,
         type: data.type,
         name: data.name,
-        description: data.description || null,
+        description: data.description || undefined,
         location: data.location,
         contact_info: data.contact_info,
         status: 'lost' as const,
@@ -52,17 +52,17 @@ export const ReportLostPage: React.FC = () => {
       console.log('✅ ReportLostPage: Lost document created:', createdDocument);
 
       // Upload files if any
-      if (data.files.length > 0) {
+      if (data.files.length > 0 && createdDocument.id) {
         console.log('📤 ReportLostPage: Uploading files for document ID:', createdDocument.id);
         const uploadedFiles = await storageService.uploadDocumentFiles(data.files, createdDocument.id);
         console.log('📤 ReportLostPage: Files uploaded successfully:', uploadedFiles);
 
         // Update document with file information
-        console.log('🔄 ReportLostPage: Updating lost document with files');
+        console.log('🔄 ReportLostPage: Updating document with files');
         const updatedDocument = await databaseAPI.updateDocument(createdDocument.id, { 
           files: uploadedFiles 
         });
-        console.log('✅ ReportLostPage: Lost document updated with files:', updatedDocument);
+        console.log('✅ ReportLostPage: Document updated with files:', updatedDocument);
         return updatedDocument;
       }
 

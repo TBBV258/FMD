@@ -1,3 +1,20 @@
+/*
+DEPRECATED - OLD SUPABASE CLIENT FOR FINDMYDOCS
+This file is no longer used and has been replaced by the React/TypeScript version.
+
+The new version is located in src/lib/supabase.ts and uses:
+- Modern ES6+ syntax
+- TypeScript types
+- React hooks integration
+- Better error handling
+
+To run the new version:
+1. npm install
+2. npm run dev
+
+This file is kept for reference only and should not be loaded.
+*/
+
 // Fetch configuration from server
 async function initializeSupabase() {
     try {

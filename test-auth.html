@@ -1,171 +1,323 @@
+<!--
+DEPRECATED - OLD TEST AUTH HTML FILE FOR FINDMYDOCS
+This file is no longer used and has been replaced by the React/TypeScript version.
+
+The new version is located in the src/ directory and uses:
+- React 18 components
+- TypeScript for type safety
+- Modern authentication with Supabase
+- Better testing with Vitest and Playwright
+
+To run the new version:
+1. npm install
+2. npm run dev
+
+This file is kept for reference only and should not be loaded.
+-->
+
+<!--
 <!DOCTYPE html>
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FindMyDocs - Auth Test</title>
+    <title>Test Auth - FindMyDocs</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
-            background: #f5f5f5;
-        }
-        .test-container {
-            max-width: 600px;
+            max-width: 800px;
             margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
             background: white;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .test-section {
-            margin: 20px 0;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        .test-button {
-            background: #2196F3;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 5px;
-        }
-        .test-button:hover {
-            background: #1976D2;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .status {
             padding: 10px;
             margin: 10px 0;
-            border-radius: 5px;
+            border-radius: 4px;
         }
-        .status.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
         }
-        .status.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+        button:hover { background-color: #0056b3; }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
-        .status.info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
+        .form-group { margin: 15px 0; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="test-container">
-        <h1>FindMyDocs Authentication Test</h1>
+    <div class="container">
+        <h1>Test Auth - FindMyDocs</h1>
         
-        <div class="test-section">
-            <h3>Authentication Status</h3>
-            <div id="auth-status" class="status info">Checking authentication status...</div>
-            <button class="test-button" onclick="checkAuthStatus()">Check Status</button>
-            <button class="test-button" onclick="testLogin()">Test Login</button>
-            <button class="test-button" onclick="testLogout()">Test Logout</button>
+        <div id="status" class="status info">
+            Initializing...
         </div>
         
-        <div class="test-section">
-            <h3>Login Form Test</h3>
-            <form id="test-login-form">
-                <div>
-                    <label for="test-email">Email:</label>
-                    <input type="email" id="test-email" value="test@example.com" style="width: 200px; margin: 5px;">
-                </div>
-                <div>
-                    <label for="test-password">Password:</label>
-                    <input type="password" id="test-password" value="password123" style="width: 200px; margin: 5px;">
-                </div>
-                <button type="submit" class="test-button">Submit Test Login</button>
-            </form>
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" placeholder="test@example.com" value="test@example.com">
         </div>
         
-        <div class="test-section">
-            <h3>Console Logs</h3>
-            <div id="console-logs" style="background: #f8f9fa; padding: 10px; border-radius: 5px; max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px;"></div>
-            <button class="test-button" onclick="clearLogs()">Clear Logs</button>
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" placeholder="password123" value="password123">
+        </div>
+        
+        <button onclick="testSignUp()">Test Sign Up</button>
+        <button onclick="testSignIn()">Test Sign In</button>
+        <button onclick="testSignOut()">Test Sign Out</button>
+        <button onclick="testGetUser()">Test Get User</button>
+        <button onclick="testResetPassword()">Test Reset Password</button>
+        
+        <div id="userInfo" style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 4px; display: none;">
+            <h3>User Info:</h3>
+            <pre id="userData"></pre>
+        </div>
+        
+        <div id="logs" style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 4px;">
+            <h3>Logs:</h3>
+            <div id="logContent"></div>
         </div>
     </div>
 
+    <script src="supabaseClient.js"></script>
     <script>
-        // Override console.log to capture logs
-        const originalLog = console.log;
-        const originalError = console.error;
-        const originalWarn = console.warn;
+        let supabaseClient = null;
         
-        function addLog(message, type = 'log') {
-            const logsDiv = document.getElementById('console-logs');
-            const logEntry = document.createElement('div');
-            logEntry.style.color = type === 'error' ? 'red' : type === 'warn' ? 'orange' : 'black';
-            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-            logsDiv.appendChild(logEntry);
-            logsDiv.scrollTop = logsDiv.scrollHeight;
-        }
-        
-        console.log = function(...args) {
-            originalLog.apply(console, args);
-            addLog(args.join(' '));
-        };
-        
-        console.error = function(...args) {
-            originalError.apply(console, args);
-            addLog(args.join(' '), 'error');
-        };
-        
-        console.warn = function(...args) {
-            originalWarn.apply(console, args);
-            addLog(args.join(' '), 'warn');
-        };
-        
-        function checkAuthStatus() {
-            const statusDiv = document.getElementById('auth-status');
-            if (window.supabaseClient) {
-                const { data: { user } } = window.supabaseClient.auth.getUser();
-                if (user) {
-                    statusDiv.className = 'status success';
-                    statusDiv.textContent = `Authenticated as: ${user.email}`;
-                } else {
-                    statusDiv.className = 'status info';
-                    statusDiv.textContent = 'Not authenticated';
+        async function initializeSupabase() {
+            try {
+                // Wait for the client to be available
+                let attempts = 0;
+                const maxAttempts = 50;
+                
+                while (!window.supabaseClient && attempts < maxAttempts) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
                 }
-            } else {
-                statusDiv.className = 'status error';
-                statusDiv.textContent = 'Supabase client not available';
+                
+                if (window.supabaseClient) {
+                    supabaseClient = window.supabaseClient;
+                    updateStatus('Supabase client initialized successfully', 'success');
+                    log('Supabase client ready');
+                } else {
+                    throw new Error('Failed to initialize Supabase client');
+                }
+            } catch (error) {
+                updateStatus('Failed to initialize Supabase: ' + error.message, 'error');
+                log('Error initializing Supabase: ' + error.message);
             }
         }
         
-        function testLogin() {
-            console.log('Testing login functionality...');
-            // This would test the actual login flow
+        function updateStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status ' + type;
         }
         
-        function testLogout() {
-            console.log('Testing logout functionality...');
-            if (window.supabaseClient) {
-                window.supabaseClient.auth.signOut();
+        function log(message) {
+            const logContent = document.getElementById('logContent');
+            const timestamp = new Date().toLocaleTimeString();
+            logContent.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            logContent.scrollTop = logContent.scrollHeight;
+        }
+        
+        async function testSignUp() {
+            if (!supabaseClient) {
+                updateStatus('Supabase client not initialized', 'error');
+                return;
+            }
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                updateStatus('Signing up...', 'info');
+                log(`Attempting sign up with email: ${email}`);
+                
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email: email,
+                    password: password
+                });
+                
+                if (error) {
+                    throw error;
+                }
+                
+                updateStatus('Sign up successful! Check your email for confirmation.', 'success');
+                log('Sign up successful: ' + JSON.stringify(data));
+                
+            } catch (error) {
+                updateStatus('Sign up failed: ' + error.message, 'error');
+                log('Sign up error: ' + error.message);
             }
         }
         
-        function clearLogs() {
-            document.getElementById('console-logs').innerHTML = '';
+        async function testSignIn() {
+            if (!supabaseClient) {
+                updateStatus('Supabase client not initialized', 'error');
+                return;
+            }
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                updateStatus('Signing in...', 'info');
+                log(`Attempting sign in with email: ${email}`);
+                
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (error) {
+                    throw error;
+                }
+                
+                updateStatus('Sign in successful!', 'success');
+                log('Sign in successful: ' + JSON.stringify(data));
+                showUserInfo(data.user);
+                
+            } catch (error) {
+                updateStatus('Sign in failed: ' + error.message, 'error');
+                log('Sign in error: ' + error.message);
+            }
         }
         
-        // Check status on page load
-        window.addEventListener('load', () => {
-            setTimeout(checkAuthStatus, 1000);
-        });
+        async function testSignOut() {
+            if (!supabaseClient) {
+                updateStatus('Supabase client not initialized', 'error');
+                return;
+            }
+            
+            try {
+                updateStatus('Signing out...', 'info');
+                log('Attempting sign out');
+                
+                const { error } = await supabaseClient.auth.signOut();
+                
+                if (error) {
+                    throw error;
+                }
+                
+                updateStatus('Sign out successful!', 'success');
+                log('Sign out successful');
+                hideUserInfo();
+                
+            } catch (error) {
+                updateStatus('Sign out failed: ' + error.message, 'error');
+                log('Sign out error: ' + error.message);
+            }
+        }
         
-        // Test form submission
-        document.getElementById('test-login-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            console.log('Test login form submitted');
-            // Add your test logic here
-        });
+        async function testGetUser() {
+            if (!supabaseClient) {
+                updateStatus('Supabase client not initialized', 'error');
+                return;
+            }
+            
+            try {
+                updateStatus('Getting user...', 'info');
+                log('Attempting to get current user');
+                
+                const { data: { user }, error } = await supabaseClient.auth.getUser();
+                
+                if (error) {
+                    throw error;
+                }
+                
+                if (user) {
+                    updateStatus('User retrieved successfully!', 'success');
+                    log('User retrieved: ' + JSON.stringify(user));
+                    showUserInfo(user);
+                } else {
+                    updateStatus('No user currently signed in', 'info');
+                    log('No user currently signed in');
+                    hideUserInfo();
+                }
+                
+            } catch (error) {
+                updateStatus('Get user failed: ' + error.message, 'error');
+                log('Get user error: ' + error.message);
+            }
+        }
+        
+        async function testResetPassword() {
+            if (!supabaseClient) {
+                updateStatus('Supabase client not initialized', 'error');
+                return;
+            }
+            
+            const email = document.getElementById('email').value;
+            
+            try {
+                updateStatus('Requesting password reset...', 'info');
+                log(`Requesting password reset for email: ${email}`);
+                
+                const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email);
+                
+                if (error) {
+                    throw error;
+                }
+                
+                updateStatus('Password reset email sent! Check your email.', 'success');
+                log('Password reset email sent: ' + JSON.stringify(data));
+                
+            } catch (error) {
+                updateStatus('Password reset failed: ' + error.message, 'error');
+                log('Password reset error: ' + error.message);
+            }
+        }
+        
+        function showUserInfo(user) {
+            const userInfo = document.getElementById('userInfo');
+            const userData = document.getElementById('userData');
+            userData.textContent = JSON.stringify(user, null, 2);
+            userInfo.style.display = 'block';
+        }
+        
+        function hideUserInfo() {
+            const userInfo = document.getElementById('userInfo');
+            userInfo.style.display = 'none';
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initializeSupabase);
+        
+        // Listen for auth state changes
+        if (window.supabaseClient) {
+            window.supabaseClient.auth.onAuthStateChange((event, session) => {
+                log(`Auth state changed: ${event}`);
+                if (session) {
+                    log('Session active: ' + JSON.stringify(session.user));
+                    showUserInfo(session.user);
+                } else {
+                    log('Session ended');
+                    hideUserInfo();
+                }
+            });
+        }
     </script>
 </body>
 </html>
+-->

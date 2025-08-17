@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Plus, FileText, Search, Eye, Download, Trash2 } from 'lucide-react';
+import { Plus, FileText, Search } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Card, CardContent } from '@/components/ui/Card';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useTranslation } from '@/i18n';
 import { useQuery } from '@tanstack/react-query';
@@ -246,7 +246,7 @@ export const DocumentsPage: React.FC = () => {
                 
                 <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                   <span>
-                    {t('common.created_at')}: {new Date(document.created_at).toLocaleDateString()}
+                    {t('common.created_at')}: {document.created_at ? new Date(document.created_at).toLocaleDateString() : 'N/A'}
                   </span>
                   {document.location && (
                     <span>

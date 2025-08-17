@@ -7,7 +7,7 @@ import { useTranslation } from '@/i18n';
 import { NotificationBell } from '@/features/notifications/components/NotificationBell';
 
 export const TopNavigation: React.FC = () => {
-  const { signOut, profile } = useAuth();
+  const { signOut } = useAuth();
   const entitlements = useEntitlements();
   const { t, currentLanguage, setLanguage } = useTranslation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
