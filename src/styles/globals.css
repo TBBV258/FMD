@@ -1,0 +1,409 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* Global styles */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    font-size: 16px;
+  }
+
+  body {
+    font-family: 'Roboto', 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Responsive typography */
+  h1 {
+    @apply text-2xl md:text-3xl lg:text-4xl font-bold;
+  }
+
+  h2 {
+    @apply text-xl md:text-2xl lg:text-3xl font-semibold;
+  }
+
+  h3 {
+    @apply text-lg md:text-xl lg:text-2xl font-medium;
+  }
+
+  h4 {
+    @apply text-base md:text-lg lg:text-xl font-medium;
+  }
+
+  p {
+    @apply text-sm md:text-base leading-relaxed;
+  }
+
+  /* Focus styles */
+  *:focus {
+    @apply outline-none ring-2 ring-primary-500 ring-opacity-50;
+  }
+
+  /* Touch-friendly tap highlights */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Prevent text selection on interactive elements */
+  button, a, input, select, textarea {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Allow text selection on content */
+  p, h1, h2, h3, h4, h5, h6, span, div {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+}
+
+/* Component styles */
+@layer components {
+  /* Responsive container */
+  .container-responsive {
+    @apply w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Form floating labels */
+  .form-group {
+    @apply relative;
+  }
+
+  .form-group input:not(:placeholder-shown) + label,
+  .form-group input:focus + label {
+    @apply transform -translate-y-6 scale-75 text-primary-600 dark:text-primary-400;
+  }
+
+  .form-group label {
+    @apply absolute left-3 top-2.5 text-gray-500 dark:text-gray-400 transition-all duration-200 pointer-events-none origin-left;
+  }
+
+  .form-group input {
+    @apply w-full px-3 py-3 md:py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-transparent focus:border-primary-500 focus:ring-2 focus:ring-primary-500 focus:ring-opacity-20 text-base;
+  }
+
+  /* Document card styles */
+  .document-card {
+    @apply bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 md:p-6 hover:shadow-md transition-all duration-200;
+  }
+
+  .document-header {
+    @apply flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3;
+  }
+
+  .document-type {
+    @apply flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400;
+  }
+
+  .document-status {
+    @apply px-2 py-1 rounded-full text-xs font-medium;
+  }
+
+  .status-normal {
+    @apply bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400;
+  }
+
+  .status-lost {
+    @apply bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-400;
+  }
+
+  .status-found {
+    @apply bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-400;
+  }
+
+  /* Feed card styles */
+  .feed-card {
+    @apply bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 md:p-6 hover:shadow-md transition-all duration-200;
+  }
+
+  .feed-header {
+    @apply flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3;
+  }
+
+  /* Chat styles */
+  .chat-message {
+    @apply mb-4 max-w-xs sm:max-w-sm md:max-w-md;
+  }
+
+  .chat-message.own {
+    @apply ml-auto;
+  }
+
+  .chat-message.own .message-content {
+    @apply bg-primary-500 text-white;
+  }
+
+  .chat-message.other .message-content {
+    @apply bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100;
+  }
+
+  .message-content {
+    @apply px-4 py-2 rounded-2xl text-sm md:text-base;
+  }
+
+  .message-time {
+    @apply text-xs text-gray-500 dark:text-gray-400 mt-1 px-2;
+  }
+
+  /* Navigation styles */
+  .nav-item {
+    @apply flex flex-col items-center gap-1 p-2 text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200;
+  }
+
+  .nav-item.active {
+    @apply text-primary-600 dark:text-primary-400;
+  }
+
+  /* File upload area */
+  .file-upload-area {
+    @apply border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 md:p-8 text-center hover:border-primary-500 transition-colors duration-200 cursor-pointer;
+  }
+
+  .file-upload-area.dragover {
+    @apply border-primary-500 bg-primary-50 dark:bg-primary-900/10;
+  }
+
+  /* Empty state */
+  .empty-state {
+    @apply text-center py-8 md:py-12;
+  }
+
+  .empty-state i {
+    @apply text-3xl md:text-4xl text-gray-400 dark:text-gray-600 mb-4;
+  }
+
+  .empty-state h3 {
+    @apply text-base md:text-lg font-medium text-gray-900 dark:text-gray-100 mb-2;
+  }
+
+  .empty-state p {
+    @apply text-sm md:text-base text-gray-600 dark:text-gray-400;
+  }
+
+  /* Responsive grid layouts */
+  .grid-responsive {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6;
+  }
+
+  .grid-responsive-2 {
+    @apply grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6;
+  }
+
+  .grid-responsive-3 {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6;
+  }
+
+  /* Responsive spacing utilities */
+  .section-padding {
+    @apply py-6 md:py-8 lg:py-12;
+  }
+
+  .section-margin {
+    @apply my-6 md:my-8 lg:my-12;
+  }
+
+  /* Mobile-first button sizes */
+  .btn-mobile {
+    @apply px-4 py-3 text-base font-medium rounded-lg;
+  }
+
+  .btn-tablet {
+    @apply md:px-6 md:py-2.5 md:text-sm;
+  }
+
+  .btn-desktop {
+    @apply lg:px-8 lg:py-3 lg:text-base;
+  }
+}
+
+/* Utility classes */
+@layer utilities {
+  /* Animation utilities */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  .animate-slide-down {
+    animation: slideDown 0.3s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.2s ease-out;
+  }
+
+  /* Custom scrollbar for specific elements */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(156 163 175) rgb(243 244 246);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    @apply w-2;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-gray-100 dark:bg-gray-800;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-gray-400 dark:bg-gray-600 rounded-full;
+  }
+
+  /* Safe area insets for mobile */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-area-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-area-right {
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Responsive text utilities */
+  .text-responsive-xs {
+    @apply text-xs md:text-sm;
+  }
+
+  .text-responsive-sm {
+    @apply text-sm md:text-base;
+  }
+
+  .text-responsive-base {
+    @apply text-base md:text-lg;
+  }
+
+  .text-responsive-lg {
+    @apply text-lg md:text-xl;
+  }
+
+  .text-responsive-xl {
+    @apply text-xl md:text-2xl;
+  }
+
+  /* Responsive spacing utilities */
+  .space-responsive-xs {
+    @apply space-y-2 md:space-y-3;
+  }
+
+  .space-responsive-sm {
+    @apply space-y-3 md:space-y-4;
+  }
+
+  .space-responsive-md {
+    @apply space-y-4 md:space-y-6;
+  }
+
+  .space-responsive-lg {
+    @apply space-y-6 md:space-y-8;
+  }
+
+  /* Touch-friendly spacing for mobile */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+}
+
+/* Leaflet map override styles */
+.leaflet-container {
+  @apply bg-gray-100 dark:bg-gray-800;
+}
+
+.leaflet-control {
+  @apply border-gray-300 dark:border-gray-600;
+}
+
+.leaflet-control a {
+  @apply text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800;
+}
+
+.leaflet-popup-content-wrapper {
+  @apply bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100;
+}
+
+/* Loading spinner */
+.spinner {
+  @apply w-8 h-8 border-4 border-gray-200 border-t-primary-500 rounded-full animate-spin;
+}
+
+.spinner-small {
+  @apply w-4 h-4 border-2 border-gray-200 border-t-primary-500 rounded-full animate-spin;
+}
+
+/* Toast animations */
+@keyframes toast-enter {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toast-leave {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.toast-enter {
+  animation: toast-enter 0.3s ease-out;
+}
+
+.toast-leave {
+  animation: toast-leave 0.3s ease-out;
+}
+
+/* Mobile-specific enhancements */
+@media (max-width: 768px) {
+  /* Ensure proper touch targets */
+  button, a, input, select, textarea {
+    @apply touch-target;
+  }
+  
+  /* Improve mobile form experience */
+  input, select, textarea {
+    @apply text-base;
+    font-size: 16px !important;
+  }
+  
+  /* Better mobile spacing */
+  .container-responsive {
+    @apply px-4;
+  }
+}
+
+/* Tablet and desktop enhancements */
+@media (min-width: 768px) {
+  /* Desktop-specific spacing */
+  .container-responsive {
+    @apply px-6;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-responsive {
+    @apply px-8;
+  }
+}

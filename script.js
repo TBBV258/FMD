@@ -8,158 +8,529 @@ let feedSubscription = null;
 let notificationSubscription = null;
 let selectedLocation = null;
 let currentMap = null;
+let authInitialized = false;
+let authCheckCompleted = false; // New flag to track auth check completion
 
-// Storage keys (keeping for theme and language preferences only)
+// Storage keys
 const STORAGE_KEYS = {
     LANGUAGE: 'findmydocs_language',
     THEME: 'findmydocs_theme'
 };
 
-// Initialize app
-document.addEventListener('DOMContentLoaded', async () => {
-    // Load saved preferences
-    currentLanguage = localStorage.getItem(STORAGE_KEYS.LANGUAGE) || 'pt';
-    currentTheme = localStorage.getItem(STORAGE_KEYS.THEME) || 'light';
+// Helper function to show errors
+function showError(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast error';
+    toast.textContent = message;
     
-    // Apply theme and language
-    document.body.setAttribute('data-theme', currentTheme);
-    updateTranslations();
-    
-    // Initialize auth state listener
-    auth.onAuthStateChange((event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-            handleUserSignedIn(session.user);
-        } else if (event === 'SIGNED_OUT') {
-            handleUserSignedOut();
-        }
-    });
-    
-    // Check if user is already logged in
-    const user = await auth.getCurrentUser();
-    if (user) {
-        await handleUserSignedIn(user);
+    const toastContainer = document.getElementById('toast-container');
+    if (toastContainer) {
+        toastContainer.appendChild(toast);
     } else {
-        showLogin();
+        document.body.appendChild(toast);
     }
     
-    // Initialize event listeners
-    initializeEventListeners();
+    setTimeout(() => {
+        toast.remove();
+    }, 5000);
+}
+
+// Helper function to hide loading spinner
+function hideLoadingSpinner() {
+    const spinner = document.getElementById('loading-spinner');
+    if (spinner) {
+        // Add hidden class
+        spinner.classList.add('hidden');
+        
+        // Force hide with inline styles (more aggressive)
+        spinner.style.setProperty('display', 'none', 'important');
+        spinner.style.setProperty('visibility', 'hidden', 'important');
+        spinner.style.setProperty('opacity', '0', 'important');
+        spinner.style.setProperty('z-index', '-1', 'important');
+        spinner.style.setProperty('pointer-events', 'none', 'important');
+        
+        console.log('✅ Loading spinner hidden aggressively');
+    } else {
+        console.log('⚠️ Loading spinner element not found');
+    }
+}
+
+// Force reset loading state (emergency function)
+function forceResetLoadingState() {
+    console.log('🚨 Force resetting loading state...');
+    hideLoadingSpinner();
+    authCheckCompleted = true;
+    authInitialized = false;
+    window.userSignInInProgress = false;
+    window.appAlreadyShown = false;
+    showLogin();
+}
+
+// Initialize app
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🚀 Starting app initialization...');
+    
+    try {
+        // Load saved preferences
+        currentLanguage = localStorage.getItem(STORAGE_KEYS.LANGUAGE) || 'pt';
+        currentTheme = localStorage.getItem(STORAGE_KEYS.THEME) || 'light';
+        
+        // Apply theme and language
+        document.body.setAttribute('data-theme', currentTheme);
+        updateTranslations();
+        
+        // Wait for Supabase client to be initialized
+        let attempts = 0;
+        const maxAttempts = 50;
+        
+        console.log('⏳ Waiting for Supabase client...');
+        while (!window.supabaseClient && attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+        }
+        
+        if (!window.supabaseClient) {
+            console.error('❌ Supabase client not initialized after maximum attempts');
+            showError('Failed to initialize database connection. Please refresh the page.');
+            hideLoadingSpinner();
+            showLogin();
+            return;
+        }
+        
+        console.log('✅ Supabase client ready, setting up auth...');
+        
+        // Initialize authentication system (only if not already done)
+        if (!authInitialized) {
+            await initializeAuthentication();
+        } else {
+            console.log('⚠️ Authentication already initialized, skipping...');
+        }
+        
+        // Set a fallback timeout to ensure login screen is shown
+        setTimeout(() => {
+            if (!authCheckCompleted) {
+                console.warn('⚠️ Auth initialization timeout, showing login screen');
+                hideLoadingSpinner();
+                showLogin();
+                authCheckCompleted = true;
+            }
+        }, 12000); // Reduced to 12 seconds
+        
+        // Initialize event listeners
+        console.log('🔧 Setting up event listeners...');
+        initializeEventListeners();
+        
+        // Test database connection
+        console.log('🔍 Testing database connection...');
+        const dbTestResult = await testDatabaseConnection();
+        if (!dbTestResult) {
+            console.warn('⚠️ Database connection failed, but continuing with auth...');
+        }
+        
+        // Final safety check - if we're still loading after 20 seconds, force show login
+        setTimeout(() => {
+            if (!authCheckCompleted) {
+                console.error('🚨 CRITICAL: App stuck in loading state, forcing login screen');
+                hideLoadingSpinner();
+                showLogin();
+                authCheckCompleted = true;
+            }
+        }, 20000);
+        
+        // Additional safety check - hide spinner if user is already logged in
+        setTimeout(() => {
+            if (currentUser && !document.getElementById('loading-spinner')?.classList.contains('hidden')) {
+                console.log('🔍 User logged in but spinner still visible, hiding...');
+                hideLoadingSpinner();
+            }
+        }, 5000);
+        
+        console.log('✅ App initialization complete!');
+        
+    } catch (error) {
+        console.error('❌ Unexpected error during initialization:', error);
+        hideLoadingSpinner();
+        showLogin();
+    }
 });
+
+// Initialize authentication system
+async function initializeAuthentication() {
+    if (authInitialized) {
+        console.log('⚠️ Authentication already initialized, skipping...');
+        return;
+    }
+    
+    try {
+        // Set up auth state listener (only once)
+        const { auth } = window.supabaseClient;
+        
+        // Track last processed event to prevent duplicates
+        let lastProcessedEvent = null;
+        let lastProcessedTime = 0;
+        let isProcessingAuth = false; // Prevent concurrent auth processing
+        
+        auth.onAuthStateChange(async (event, session) => {
+            console.log('🔐 Auth state changed:', event, session);
+            
+            // Prevent duplicate events within 2 seconds
+            const now = Date.now();
+            if (lastProcessedEvent === event && (now - lastProcessedTime) < 2000) {
+                console.log('⚠️ Ignoring duplicate auth event:', event);
+                return;
+            }
+            
+            // Prevent concurrent processing
+            if (isProcessingAuth) {
+                console.log('⚠️ Auth event already being processed, skipping:', event);
+                return;
+            }
+            
+            lastProcessedEvent = event;
+            lastProcessedTime = now;
+            isProcessingAuth = true;
+            
+            try {
+                if (event === 'SIGNED_IN' && session?.user) {
+                    console.log('👤 Processing SIGNED_IN event for:', session.user.email);
+                    await handleUserSignedIn(session.user);
+                } else if (event === 'SIGNED_OUT') {
+                    console.log('👤 Processing SIGNED_OUT event');
+                    handleUserSignedOut();
+                } else if (event === 'INITIAL_SESSION') {
+                    if (session?.user) {
+                        console.log('👤 User already logged in:', session.user.email);
+                        await handleUserSignedIn(session.user);
+                    } else {
+                        console.log('👤 No user logged in, showing login screen');
+                        hideLoadingSpinner();
+                        showLogin();
+                    }
+                    authCheckCompleted = true;
+                } else if (event === 'TOKEN_REFRESHED') {
+                    console.log('🔄 Token refreshed');
+                    if (!authCheckCompleted) {
+                        // If we haven't completed auth check yet, wait for INITIAL_SESSION
+                        console.log('⏳ Waiting for INITIAL_SESSION event...');
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Error processing auth event:', event, error);
+                hideLoadingSpinner();
+                showLogin();
+                authCheckCompleted = true; // Mark as completed even on error
+            } finally {
+                isProcessingAuth = false;
+            }
+        });
+        
+        // Set a timeout to ensure we don't get stuck in loading state
+        setTimeout(() => {
+            if (!authCheckCompleted) {
+                console.warn('⚠️ Auth check timeout, showing login screen');
+                hideLoadingSpinner();
+                showLogin();
+                authCheckCompleted = true;
+            }
+        }, 8000); // Reduced to 8 seconds
+        
+        authInitialized = true;
+        console.log('✅ Authentication system initialized');
+        
+    } catch (error) {
+        console.error('❌ Error initializing authentication:', error);
+        hideLoadingSpinner();
+        showLogin();
+        authCheckCompleted = true;
+    }
+}
 
 // Event listeners
 function initializeEventListeners() {
-    // Theme toggle
-    document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
-    document.getElementById('theme-toggle-app')?.addEventListener('click', toggleTheme);
-    
-    // Language toggle
-    document.getElementById('lang-pt')?.addEventListener('click', () => setLanguage('pt'));
-    document.getElementById('lang-en')?.addEventListener('click', () => setLanguage('en'));
-    
-    // Auth forms
-    document.getElementById('login-form')?.addEventListener('submit', handleLogin);
-    document.getElementById('signup-form')?.addEventListener('submit', handleSignup);
-    document.getElementById('signup-btn')?.addEventListener('click', () => showModal('signup-modal'));
-    document.getElementById('google-login-btn')?.addEventListener('click', handleGoogleLogin);
-    document.getElementById('logout-btn')?.addEventListener('click', handleLogout);
-    
-    // Document management
-    document.getElementById('add-document')?.addEventListener('click', () => showModal('document-modal'));
-    document.getElementById('document-form')?.addEventListener('submit', handleAddDocument);
-    
-    // Lost/Found forms
-    document.getElementById('lost-form')?.addEventListener('submit', handleReportLost);
-    document.getElementById('found-form')?.addEventListener('submit', handleReportFound);
-    
-    // Feed tabs
-    document.querySelectorAll('.feed-tab').forEach(tab => {
-        tab.addEventListener('click', handleFeedTabChange);
-    });
-    
-    // Feed filters
-    document.getElementById('feed-type-filter')?.addEventListener('change', handleFeedFilterChange);
-    document.getElementById('feed-search')?.addEventListener('input', debounce(handleFeedFilterChange, 500));
-    
-    // Chat
-    document.getElementById('chat-input')?.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') handleSendMessage();
-    });
-    document.getElementById('send-message')?.addEventListener('click', handleSendMessage);
-    
-    // Location
-    document.getElementById('lost-location-btn')?.addEventListener('click', () => openLocationModal('lost'));
-    document.getElementById('found-location-btn')?.addEventListener('click', () => openLocationModal('found'));
-    document.getElementById('confirm-location')?.addEventListener('click', confirmLocation);
-    
-    // File uploads
-    setupFileUpload('document-upload-area', 'document-files');
-    setupFileUpload('lost-upload-area', 'lost-files');
-    setupFileUpload('found-upload-area', 'found-files');
-    
-    // Modal management
-    document.querySelectorAll('.close-modal').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const modal = e.target.closest('.modal');
-            hideModal(modal.id);
+    try {
+        // Theme toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeToggleApp = document.getElementById('theme-toggle-app');
+        themeToggle?.addEventListener('click', toggleTheme);
+        themeToggleApp?.addEventListener('click', toggleTheme);
+        
+        // Language toggle
+        const langPt = document.getElementById('lang-pt');
+        const langEn = document.getElementById('lang-en');
+        langPt?.addEventListener('click', () => setLanguage('pt'));
+        langEn?.addEventListener('click', () => setLanguage('en'));
+        
+        // Auth forms
+        const loginForm = document.getElementById('login-form');
+        const signupForm = document.getElementById('signup-form');
+        const signupBtn = document.getElementById('signup-btn');
+        const googleLoginBtn = document.getElementById('google-login-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        
+        loginForm?.addEventListener('submit', handleLogin);
+        signupForm?.addEventListener('submit', handleSignup);
+        signupBtn?.addEventListener('click', () => showModal('signup-modal'));
+        googleLoginBtn?.addEventListener('click', handleGoogleLogin);
+        logoutBtn?.addEventListener('click', handleLogout);
+        
+        // Document management
+        const addDocumentBtn = document.getElementById('add-document');
+        const documentForm = document.getElementById('document-form');
+        addDocumentBtn?.addEventListener('click', () => showModal('document-modal'));
+        documentForm?.addEventListener('submit', handleAddDocument);
+        
+        // Lost/Found forms
+        const lostForm = document.getElementById('lost-form');
+        const foundForm = document.getElementById('found-form');
+        lostForm?.addEventListener('submit', handleReportLost);
+        foundForm?.addEventListener('submit', handleReportFound);
+        
+        // Feed tabs
+        const feedTabs = document.querySelectorAll('.feed-tab');
+        feedTabs.forEach(tab => {
+            tab.addEventListener('click', handleFeedTabChange);
         });
-    });
-    
-    // Bottom navigation
-    setupBottomNavigation();
-    
-    // Upgrade button
-    document.getElementById('upgrade-btn')?.addEventListener('click', () => showModal('upgrade-modal'));
-    
-    // Profile actions
-    document.getElementById('change-avatar-btn')?.addEventListener('click', () => {
-        document.getElementById('avatar-upload').click();
-    });
-    document.getElementById('avatar-upload')?.addEventListener('change', handleAvatarUpload);
-    
-    // Country prefix setup
-    setupCountryPrefix('lost-country', 'lost-prefix');
-    setupCountryPrefix('found-country', 'found-prefix');
+        
+        // Feed filters
+        const feedTypeFilter = document.getElementById('feed-type-filter');
+        const feedSearch = document.getElementById('feed-search');
+        feedTypeFilter?.addEventListener('change', handleFeedFilterChange);
+        feedSearch?.addEventListener('input', debounce(handleFeedFilterChange, 500));
+        
+        // Chat
+        const chatInput = document.getElementById('chat-input');
+        const sendMessageBtn = document.getElementById('send-message');
+        chatInput?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSendMessage();
+        });
+        sendMessageBtn?.addEventListener('click', handleSendMessage);
+        
+        // Location
+        const lostLocationBtn = document.getElementById('lost-location-btn');
+        const foundLocationBtn = document.getElementById('found-location-btn');
+        const confirmLocationBtn = document.getElementById('confirm-location');
+        lostLocationBtn?.addEventListener('click', () => openLocationModal('lost'));
+        foundLocationBtn?.addEventListener('click', () => openLocationModal('found'));
+        confirmLocationBtn?.addEventListener('click', confirmLocation);
+        
+        // File uploads
+        setupFileUpload('document-upload-area', 'document-files');
+        setupFileUpload('lost-upload-area', 'lost-files');
+        setupFileUpload('found-upload-area', 'found-files');
+        
+        // Modal management
+        const closeModalBtns = document.querySelectorAll('.close-modal');
+        closeModalBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const modal = e.target.closest('.modal');
+                hideModal(modal.id);
+            });
+        });
+        
+        // Bottom navigation
+        setupBottomNavigation();
+        
+        // Profile actions
+        const changeAvatarBtn = document.getElementById('change-avatar-btn');
+        const avatarUpload = document.getElementById('avatar-upload');
+        changeAvatarBtn?.addEventListener('click', () => {
+            document.getElementById('avatar-upload').click();
+        });
+        avatarUpload?.addEventListener('change', handleAvatarUpload);
+        
+        // Country prefix setup
+        setupCountryPrefix('lost-country', 'lost-prefix');
+        setupCountryPrefix('found-country', 'found-prefix');
+        
+        console.log('✅ All event listeners set up successfully!');
+        
+    } catch (error) {
+        console.error('❌ Error setting up event listeners:', error);
+        throw error;
+    }
+}
+
+// Test database connection
+async function testDatabaseConnection() {
+    try {
+        const { data, error } = await window.supabaseClient
+            .from('users')
+            .select('count')
+            .limit(1);
+        
+        if (error) {
+            console.error('❌ Database connection failed:', error);
+            if (error.message.includes('relation "users" does not exist')) {
+                showToast('❌ Database tables not set up. Please run the database setup script first.', 'error');
+            } else if (error.message.includes('permission denied')) {
+                showToast('❌ Database permissions issue. Check your Supabase configuration.', 'error');
+            } else {
+                showToast('❌ Database connection error: ' + error.message, 'error');
+            }
+            return false;
+        }
+        
+        console.log('✅ Database connection successful');
+        return true;
+    } catch (error) {
+        console.error('❌ Database test failed:', error);
+        showToast('❌ Cannot connect to database. Check your internet connection.', 'error');
+        return false;
+    }
 }
 
 // Auth functions
 async function handleLogin(e) {
     e.preventDefault();
-    showLoading(true);
+    
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value.trim();
+    
+    // Validate form inputs
+    if (!email) {
+        showToast('Por favor, insira seu email.', 'error');
+        document.getElementById('login-email').focus();
+        return;
+    }
+    
+    if (!password) {
+        showToast('Por favor, insira sua senha.', 'error');
+        document.getElementById('login-password').focus();
+        return;
+    }
+    
+    if (!email.includes('@')) {
+        showToast('Por favor, insira um email válido.', 'error');
+        document.getElementById('login-password').focus();
+        return;
+    }
+    
+    // Show loading state on the login form
+    const loginForm = document.getElementById('login-form');
+    const submitBtn = loginForm.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.textContent;
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<div class="spinner-small"></div> Carregando...';
     
     try {
-        const email = document.getElementById('login-email').value;
-        const password = document.getElementById('login-password').value;
+        console.log('🔐 Attempting login with email:', email);
         
-        await auth.signIn(email, password);
-        showToast(t('message.login_success') || 'Login realizado com sucesso!', 'success');
+        // Clear any existing sign-in progress flag
+        if (window.userSignInInProgress) {
+            window.userSignInInProgress = false;
+        }
+        
+        const { auth } = window.supabaseClient;
+        const { data, error } = await auth.signInWithPassword({
+            email: email,
+            password: password
+        });
+        
+        if (error) {
+            throw error;
+        }
+        
+        console.log('✅ Login request sent successfully');
+        // The auth state change listener will handle the success case
+        
     } catch (error) {
         console.error('Login error:', error);
-        showToast(error.message || 'Erro no login. Verifique suas credenciais.', 'error');
-    } finally {
-        showLoading(false);
+        
+        let errorMessage = 'Erro no login. Verifique suas credenciais.';
+        
+        if (error.message.includes('Invalid login credentials')) {
+            errorMessage = 'Email ou senha incorretos.';
+        } else if (error.message.includes('missing email or phone')) {
+            errorMessage = 'Por favor, insira email e senha.';
+        } else if (error.message.includes('Email not confirmed')) {
+            errorMessage = 'Por favor, confirme seu email antes de fazer login.';
+        } else if (error.message.includes('Too many requests')) {
+            errorMessage = 'Muitas tentativas. Tente novamente em alguns minutos.';
+        }
+        
+        showToast(errorMessage, 'error');
+        
+        // Reset form loading state
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalBtnText;
     }
 }
 
 async function handleSignup(e) {
     e.preventDefault();
+    
+    const email = document.getElementById('signup-email').value.trim();
+    const password = document.getElementById('signup-password').value.trim();
+    const firstName = document.getElementById('signup-first-name').value.trim();
+    const lastName = document.getElementById('signup-last-name').value.trim();
+    
+    // Validate form inputs
+    if (!email) {
+        showToast('Por favor, insira seu email.', 'error');
+        document.getElementById('signup-email').focus();
+        return;
+    }
+    
+    if (!email.includes('@')) {
+        showToast('Por favor, insira um email válido.', 'error');
+        document.getElementById('signup-email').focus();
+        return;
+    }
+    
+    if (!password) {
+        showToast('Por favor, insira uma senha.', 'error');
+        document.getElementById('signup-password').focus();
+        return;
+    }
+    
+    if (password.length < 6) {
+        showToast('A senha deve ter pelo menos 6 caracteres.', 'error');
+        document.getElementById('signup-password').focus();
+        return;
+    }
+    
+    if (!firstName) {
+        showToast('Por favor, insira seu nome.', 'error');
+        document.getElementById('signup-first-name').focus();
+        return;
+    }
+    
+    if (!lastName) {
+        showToast('Por favor, insira seu sobrenome.', 'error');
+        document.getElementById('signup-last-name').focus();
+        return;
+    }
+    
     showLoading(true);
     
     try {
-        const email = document.getElementById('signup-email').value;
-        const password = document.getElementById('signup-password').value;
-        const firstName = document.getElementById('signup-first-name').value;
-        const lastName = document.getElementById('signup-last-name').value;
-        
+        console.log('🔐 Attempting signup with email:', email);
+        const { auth } = window.supabaseClient;
         await auth.signUp(email, password, {
             first_name: firstName,
             last_name: lastName
         });
         
         hideModal('signup-modal');
-        showToast('Conta criada com sucesso! Verifique seu email.', 'success');
+        showToast('Conta criada com sucesso! Verifique seu email para confirmar.', 'success');
     } catch (error) {
         console.error('Signup error:', error);
-        showToast(error.message || 'Erro ao criar conta.', 'error');
+        
+        let errorMessage = 'Erro ao criar conta.';
+        
+        if (error.message.includes('Database error saving new user')) {
+            errorMessage = 'Erro no banco de dados. Verifique se o email já não está em uso.';
+        } else if (error.message.includes('User already registered')) {
+            errorMessage = 'Este email já está registrado. Tente fazer login.';
+        } else if (error.message.includes('Password should be at least 6 characters')) {
+            errorMessage = 'A senha deve ter pelo menos 6 caracteres.';
+        } else if (error.message.includes('Invalid email')) {
+            errorMessage = 'Por favor, insira um email válido.';
+        }
+        
+        showToast(errorMessage, 'error');
     } finally {
         showLoading(false);
     }
@@ -167,6 +538,7 @@ async function handleSignup(e) {
 
 async function handleGoogleLogin() {
     try {
+        const { auth } = window.supabaseClient;
         await auth.signInWithGoogle();
     } catch (error) {
         console.error('Google login error:', error);
@@ -176,6 +548,7 @@ async function handleGoogleLogin() {
 
 async function handleLogout() {
     try {
+        const { auth } = window.supabaseClient;
         await auth.signOut();
         showToast('Logout realizado com sucesso!', 'success');
     } catch (error) {
@@ -185,17 +558,37 @@ async function handleLogout() {
 }
 
 async function handleUserSignedIn(user) {
-    currentUser = user;
+    // Prevent multiple simultaneous sign-in handling
+    if (window.userSignInInProgress) {
+        console.log('⚠️ User sign-in already in progress, skipping...');
+        return;
+    }
+    
+    // Also check if we already have this user loaded
+    if (currentUser && currentUser.id === user.id && window.appAlreadyShown) {
+        console.log('⚠️ User already loaded and app shown, skipping...');
+        return;
+    }
+    
+    window.userSignInInProgress = true;
+    console.log('👤 Handling user sign in for:', user.email);
     
     try {
+        currentUser = user;
+        
         // Get or create user profile
         try {
             currentUserProfile = await database.getUserProfile(user.id);
+            console.log('✅ User profile found:', currentUserProfile);
         } catch (error) {
-            if (error.code === 'PGRST116') { // Not found
+            console.error('❌ Error getting user profile:', error);
+            // Fallback: try to create profile manually if trigger failed
+            try {
                 currentUserProfile = await database.createUserProfile(user);
-            } else {
-                throw error;
+                console.log('✅ User profile created manually:', currentUserProfile);
+            } catch (createError) {
+                console.error('❌ Failed to create user profile:', createError);
+                throw createError;
             }
         }
         
@@ -209,16 +602,38 @@ async function handleUserSignedIn(user) {
         // Setup realtime subscriptions
         setupRealtimeSubscriptions();
         
+        // Show the app
         showApp();
+        
+        // Show success message only if not already shown
+        if (!window.appAlreadyShown) {
+            showToast('Login realizado com sucesso!', 'success');
+        }
+        
+        // Mark auth as completed and ensure loading spinner is hidden
+        authCheckCompleted = true;
+        hideLoadingSpinner();
+        
     } catch (error) {
         console.error('Error handling signed in user:', error);
         showToast('Erro ao carregar dados do usuário.', 'error');
+        // On error, still mark as completed and show login
+        authCheckCompleted = true;
+        hideLoadingSpinner();
+        showLogin();
+    } finally {
+        window.userSignInInProgress = false;
     }
 }
 
 function handleUserSignedOut() {
     currentUser = null;
     currentUserProfile = null;
+    
+    // Reset app state flags
+    window.appAlreadyShown = false;
+    window.userSignInInProgress = false;
+    authCheckCompleted = false; // Reset auth check for next login
     
     // Clean up subscriptions
     if (feedSubscription) {
@@ -242,6 +657,29 @@ async function handleAddDocument(e) {
         const formData = new FormData(e.target);
         const files = document.getElementById('document-files').files;
         
+        console.log('📁 Files to upload:', files.length);
+        
+        // Debug: Log all form data
+        console.log('🔍 Form data entries:');
+        for (let [key, value] of formData.entries()) {
+            console.log(`  ${key}: ${value}`);
+        }
+        
+        // Validate required fields
+        const type = formData.get('document-type');
+        const name = formData.get('document-name');
+        const number = formData.get('document-number');
+        
+        console.log('🔍 Raw form values:', { type, name, number });
+        
+        if (!type || !name || !number) {
+            console.error('❌ Missing required fields:', { type, name, number });
+            showToast('Por favor, preencha todos os campos obrigatórios.', 'error');
+            return;
+        }
+        
+        console.log('✅ Form validation passed:', { type, name, number });
+        
         // Check free plan limits
         if (!currentUserProfile.is_premium) {
             const userDocs = await database.getUserDocuments(currentUser.id);
@@ -251,27 +689,39 @@ async function handleAddDocument(e) {
             }
         }
         
-        // Upload files if any
-        let uploadedFiles = [];
-        if (files.length > 0) {
-            const documentId = `doc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            uploadedFiles = await storage.uploadDocumentFiles(Array.from(files), documentId);
-        }
-        
-        // Create document
+        // Create document first (let database generate the ID)
         const documentData = {
-            id: `doc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             user_id: currentUser.id,
-            type: formData.get('type'),
-            name: formData.get('name'),
-            number: formData.get('number'),
-            description: formData.get('description') || null,
+            type: formData.get('document-type'),
+            name: formData.get('document-name'),
+            number: formData.get('document-number'),
+            description: formData.get('document-description') || null,
             status: 'normal',
-            files: uploadedFiles,
+            files: [],
             created_at: new Date().toISOString()
         };
         
-        await database.createDocument(documentData);
+        console.log('📄 Creating document with data:', documentData);
+        const createdDocument = await database.createDocument(documentData);
+        console.log('✅ Document created:', createdDocument);
+        
+        // Upload files if any (using the real document ID)
+        if (files.length > 0) {
+            console.log('📤 Uploading files for document ID:', createdDocument.id);
+            const uploadedFiles = await storage.uploadDocumentFiles(Array.from(files), createdDocument.id);
+            console.log('📤 Files uploaded successfully:', uploadedFiles);
+            
+            // Update document with file information
+            console.log('🔄 Updating document with files:', { files: uploadedFiles });
+            const updatedDocument = await database.updateDocument(createdDocument.id, { files: uploadedFiles });
+            console.log('✅ Document updated with files:', updatedDocument);
+            
+            // Verify the update worked by querying the document again
+            console.log('🔍 Verifying document update...');
+            const verificationDoc = await database.getDocumentById(createdDocument.id);
+            console.log('🔍 Verification - Document after update:', verificationDoc);
+            console.log('🔍 Verification - Files field:', verificationDoc.files);
+        }
         
         // Reset form and close modal
         e.target.reset();
@@ -282,7 +732,13 @@ async function handleAddDocument(e) {
         
         showToast(t('message.document_added') || 'Documento adicionado com sucesso!', 'success');
     } catch (error) {
-        console.error('Error adding document:', error);
+        console.error('❌ Error adding document:', error);
+        console.error('❌ Error details:', {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint
+        });
         showToast(error.message || 'Erro ao adicionar documento.', 'error');
     } finally {
         showLoading(false);
@@ -297,30 +753,66 @@ async function handleReportLost(e) {
         const formData = new FormData(e.target);
         const files = document.getElementById('lost-files').files;
         
-        // Upload files if any
-        let uploadedFiles = [];
-        if (files.length > 0) {
-            const documentId = `lost_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            uploadedFiles = await storage.uploadDocumentFiles(Array.from(files), documentId);
+        console.log('📁 Lost files to upload:', files.length);
+        
+        // Debug: Log all form data
+        console.log('🔍 Lost form data entries:');
+        for (let [key, value] of formData.entries()) {
+            console.log(`  ${key}: ${value}`);
         }
         
-        // Create lost document report
+        // Validate required fields
+        const type = formData.get('lost-document-type');
+        const name = formData.get('lost-document-name');
+        const location = formData.get('lost-location');
+        const contact = formData.get('lost-contact');
+        
+        console.log('🔍 Raw lost form values:', { type, name, location, contact });
+        
+        if (!type || !name || !location || !contact) {
+            console.error('❌ Missing required fields for lost document:', { type, name, location, contact });
+            showToast('Por favor, preencha todos os campos obrigatórios.', 'error');
+            return;
+        }
+        
+        console.log('✅ Lost form validation passed:', { type, name, location, contact });
+        
+        // Create lost document report first (let database generate the ID)
         const documentData = {
-            id: `lost_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             user_id: currentUser.id,
-            type: formData.get('document_type'),
-            name: formData.get('document_name'),
-            description: formData.get('description'),
-            location: formData.get('location'),
-            contact_info: formData.get('contact_info'),
+            type: formData.get('lost-document-type'),
+            name: formData.get('lost-document-name'),
+            description: formData.get('lost-description'),
+            location: formData.get('lost-location'),
+            contact_info: formData.get('lost-contact'),
             status: 'lost',
-            files: uploadedFiles,
+            files: [],
             latitude: selectedLocation?.lat || null,
             longitude: selectedLocation?.lng || null,
             created_at: new Date().toISOString()
         };
         
-        await database.createDocument(documentData);
+        console.log('📄 Creating lost document with data:', documentData);
+        const createdDocument = await database.createDocument(documentData);
+        console.log('✅ Lost document created:', createdDocument);
+        
+        // Upload files if any (using the real document ID)
+        if (files.length > 0) {
+            console.log('📤 Uploading lost files for document ID:', createdDocument.id);
+            const uploadedFiles = await storage.uploadDocumentFiles(Array.from(files), createdDocument.id);
+            console.log('📤 Lost files uploaded successfully:', uploadedFiles);
+            
+            // Update document with file information
+            console.log('🔄 Updating lost document with files:', { files: uploadedFiles });
+            const updatedDocument = await database.updateDocument(createdDocument.id, { files: uploadedFiles });
+            console.log('✅ Lost document updated with files:', updatedDocument);
+            
+            // Verify the update worked by querying the document again
+            console.log('🔍 Verifying lost document update...');
+            const verificationDoc = await database.getDocumentById(createdDocument.id);
+            console.log('🔍 Verification - Lost document after update:', verificationDoc);
+            console.log('🔍 Verification - Files field:', verificationDoc.files);
+        }
         
         // Reset form
         e.target.reset();
@@ -331,7 +823,13 @@ async function handleReportLost(e) {
         
         showToast(t('message.lost_reported') || 'Documento perdido reportado com sucesso!', 'success');
     } catch (error) {
-        console.error('Error reporting lost document:', error);
+        console.error('❌ Error reporting lost document:', error);
+        console.error('❌ Error details:', {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint
+        });
         showToast(error.message || 'Erro ao reportar documento perdido.', 'error');
     } finally {
         showLoading(false);
@@ -346,33 +844,69 @@ async function handleReportFound(e) {
         const formData = new FormData(e.target);
         const files = document.getElementById('found-files').files;
         
-        // Upload files if any
-        let uploadedFiles = [];
-        if (files.length > 0) {
-            const documentId = `found_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            uploadedFiles = await storage.uploadDocumentFiles(Array.from(files), documentId);
+        console.log('📁 Found files to upload:', files.length);
+        
+        // Debug: Log all form data
+        console.log('🔍 Found form data entries:');
+        for (let [key, value] of formData.entries()) {
+            console.log(`  ${key}: ${value}`);
         }
         
-        // Create found document report
+        // Validate required fields
+        const type = formData.get('found-document-type');
+        const name = formData.get('found-document-name');
+        const location = formData.get('found-location');
+        const contact = formData.get('found-contact');
+        
+        console.log('🔍 Raw found form values:', { type, name, location, contact });
+        
+        if (!type || !name || !location || !contact) {
+            console.error('❌ Missing required fields for found document:', { type, name, location, contact });
+            showToast('Por favor, preencha todos os campos obrigatórios.', 'error');
+            return;
+        }
+        
+        console.log('✅ Found form validation passed:', { type, name, location, contact });
+        
+        // Create found document report first (let database generate the ID)
         const documentData = {
-            id: `found_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             user_id: currentUser.id,
-            type: formData.get('document_type'),
-            name: formData.get('document_name'),
-            description: formData.get('description'),
-            location: formData.get('location'),
-            contact_info: formData.get('contact_info'),
+            type: formData.get('found-document-type'),
+            name: formData.get('found-document-name'),
+            description: formData.get('found-description'),
+            location: formData.get('found-location'),
+            contact_info: formData.get('found-contact'),
             status: 'found',
-            files: uploadedFiles,
+            files: [],
             latitude: selectedLocation?.lat || null,
             longitude: selectedLocation?.lng || null,
             created_at: new Date().toISOString()
         };
         
-        await database.createDocument(documentData);
+        console.log('📄 Creating found document with data:', documentData);
+        const createdDocument = await database.createDocument(documentData);
+        console.log('✅ Found document created:', createdDocument);
+        
+        // Upload files if any (using the real document ID)
+        if (files.length > 0) {
+            console.log('📤 Uploading found files for document ID:', createdDocument.id);
+            const uploadedFiles = await storage.uploadDocumentFiles(Array.from(files), createdDocument.id);
+            console.log('📤 Found files uploaded successfully:', uploadedFiles);
+            
+            // Update document with file information
+            console.log('🔄 Updating found document with files:', { files: uploadedFiles });
+            const updatedDocument = await database.updateDocument(createdDocument.id, { files: uploadedFiles });
+            console.log('✅ Found document updated with files:', updatedDocument);
+            
+            // Verify the update worked by querying the document again
+            console.log('🔍 Verifying found document update...');
+            const verificationDoc = await database.getDocumentById(createdDocument.id);
+            console.log('🔍 Verification - Found document after update:', verificationDoc);
+            console.log('🔍 Verification - Files field:', verificationDoc.files);
+        }
         
         // Check for potential matches and create notification
-        await checkForMatches(documentData);
+        await checkForMatches(createdDocument);
         
         // Reset form
         e.target.reset();
@@ -383,7 +917,13 @@ async function handleReportFound(e) {
         
         showToast(t('message.found_reported') || 'Documento encontrado reportado com sucesso!', 'success');
     } catch (error) {
-        console.error('Error reporting found document:', error);
+        console.error('❌ Error reporting found document:', error);
+        console.error('❌ Error details:', {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint
+        });
         showToast(error.message || 'Erro ao reportar documento encontrado.', 'error');
     } finally {
         showLoading(false);
@@ -924,30 +1464,58 @@ function handleFeedFilterChange() {
 
 // Bottom navigation
 function setupBottomNavigation() {
+    console.log('🧭 Setting up bottom navigation...');
     const navItems = document.querySelectorAll('#bottom-nav-bar .nav-item');
     const sections = document.querySelectorAll('.content-section');
     
-    navItems.forEach(item => {
+    console.log('📱 Found nav items:', navItems.length);
+    console.log('📱 Found content sections:', sections.length);
+    
+    navItems.forEach((item, index) => {
+        console.log(`📱 Nav item ${index}:`, item.dataset.navTarget);
+        
         item.addEventListener('click', (e) => {
             e.preventDefault();
+            console.log('🧭 Nav item clicked:', item.dataset.navTarget);
+            
+            // Check if app section is visible before allowing navigation
+            const appSection = document.getElementById('app-section');
+            if (appSection && appSection.classList.contains('hidden')) {
+                console.log('⚠️ App section is hidden, navigation blocked');
+                return;
+            }
             
             const target = item.dataset.navTarget;
             
             // Update active nav item
             navItems.forEach(nav => nav.classList.remove('active'));
             item.classList.add('active');
+            console.log('✅ Active nav item updated');
             
             // Show target section
-            sections.forEach(section => section.classList.remove('active'));
-            document.getElementById(target)?.classList.add('active');
+            sections.forEach(section => {
+                section.classList.remove('active');
+                console.log('📱 Section hidden:', section.id);
+            });
+            
+            const targetSection = document.getElementById(target);
+            if (targetSection) {
+                targetSection.classList.add('active');
+                console.log('✅ Target section shown:', target);
+            } else {
+                console.error('❌ Target section not found:', target);
+            }
             
             // Hide welcome tips if not on documents page
             const welcomeTips = document.getElementById('welcome-tips');
             if (welcomeTips) {
                 welcomeTips.style.display = target === 'documentos' ? 'block' : 'none';
+                console.log('📱 Welcome tips visibility updated for:', target);
             }
         });
     });
+    
+    console.log('✅ Bottom navigation setup complete');
 }
 
 // UI update functions
@@ -1008,18 +1576,131 @@ function setLanguage(lang) {
 
 // UI helper functions
 function showApp() {
-    document.getElementById('login-section').classList.add('hidden');
-    document.getElementById('app-section').classList.remove('hidden');
+    // Prevent multiple app shows
+    if (window.appAlreadyShown) {
+        console.log('⚠️ App already shown, skipping...');
+        return;
+    }
+    
+    // Also check if we're already showing the app
+    const appSection = document.getElementById('app-section');
+    if (appSection && !appSection.classList.contains('hidden')) {
+        console.log('⚠️ App section already visible, skipping...');
+        return;
+    }
+    
+    console.log('🚀 showApp() called');
+    
+    const loginSection = document.getElementById('login-section');
+    
+    if (loginSection) {
+        loginSection.classList.add('hidden');
+        loginSection.style.display = 'none';
+        loginSection.style.visibility = 'hidden';
+        loginSection.style.opacity = '0';
+        loginSection.style.zIndex = '-1';
+        console.log('✅ login-section hidden');
+    }
+    
+    if (appSection) {
+        appSection.classList.remove('hidden');
+        appSection.style.display = 'block';
+        appSection.style.visibility = 'visible';
+        appSection.style.opacity = '1';
+        appSection.style.zIndex = '1';
+        console.log('✅ app-section shown');
+        
+        // Show the default content section (documentos)
+        const defaultSection = document.getElementById('documentos');
+        if (defaultSection) {
+            defaultSection.classList.add('active');
+            console.log('✅ Default content section shown:', defaultSection.id);
+        }
+        
+        // Update bottom navigation to show first tab as active
+        const firstNavItem = document.querySelector('#bottom-nav-bar .nav-item');
+        if (firstNavItem) {
+            document.querySelectorAll('#bottom-nav-bar .nav-item').forEach(item => item.classList.remove('active'));
+            firstNavItem.classList.add('active');
+            console.log('✅ Bottom navigation updated');
+        }
+        
+        window.appAlreadyShown = true;
+        
+        // Ensure loading spinner is hidden when app is shown
+        hideLoadingSpinner();
+    }
 }
 
 function showLogin() {
-    document.getElementById('login-section').classList.remove('hidden');
-    document.getElementById('app-section').classList.add('hidden');
+    console.log('🔍 showLogin() called - looking for elements...');
+    
+    const loginSection = document.getElementById('login-section');
+    const appSection = document.getElementById('app-section');
+    
+    console.log('📱 login-section found:', !!loginSection);
+    console.log('📱 app-section found:', !!appSection);
+    
+    if (loginSection) {
+        loginSection.classList.remove('hidden');
+        loginSection.style.display = 'block';
+        loginSection.style.visibility = 'visible';
+        loginSection.style.opacity = '1';
+        loginSection.style.zIndex = '1000';
+        console.log('✅ login-section shown');
+    } else {
+        console.error('❌ login-section element not found!');
+    }
+    
+    if (appSection) {
+        appSection.classList.add('hidden');
+        appSection.style.display = 'none';
+        appSection.style.visibility = 'hidden';
+        appSection.style.opacity = '0';
+        appSection.style.zIndex = '-1';
+        console.log('✅ app-section hidden');
+        
+        // Also hide all content sections inside the app section
+        const contentSections = appSection.querySelectorAll('.content-section');
+        contentSections.forEach(section => {
+            section.classList.remove('active');
+            console.log('📱 Content section hidden:', section.id);
+        });
+    } else {
+        console.error('❌ app-section element not found!');
+    }
+    
+    // Also make sure loading spinner is hidden
+    hideLoadingSpinner();
+    
+    // Reset any form loading states
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        const submitBtn = loginForm.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Entrar';
+        }
+    }
+    
+    console.log('🔍 Current page state:');
+    console.log('  - login-section hidden:', loginSection?.classList.contains('hidden'));
+    console.log('  - app-section hidden:', appSection?.classList.contains('hidden'));
+    console.log('  - loading-spinner hidden:', document.getElementById('loading-spinner')?.classList.contains('hidden'));
 }
 
 function showModal(modalId) {
-    document.getElementById(modalId).classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
+    console.log('🚪 showModal() called with modalId:', modalId);
+    console.log('🔍 Stack trace:', new Error().stack);
+    
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        console.log('✅ Modal shown:', modalId);
+    } else {
+        console.error('❌ Modal not found:', modalId);
+    }
 }
 
 function hideModal(modalId) {
@@ -1109,3 +1790,7 @@ function updateTranslations() {
 function t(key) {
     return translations[currentLanguage]?.[key] || translations['pt']?.[key] || key;
 }
+
+// Export utility functions for debugging (available in browser console)
+window.forceResetLoadingState = forceResetLoadingState;
+window.hideLoadingSpinner = hideLoadingSpinner;

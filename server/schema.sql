@@ -146,6 +146,23 @@ CREATE POLICY "Users can update own avatar files" ON storage.objects
 CREATE POLICY "Users can delete own avatar files" ON storage.objects
     FOR DELETE USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
 
+-- Notifications table RLS policies
+CREATE POLICY "Users can view own notifications" ON notifications
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert notifications for themselves" ON notifications
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own notifications" ON notifications
+    FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own notifications" ON notifications
+    FOR DELETE USING (auth.uid() = user_id);
+
+-- Allow system functions to insert notifications (for triggers)
+CREATE POLICY "System can insert notifications" ON notifications
+    FOR INSERT WITH CHECK (true);
+
 -- Create functions for automatic timestamps
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$

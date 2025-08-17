@@ -4,15 +4,24 @@ const path = require('path');
 const multer = require('multer');
 const fs = require('fs');
 const { createClient } = require('@supabase/supabase-js');
+const config = require('./config.cjs');
 
 const app = express();
 
 // Initialize Supabase client
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabaseUrl = config.SUPABASE_URL;
+const supabaseKey = config.SUPABASE_ANON_KEY;
+
+// Check if using placeholder credentials
+if (supabaseUrl === 'https://your-project-id.supabase.co' || supabaseKey === 'your-anon-key-here') {
+    console.error('⚠️  WARNING: Using placeholder Supabase credentials!');
+    console.error('Please update config.js with your actual Supabase credentials.');
+    console.error('Get them from: https://supabase.com/dashboard/project/[YOUR_PROJECT]/settings/api');
+    console.error('');
+}
 
 if (!supabaseUrl || !supabaseKey) {
-    console.error('Missing Supabase configuration. Please set SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
+    console.error('❌ Missing Supabase configuration. Please set SUPABASE_URL and SUPABASE_ANON_KEY.');
     process.exit(1);
 }
 
@@ -642,9 +651,11 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.listen(5000, '0.0.0.0', () => {
-    console.log(`FindMyDocs server running on port 5000`);
-    console.log(`Supabase URL: ${supabaseUrl}`);
+app.listen(config.PORT, '0.0.0.0', () => {
+    console.log(`🚀 FindMyDocs server running on port ${config.PORT}`);
+    console.log(`🌐 Access the app at: http://localhost:${config.PORT}`);
+    console.log(`🔗 Supabase URL: ${supabaseUrl}`);
+    console.log(`📱 Environment: ${config.NODE_ENV}`);
 });
 
 module.exports = app;

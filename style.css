@@ -131,6 +131,13 @@ body {
     color: white;
 }
 
+.loading-spinner.hidden {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    z-index: -1 !important;
+}
+
 .spinner {
     width: 40px;
     height: 40px;
@@ -139,6 +146,17 @@ body {
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin-bottom: 16px;
+}
+
+.spinner-small {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    margin-right: 8px;
 }
 
 @keyframes spin {
@@ -209,6 +227,47 @@ body {
     min-height: 100vh;
     background: linear-gradient(120deg, #f5f7fa 0%, #c3cfe2 100%);
     padding: 24px 8px;
+    position: relative;
+    z-index: 1000;
+}
+
+#login-section.hidden {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    z-index: -1 !important;
+}
+
+/* App Section */
+#app-section {
+    display: none;
+    min-height: 100vh;
+    background: var(--bg-color);
+    position: relative;
+    z-index: 1;
+}
+
+#app-section:not(.hidden) {
+    display: block;
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Ensure content sections are hidden when parent app-section is hidden */
+#app-section.hidden .content-section {
+    display: none !important;
+}
+
+/* Additional rule to ensure complete hiding of app section content */
+#app-section.hidden {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    z-index: -1 !important;
+}
+
+#app-section.hidden * {
+    display: none !important;
 }
 
 .login-container {
@@ -1033,6 +1092,11 @@ body {
     align-items: center;
     z-index: 1000;
     padding: 20px;
+}
+
+/* Hide modals when they have the hidden class */
+.modal.hidden {
+    display: none !important;
 }
 
 .modal-content {
