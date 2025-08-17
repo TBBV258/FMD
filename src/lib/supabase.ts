@@ -80,11 +80,17 @@ export const initializeSupabase = async () => {
       }
 
       console.log('🔧 initializeSupabase: Creating Supabase client...');
+      
+      // Get the current base URL for redirects
+      const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '');
+      console.log('🔍 initializeSupabase: Base URL for redirects:', baseUrl);
+      
       supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
         auth: {
           autoRefreshToken: true,
           persistSession: true,
-          detectSessionInUrl: true
+          detectSessionInUrl: true,
+          flowType: 'pkce'
         }
       });
 
