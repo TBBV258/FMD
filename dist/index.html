@@ -108,6 +108,19 @@
         window.addEventListener('load', () => {
             setTimeout(checkScripts, 100);
         });
+        
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/FMD/sw.js')
+                    .then((registration) => {
+                        console.log('✅ Service Worker registered successfully:', registration);
+                    })
+                    .catch((error) => {
+                        console.error('❌ Service Worker registration failed:', error);
+                    });
+            });
+        }
     </script>
     
     <style>
@@ -173,7 +186,7 @@
             }
         }
     </style>
-  <script type="module" crossorigin src="/FMD/assets/index-5d89ce82.js"></script>
+  <script type="module" crossorigin src="/FMD/assets/index-d10ef35c.js"></script>
   <link rel="stylesheet" href="/FMD/assets/index-c1a0e948.css">
 </head>
 <body>
