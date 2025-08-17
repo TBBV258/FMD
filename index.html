@@ -16,8 +16,11 @@
     <meta name="theme-color" content="#2196F3">
     
     <!-- App Icons -->
-    <link rel="icon" type="image/jpeg" href="/fmd-logo.jpg">
-    <link rel="apple-touch-icon" href="/fmd-logo.jpg">
+    <link rel="icon" type="image/jpeg" href="/FMD/fmd-logo.jpg">
+    <link rel="apple-touch-icon" href="/FMD/fmd-logo.jpg">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/FMD/manifest.json">
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -105,6 +108,19 @@
         window.addEventListener('load', () => {
             setTimeout(checkScripts, 100);
         });
+        
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/FMD/sw.js')
+                    .then((registration) => {
+                        console.log('✅ Service Worker registered successfully:', registration);
+                    })
+                    .catch((error) => {
+                        console.error('❌ Service Worker registration failed:', error);
+                    });
+            });
+        }
     </script>
     
     <style>

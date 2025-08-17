@@ -16,8 +16,11 @@
     <meta name="theme-color" content="#2196F3">
     
     <!-- App Icons -->
-    <link rel="icon" type="image/jpeg" href="./fmd-logo.jpg">
-    <link rel="apple-touch-icon" href="./fmd-logo.jpg">
+    <link rel="icon" type="image/jpeg" href="/FMD/fmd-logo.jpg">
+    <link rel="apple-touch-icon" href="/FMD/fmd-logo.jpg">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/FMD/manifest.json">
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -170,6 +173,8 @@
             }
         }
     </style>
+  <script type="module" crossorigin src="/FMD/assets/index-5d89ce82.js"></script>
+  <link rel="stylesheet" href="/FMD/assets/index-c1a0e948.css">
 </head>
 <body>
     <div id="root">
@@ -181,6 +186,8 @@
     </div>
     
     <!-- Vite will automatically inject the correct script tags during build -->
+    
+    
     <script>
         console.log('📄 index.html: About to close body tag');
         console.log('🔍 index.html: Scripts that should be loaded:', document.scripts.length);
