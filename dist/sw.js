@@ -1,9 +1,9 @@
 const CACHE_NAME = 'findmydocs-v1';
 const urlsToCache = [
-  '/FMD/',
-  '/FMD/index.html',
-  '/FMD/manifest.json',
-  '/FMD/fmd-logo.jpg'
+  './',
+  './index.html',
+  './manifest.json',
+  './fmd-logo.jpg'
 ];
 
 // Install event - cache resources
