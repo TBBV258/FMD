@@ -2,7 +2,7 @@
   "name": "FindMyDocs",
   "short_name": "FindMyDocs",
   "description": "Sistema de Gestão de Documentos Perdidos e Encontrados",
-  "start_url": "/FMD/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#f9fafb",
   "theme_color": "#2196F3",
@@ -24,6 +24,6 @@
   "categories": ["productivity", "utilities", "business"],
   "lang": "pt",
   "dir": "ltr",
-  "scope": "/FMD/",
+  "scope": "./",
   "prefer_related_applications": false
 }
