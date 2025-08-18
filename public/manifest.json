@@ -1,4 +1,5 @@
 {
+  "id": "findmydocs-pwa",
   "name": "FindMyDocs",
   "short_name": "FindMyDocs",
   "description": "Sistema de Gestão de Documentos Perdidos e Encontrados",
@@ -12,13 +13,13 @@
       "src": "./fmd-logo.jpg",
       "sizes": "192x192",
       "type": "image/jpeg",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "./fmd-logo.jpg",
       "sizes": "512x512",
       "type": "image/jpeg",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ],
   "categories": ["productivity", "utilities", "business"],
