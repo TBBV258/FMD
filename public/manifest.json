@@ -26,11 +26,5 @@
   "lang": "pt",
   "dir": "ltr",
   "scope": "./",
-  "prefer_related_applications": false,
-  "edge_side_panel": {
-    "preferred_width": 400
-  },
-  "launch_handler": {
-    "client_mode": "focus-existing"
-  }
+  "prefer_related_applications": false
 }
