@@ -3,7 +3,9 @@ const urlsToCache = [
   './',
   './index.html',
   './manifest.json',
-  './fmd-logo.jpg'
+  './fmd-logo.jpg',
+  './assets/',
+  './src/'
 ];
 
 // Install event - cache resources
