@@ -1,22 +1,23 @@
 {
-  "id": "findmydocs-pwa",
-  "name": "FindMyDocs",
-  "short_name": "FindMyDocs",
+  "id": "FMD-pwa",
+  "name": "FMD",
+  "short_name": "FMD",
   "description": "Sistema de Gestão de Documentos Perdidos e Encontrados",
-  "start_url": "./",
+  "start_url": "/FMD/",
+  "scope": "/FMD/",
   "display": "standalone",
   "background_color": "#f9fafb",
   "theme_color": "#2196F3",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "./icon-192.png",
+      "src": "/FMD/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "./icon-512.png",
+      "src": "/FMD/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
@@ -25,6 +26,5 @@
   "categories": ["productivity", "utilities", "business"],
   "lang": "pt",
   "dir": "ltr",
-  "scope": "./",
   "prefer_related_applications": false
 }
