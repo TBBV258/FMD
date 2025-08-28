@@ -1,15 +1,17 @@
-// Fetch configuration from server
+// Initialize Supabase with environment variables or build-time configuration
 async function initializeSupabase() {
     try {
-        const response = await fetch('/api/config');
-        const config = await response.json();
+        // In production, these should come from environment variables or build-time configuration
+        // For development, you can set these directly or use a .env file
+        const supabaseUrl = window.SUPABASE_URL || process.env.SUPABASE_URL || 'your-supabase-url-here';
+        const supabaseKey = window.SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || 'your-supabase-anon-key-here';
         
-        if (!config.supabaseUrl || !config.supabaseKey) {
-            throw new Error('Missing Supabase configuration');
+        if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('your-supabase') || supabaseKey.includes('your-supabase')) {
+            throw new Error('Missing or invalid Supabase configuration. Please set SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
         }
         
         // Initialize Supabase client
-        const supabaseClient = window.supabase.createClient(config.supabaseUrl, config.supabaseKey);
+        const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
         window.supabaseClient = supabaseClient;
         
         return supabaseClient;
@@ -21,13 +23,30 @@ async function initializeSupabase() {
 
 // Initialize when DOM is loaded
 let supabaseClient = null;
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        supabaseClient = await initializeSupabase();
-        console.log('Supabase client initialized successfully');
-    } catch (error) {
-        console.error('Failed to initialize Supabase client:', error);
+let initializationPromise = null;
+
+// Create a promise that resolves when supabase is initialized
+function ensureSupabaseInitialized() {
+    if (supabaseClient) {
+        return Promise.resolve(supabaseClient);
     }
+    
+    if (!initializationPromise) {
+        initializationPromise = initializeSupabase().then(client => {
+            supabaseClient = client;
+            console.log('Supabase client initialized successfully');
+            return client;
+        }).catch(error => {
+            console.error('Failed to initialize Supabase client:', error);
+            throw error;
+        });
+    }
+    
+    return initializationPromise;
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+    await ensureSupabaseInitialized();
 });
 
 // Storage bucket names
@@ -47,7 +66,8 @@ const TABLES = {
 // Auth functions
 const auth = {
     async signUp(email, password, userData = {}) {
-        const { data, error } = await supabaseClient.auth.signUp({
+        const client = await ensureSupabaseInitialized();
+        const { data, error } = await client.auth.signUp({
             email,
             password,
             options: {
@@ -60,7 +80,8 @@ const auth = {
     },
 
     async signIn(email, password) {
-        const { data, error } = await supabaseClient.auth.signInWithPassword({
+        const client = await ensureSupabaseInitialized();
+        const { data, error } = await client.auth.signInWithPassword({
             email,
             password
         });
@@ -70,7 +91,8 @@ const auth = {
     },
 
     async signInWithGoogle() {
-        const { data, error } = await supabaseClient.auth.signInWithOAuth({
+        const client = await ensureSupabaseInitialized();
+        const { data, error } = await client.auth.signInWithOAuth({
             provider: 'google',
             options: {
                 redirectTo: window.location.origin
@@ -82,17 +104,20 @@ const auth = {
     },
 
     async signOut() {
-        const { error } = await supabaseClient.auth.signOut();
+        const client = await ensureSupabaseInitialized();
+        const { error } = await client.auth.signOut();
         if (error) throw error;
     },
 
     async getCurrentUser() {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const client = await ensureSupabaseInitialized();
+        const { data: { user } } = await client.auth.getUser();
         return user;
     },
 
     async updateProfile(updates) {
-        const { data, error } = await supabaseClient.auth.updateUser({
+        const client = await ensureSupabaseInitialized();
+        const { data, error } = await client.auth.updateUser({
             data: updates
         });
         
@@ -100,8 +125,9 @@ const auth = {
         return data;
     },
 
-    onAuthStateChange(callback) {
-        return supabaseClient.auth.onAuthStateChange(callback);
+    async onAuthStateChange(callback) {
+        const client = await ensureSupabaseInitialized();
+        return client.auth.onAuthStateChange(callback);
     }
 };
 
@@ -325,7 +351,8 @@ const database = {
 // Storage functions
 const storage = {
     async uploadFile(bucket, file, path) {
-        const { data, error } = await supabaseClient.storage
+        const client = await ensureSupabaseInitialized();
+        const { data, error } = await client.storage
             .from(bucket)
             .upload(path, file, {
                 cacheControl: '3600',
@@ -337,7 +364,8 @@ const storage = {
     },
 
     async downloadFile(bucket, path) {
-        const { data, error } = await supabaseClient.storage
+        const client = await ensureSupabaseInitialized();
+        const { data, error } = await client.storage
             .from(bucket)
             .download(path);
             
@@ -346,7 +374,8 @@ const storage = {
     },
 
     async getPublicUrl(bucket, path) {
-        const { data } = supabaseClient.storage
+        const client = await ensureSupabaseInitialized();
+        const { data } = client.storage
             .from(bucket)
             .getPublicUrl(path);
             
@@ -354,7 +383,8 @@ const storage = {
     },
 
     async deleteFile(bucket, path) {
-        const { error } = await supabaseClient.storage
+        const client = await ensureSupabaseInitialized();
+        const { error } = await client.storage
             .from(bucket)
             .remove([path]);
             
@@ -424,8 +454,9 @@ const realtime = {
             .subscribe();
     },
 
-    unsubscribe(subscription) {
-        return supabaseClient.removeChannel(subscription);
+    async unsubscribe(subscription) {
+        const client = await ensureSupabaseInitialized();
+        return client.removeChannel(subscription);
     }
 };
 
