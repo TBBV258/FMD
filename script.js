@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateTranslations();
     
     // Initialize auth state listener
-    auth.onAuthStateChange((event, session) => {
+    await auth.onAuthStateChange((event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
             handleUserSignedIn(session.user);
         } else if (event === 'SIGNED_OUT') {
@@ -575,7 +575,7 @@ function renderChatMessages(messages) {
     
     container.innerHTML = messages.map(message => `
         <div class="chat-message ${message.sender_id === currentUser.id ? 'own' : 'other'}">
-            <div class="message-content">${message.message}</div>
+            <div class="message-content">${escapeHtml(message.message)}</div>
             <div class="message-time">${formatTime(message.created_at)}</div>
         </div>
     `).join('');
@@ -1082,6 +1082,12 @@ function showNotification(notification) {
 }
 
 // Utility functions
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {

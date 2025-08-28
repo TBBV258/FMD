@@ -87,13 +87,9 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Configuration endpoint for frontend
-app.get('/api/config', (req, res) => {
-    res.json({
-        supabaseUrl: supabaseUrl,
-        supabaseKey: supabaseKey
-    });
-});
+// Configuration endpoint for frontend - REMOVED for security
+// Supabase configuration should be handled client-side via environment variables
+// or build-time configuration, not exposed through API endpoints
 
 // Document endpoints
 app.get('/api/documents', requireAuth, async (req, res) => {
