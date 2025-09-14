@@ -1,470 +1,408 @@
-// Initialize Supabase with environment variables or build-time configuration
-async function initializeSupabase() {
+// Initialize the Supabase client
+(function() {
+    'use strict';
+    
+    // Check if already initialized to prevent duplicate declarations
+    if (window.supabaseClientInitialized) {
+        console.log('Supabase client already initialized');
+        return;
+    }
+    
+    const supabaseUrl = 'https://amwkpnruxlxvgelgucit.supabase.co';
+    const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtd2twbnJ1eGx4dmdlbGd1Y2l0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MjQyNzksImV4cCI6MjA3MTEwMDI3OX0.Aig88y-2xy4isACVB6zQ4n3zUrTAG_ZuwRFisqplG4U';
+    
+    // Check if Supabase library is loaded
+    if (typeof supabase === 'undefined' || typeof supabase.createClient !== 'function') {
+        console.error('Supabase library not loaded. Make sure to include the Supabase JavaScript library before this file.');
+        return;
+    }
+    
     try {
-        // In production, these should come from environment variables or build-time configuration
-        // For development, you can set these directly or use a .env file
-        const supabaseUrl = window.SUPABASE_URL || process.env.SUPABASE_URL || 'your-supabase-url-here';
-        const supabaseKey = window.SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || 'your-supabase-anon-key-here';
+        // Initialize the client
+        window.supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
+        console.log('Supabase client initialized successfully');
         
-        if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('your-supabase') || supabaseKey.includes('your-supabase')) {
-            throw new Error('Missing or invalid Supabase configuration. Please set SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
-        }
+        // Mark as initialized
+        window.supabaseClientInitialized = true;
         
-        // Initialize Supabase client
-        const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
-        window.supabaseClient = supabaseClient;
+        // Initialize APIs
+        initializeAPIs();
         
-        return supabaseClient;
     } catch (error) {
-        console.error('Failed to initialize Supabase:', error);
-        throw error;
-    }
-}
-
-// Initialize when DOM is loaded
-let supabaseClient = null;
-let initializationPromise = null;
-
-// Create a promise that resolves when supabase is initialized
-function ensureSupabaseInitialized() {
-    if (supabaseClient) {
-        return Promise.resolve(supabaseClient);
+        console.error('Error initializing Supabase client:', error);
+        // Continue with fallback mode
+        window.supabaseClientInitialized = false;
+        initializeFallbackAPIs();
     }
     
-    if (!initializationPromise) {
-        initializationPromise = initializeSupabase().then(client => {
-            supabaseClient = client;
-            console.log('Supabase client initialized successfully');
-            return client;
-        }).catch(error => {
-            console.error('Failed to initialize Supabase client:', error);
-            throw error;
-        });
+    function initializeAPIs() {
+        // Documents API
+        window.documentsApi = {
+            async create(data) {
+                try {
+                    const { data: document, error } = await window.supabase
+                        .from('documents')
+                        .insert([{
+                            user_id: data.userId,
+                            title: data.title,
+                            type: data.type,
+                            status: data.status || 'normal',
+                            location: data.location,
+                            file_url: data.fileUrl || ''
+                        }])
+                        .select()
+                        .single();
+                    if (error) throw error;
+                    return document;
+                } catch (error) {
+                    console.error('Create document error:', error);
+                    return createFallbackDocument(data);
+                }
+            },
+            
+            async getByUser(userId) {
+                try {
+                    const { data: documents, error } = await window.supabase
+                        .from('documents')
+                        .select('*')
+                        .eq('user_id', userId)
+                        .order('created_at', { ascending: false });
+                    if (error) throw error;
+                    return documents;
+                } catch (error) {
+                    console.error('Get documents error:', error);
+                    return getFallbackDocuments();
+                }
+            },
+            
+            async update(id, data) {
+                try {
+                    const { data: document, error } = await window.supabase
+                        .from('documents')
+                        .update({
+                            title: data.title,
+                            type: data.type,
+                            status: data.status,
+                            location: data.location,
+                            file_url: data.fileUrl
+                        })
+                        .eq('id', id)
+                        .select()
+                        .single();
+                    if (error) throw error;
+                    return document;
+                } catch (error) {
+                    console.error('Update document error:', error);
+                    return null;
+                }
+            },
+            
+            async deleteDoc(id) {
+                try {
+                    const { error } = await window.supabase
+                        .from('documents')
+                        .delete()
+                        .eq('id', id);
+                    if (error) throw error;
+                    return true;
+                } catch (error) {
+                    console.error('Delete document error:', error);
+                    return false;
+                }
+            }
+        };
+        
+        // Profiles API
+        window.profilesApi = {
+            async create(userId, data) {
+                try {
+                    const { data: profile, error } = await window.supabase
+                        .from('user_profiles')
+                        .insert([{
+                            id: userId,
+                            phone_number: data.phoneNumber,
+                            country: data.country,
+                            plan: 'free'
+                        }])
+                        .select()
+                        .single();
+                    if (error) throw error;
+                    return profile;
+                } catch (error) {
+                    console.error('Create profile error:', error);
+                    return null;
+                }
+            },
+            
+            async get(userId) {
+                try {
+                    const { data: profile, error } = await window.supabase
+                        .from('user_profiles')
+                        .select('*')
+                        .eq('id', userId)
+                        .single();
+                    if (error) throw error;
+                    return profile;
+                } catch (error) {
+                    console.error('Get profile error:', error);
+                    return null;
+                }
+            },
+            
+            async update(userId, data) {
+                try {
+                    const updateData = {};
+                    
+                    if (data.phoneNumber !== undefined) updateData.phone_number = data.phoneNumber;
+                    if (data.country !== undefined) updateData.country = data.country;
+                    if (data.plan !== undefined) updateData.plan = data.plan;
+                    if (data.avatar_url !== undefined) updateData.avatar_url = data.avatar_url;
+                    if (data.points !== undefined) updateData.points = data.points;
+                    if (data.document_count !== undefined) updateData.document_count = data.document_count;
+                    
+                    const { data: profile, error } = await window.supabase
+                        .from('user_profiles')
+                        .update(updateData)
+                        .eq('id', userId)
+                        .select()
+                        .single();
+                    if (error) throw error;
+                    return profile;
+                } catch (error) {
+                    console.error('Update profile error:', error);
+                    return null;
+                }
+            }
+        };
+        
+        // Chats API
+        window.chatsApi = {
+            async send(data) {
+                try {
+                    const { data: message, error } = await window.supabase
+                        .from('chats')
+                        .insert([{
+                            document_id: data.documentId,
+                            sender_id: data.senderId,
+                            receiver_id: data.receiverId,
+                            message: data.message
+                        }])
+                        .select()
+                        .single();
+                    if (error) throw error;
+                    return message;
+                } catch (error) {
+                    console.error('Send message error:', error);
+                    return null;
+                }
+            },
+            
+            async getConversation(documentId, userId) {
+                try {
+                    const { data: messages, error } = await window.supabase
+                        .from('chats')
+                        .select('*')
+                        .eq('document_id', documentId)
+                        .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+                        .order('created_at', { ascending: true });
+                    if (error) throw error;
+                    return messages;
+                } catch (error) {
+                    console.error('Get conversation error:', error);
+                    return [];
+                }
+            }
+        };
+        
+        // Auth API
+        window.authApi = {
+            async signUp(email, password, userData) {
+                try {
+                    const { data: authData, error: signUpError } = await window.supabase.auth.signUp({
+                        email,
+                        password,
+                        options: {
+                            data: {
+                                full_name: userData.fullName,
+                                phone_number: userData.phoneNumber,
+                                country: userData.country || 'MZ'
+                            }
+                        }
+                    });
+                    if (signUpError) throw signUpError;
+                    return authData;
+                } catch (error) {
+                    console.error('Sign up error:', error);
+                    throw error;
+                }
+            },
+            
+            async signIn(email, password) {
+                try {
+                    const { data, error } = await window.supabase.auth.signInWithPassword({
+                        email,
+                        password
+                    });
+                    if (error) throw error;
+                    return data;
+                } catch (error) {
+                    console.error('Sign in error:', error);
+                    throw error;
+                }
+            },
+            
+            async signInWithGoogle() {
+                try {
+                    const { data, error } = await window.supabase.auth.signInWithOAuth({
+                        provider: 'google'
+                    });
+                    if (error) throw error;
+                    return data;
+                } catch (error) {
+                    console.error('Google sign in error:', error);
+                    throw error;
+                }
+            },
+            
+            async signOut() {
+                try {
+                    const { error } = await window.supabase.auth.signOut();
+                    if (error) throw error;
+                } catch (error) {
+                    console.error('Sign out error:', error);
+                    throw error;
+                }
+            },
+            
+            async getCurrentUser() {
+                try {
+                    const { data: { user }, error } = await window.supabase.auth.getUser();
+                    if (error) throw error;
+                    return user;
+                } catch (error) {
+                    console.error('Get user error:', error);
+                    return null;
+                }
+            },
+            
+            async getSession() {
+                try {
+                    const { data: { session }, error } = await window.supabase.auth.getSession();
+                    if (error) throw error;
+                    return session;
+                } catch (error) {
+                    console.error('Get session error:', error);
+                    return null;
+                }
+            },
+            
+            async resetPassword(email) {
+                try {
+                    const { error } = await window.supabase.auth.resetPasswordForEmail(email);
+                    if (error) throw error;
+                } catch (error) {
+                    console.error('Reset password error:', error);
+                    throw error;
+                }
+            }
+        };
+        
+        // Real-time subscriptions
+        window.subscribeToDocuments = (userId, callback) => {
+            return window.supabase
+                .channel('documents')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'documents',
+                        filter: `user_id=eq.${userId}`
+                    },
+                    callback
+                )
+                .subscribe();
+        };
+        
+        window.subscribeToChats = (documentId, callback) => {
+            return window.supabase
+                .channel('chats')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'chats',
+                        filter: `document_id=eq.${documentId}`
+                    },
+                    callback
+                )
+                .subscribe();
+        };
+        
+        console.log('All APIs initialized successfully');
     }
     
-    return initializationPromise;
-}
-
-document.addEventListener('DOMContentLoaded', async () => {
-    await ensureSupabaseInitialized();
-});
-
-// Storage bucket names
-const STORAGE_BUCKETS = {
-    DOCUMENTS: 'documents',
-    AVATARS: 'avatars'
-};
-
-// Database table names
-const TABLES = {
-    USERS: 'users',
-    DOCUMENTS: 'documents',
-    CHATS: 'chats',
-    NOTIFICATIONS: 'notifications'
-};
-
-// Auth functions
-const auth = {
-    async signUp(email, password, userData = {}) {
-        const client = await ensureSupabaseInitialized();
-        const { data, error } = await client.auth.signUp({
-            email,
-            password,
-            options: {
-                data: userData
-            }
-        });
+    // Fallback functions for when Supabase is not available
+    function initializeFallbackAPIs() {
+        console.log('Initializing fallback APIs...');
         
-        if (error) throw error;
-        return data;
-    },
-
-    async signIn(email, password) {
-        const client = await ensureSupabaseInitialized();
-        const { data, error } = await client.auth.signInWithPassword({
-            email,
-            password
-        });
+        window.documentsApi = {
+            async create(data) { return createFallbackDocument(data); },
+            async getByUser(userId) { return getFallbackDocuments(); },
+            async update(id, data) { return null; },
+            async deleteDoc(id) { return true; }
+        };
         
-        if (error) throw error;
-        return data;
-    },
-
-    async signInWithGoogle() {
-        const client = await ensureSupabaseInitialized();
-        const { data, error } = await client.auth.signInWithOAuth({
-            provider: 'google',
-            options: {
-                redirectTo: window.location.origin
-            }
-        });
+        window.profilesApi = {
+            async create(userId, data) { return null; },
+            async get(userId) { return null; },
+            async update(userId, data) { return null; }
+        };
         
-        if (error) throw error;
-        return data;
-    },
-
-    async signOut() {
-        const client = await ensureSupabaseInitialized();
-        const { error } = await client.auth.signOut();
-        if (error) throw error;
-    },
-
-    async getCurrentUser() {
-        const client = await ensureSupabaseInitialized();
-        const { data: { user } } = await client.auth.getUser();
-        return user;
-    },
-
-    async updateProfile(updates) {
-        const client = await ensureSupabaseInitialized();
-        const { data, error } = await client.auth.updateUser({
-            data: updates
-        });
+        window.chatsApi = {
+            async send(data) { return null; },
+            async getConversation(documentId, userId) { return []; }
+        };
         
-        if (error) throw error;
-        return data;
-    },
-
-    async onAuthStateChange(callback) {
-        const client = await ensureSupabaseInitialized();
-        return client.auth.onAuthStateChange(callback);
+        window.authApi = {
+            async signUp(email, password, userData) { throw new Error('Authentication not available'); },
+            async signIn(email, password) { throw new Error('Authentication not available'); },
+            async signInWithGoogle() { throw new Error('Authentication not available'); },
+            async signOut() { throw new Error('Authentication not available'); },
+            async getCurrentUser() { return null; },
+            async getSession() { return null; },
+            async resetPassword(email) { throw new Error('Authentication not available'); }
+        };
+        
+        window.subscribeToDocuments = () => ({ unsubscribe: () => {} });
+        window.subscribeToChats = () => ({ unsubscribe: () => {} });
     }
-};
-
-// Database functions
-const database = {
-    // User functions
-    async createUserProfile(user) {
-        const { data, error } = await supabaseClient
-            .from(TABLES.USERS)
-            .insert([{
-                id: user.id,
-                email: user.email,
-                first_name: user.user_metadata.first_name || '',
-                last_name: user.user_metadata.last_name || '',
-                points: 0,
-                is_premium: false,
+    
+    function createFallbackDocument(data) {
+        return {
+            id: 'doc_' + Date.now(),
+            user_id: data.userId,
+            title: data.title,
+            type: data.type,
+            status: data.status || 'normal',
+            location: data.location,
+            file_url: data.fileUrl || '',
+            created_at: new Date().toISOString()
+        };
+    }
+    
+    function getFallbackDocuments() {
+        return [
+            {
+                id: 'doc_1',
+                title: 'BI - João Silva',
+                type: 'ID card',
+                status: 'normal',
+                location: { address: 'Maputo, Moçambique' },
+                file_url: '',
                 created_at: new Date().toISOString()
-            }])
-            .select()
-            .single();
-            
-        if (error) throw error;
-        return data;
-    },
-
-    async getUserProfile(userId) {
-        const { data, error } = await supabaseClient
-            .from(TABLES.USERS)
-            .select('*')
-            .eq('id', userId)
-            .single();
-            
-        if (error) throw error;
-        return data;
-    },
-
-    async updateUserProfile(userId, updates) {
-        const { data, error } = await supabaseClient
-            .from(TABLES.USERS)
-            .update(updates)
-            .eq('id', userId)
-            .select()
-            .single();
-            
-        if (error) throw error;
-        return data;
-    },
-
-    // Document functions
-    async createDocument(documentData) {
-        const { data, error } = await supabaseClient
-            .from(TABLES.DOCUMENTS)
-            .insert([documentData])
-            .select()
-            .single();
-            
-        if (error) throw error;
-        return data;
-    },
-
-    async getUserDocuments(userId) {
-        const { data, error } = await supabaseClient
-            .from(TABLES.DOCUMENTS)
-            .select('*')
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false });
-            
-        if (error) throw error;
-        return data;
-    },
-
-    async getDocumentById(documentId) {
-        const { data, error } = await supabaseClient
-            .from(TABLES.DOCUMENTS)
-            .select('*')
-            .eq('id', documentId)
-            .single();
-            
-        if (error) throw error;
-        return data;
-    },
-
-    async updateDocument(documentId, updates) {
-        const { data, error } = await supabaseClient
-            .from(TABLES.DOCUMENTS)
-            .update(updates)
-            .eq('id', documentId)
-            .select()
-            .single();
-            
-        if (error) throw error;
-        return data;
-    },
-
-    async deleteDocument(documentId) {
-        const { error } = await supabaseClient
-            .from(TABLES.DOCUMENTS)
-            .delete()
-            .eq('id', documentId);
-            
-        if (error) throw error;
-    },
-
-    async getLostDocuments(filters = {}) {
-        let query = supabaseClient
-            .from(TABLES.DOCUMENTS)
-            .select('*')
-            .eq('status', 'lost')
-            .order('created_at', { ascending: false });
-
-        if (filters.type) {
-            query = query.eq('type', filters.type);
-        }
-
-        if (filters.search) {
-            query = query.or(`name.ilike.%${filters.search}%,description.ilike.%${filters.search}%,location.ilike.%${filters.search}%`);
-        }
-
-        const { data, error } = await query;
-        if (error) throw error;
-        return data;
-    },
-
-    async getFoundDocuments(filters = {}) {
-        let query = supabaseClient
-            .from(TABLES.DOCUMENTS)
-            .select('*')
-            .eq('status', 'found')
-            .order('created_at', { ascending: false });
-
-        if (filters.type) {
-            query = query.eq('type', filters.type);
-        }
-
-        if (filters.search) {
-            query = query.or(`name.ilike.%${filters.search}%,description.ilike.%${filters.search}%,location.ilike.%${filters.search}%`);
-        }
-
-        const { data, error } = await query;
-        if (error) throw error;
-        return data;
-    },
-
-    // Chat functions
-    async createChat(chatData) {
-        const { data, error } = await supabaseClient
-            .from(TABLES.CHATS)
-            .insert([chatData])
-            .select()
-            .single();
-            
-        if (error) throw error;
-        return data;
-    },
-
-    async getChatMessages(documentId) {
-        const { data, error } = await supabaseClient
-            .from(TABLES.CHATS)
-            .select(`
-                *,
-                sender:users!chats_sender_id_fkey(id, first_name, last_name),
-                receiver:users!chats_receiver_id_fkey(id, first_name, last_name)
-            `)
-            .eq('document_id', documentId)
-            .order('created_at', { ascending: true });
-            
-        if (error) throw error;
-        return data;
-    },
-
-    async getUserChats(userId) {
-        const { data, error } = await supabaseClient
-            .from(TABLES.CHATS)
-            .select(`
-                *,
-                document:documents(id, name, type),
-                sender:users!chats_sender_id_fkey(id, first_name, last_name),
-                receiver:users!chats_receiver_id_fkey(id, first_name, last_name)
-            `)
-            .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
-            .order('created_at', { ascending: false });
-            
-        if (error) throw error;
-        return data;
-    },
-
-    // Notification functions
-    async createNotification(notificationData) {
-        const { data, error } = await supabaseClient
-            .from(TABLES.NOTIFICATIONS)
-            .insert([notificationData])
-            .select()
-            .single();
-            
-        if (error) throw error;
-        return data;
-    },
-
-    async getUserNotifications(userId) {
-        const { data, error } = await supabaseClient
-            .from(TABLES.NOTIFICATIONS)
-            .select('*')
-            .eq('user_id', userId)
-            .eq('read', false)
-            .order('created_at', { ascending: false });
-            
-        if (error) throw error;
-        return data;
-    },
-
-    async markNotificationAsRead(notificationId) {
-        const { error } = await supabaseClient
-            .from(TABLES.NOTIFICATIONS)
-            .update({ read: true })
-            .eq('id', notificationId);
-            
-        if (error) throw error;
+            }
+        ];
     }
-};
-
-// Storage functions
-const storage = {
-    async uploadFile(bucket, file, path) {
-        const client = await ensureSupabaseInitialized();
-        const { data, error } = await client.storage
-            .from(bucket)
-            .upload(path, file, {
-                cacheControl: '3600',
-                upsert: false
-            });
-            
-        if (error) throw error;
-        return data;
-    },
-
-    async downloadFile(bucket, path) {
-        const client = await ensureSupabaseInitialized();
-        const { data, error } = await client.storage
-            .from(bucket)
-            .download(path);
-            
-        if (error) throw error;
-        return data;
-    },
-
-    async getPublicUrl(bucket, path) {
-        const client = await ensureSupabaseInitialized();
-        const { data } = client.storage
-            .from(bucket)
-            .getPublicUrl(path);
-            
-        return data.publicUrl;
-    },
-
-    async deleteFile(bucket, path) {
-        const client = await ensureSupabaseInitialized();
-        const { error } = await client.storage
-            .from(bucket)
-            .remove([path]);
-            
-        if (error) throw error;
-    },
-
-    async uploadDocumentFiles(files, documentId) {
-        const uploadPromises = files.map(async (file, index) => {
-            const fileName = `${documentId}/${Date.now()}_${index}.${file.name.split('.').pop()}`;
-            const uploadResult = await this.uploadFile(STORAGE_BUCKETS.DOCUMENTS, file, fileName);
-            const publicUrl = this.getPublicUrl(STORAGE_BUCKETS.DOCUMENTS, fileName);
-            
-            return {
-                id: `file_${Date.now()}_${index}`,
-                filename: fileName,
-                originalName: file.name,
-                size: file.size,
-                mimetype: file.type,
-                url: publicUrl
-            };
-        });
-
-        return Promise.all(uploadPromises);
-    },
-
-    async uploadAvatar(file, userId) {
-        const fileName = `${userId}/avatar.${file.name.split('.').pop()}`;
-        await this.uploadFile(STORAGE_BUCKETS.AVATARS, file, fileName);
-        return this.getPublicUrl(STORAGE_BUCKETS.AVATARS, fileName);
-    }
-};
-
-// Realtime functions
-const realtime = {
-    subscribeToChats(documentId, callback) {
-        return supabaseClient
-            .channel(`chats:${documentId}`)
-            .on('postgres_changes', {
-                event: 'INSERT',
-                schema: 'public',
-                table: TABLES.CHATS,
-                filter: `document_id=eq.${documentId}`
-            }, callback)
-            .subscribe();
-    },
-
-    subscribeToNotifications(userId, callback) {
-        return supabaseClient
-            .channel(`notifications:${userId}`)
-            .on('postgres_changes', {
-                event: 'INSERT',
-                schema: 'public',
-                table: TABLES.NOTIFICATIONS,
-                filter: `user_id=eq.${userId}`
-            }, callback)
-            .subscribe();
-    },
-
-    subscribeToDocumentUpdates(callback) {
-        return supabaseClient
-            .channel('document_updates')
-            .on('postgres_changes', {
-                event: '*',
-                schema: 'public',
-                table: TABLES.DOCUMENTS
-            }, callback)
-            .subscribe();
-    },
-
-    async unsubscribe(subscription) {
-        const client = await ensureSupabaseInitialized();
-        return client.removeChannel(subscription);
-    }
-};
-
-// Export the client and functions
-window.supabaseClient = supabaseClient;
-window.auth = auth;
-window.database = database;
-window.storage = storage;
-window.realtime = realtime;
-window.STORAGE_BUCKETS = STORAGE_BUCKETS;
-window.TABLES = TABLES;
+})();

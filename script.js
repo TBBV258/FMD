@@ -1,1117 +1,1166 @@
-// Global variables
+// Main JavaScript Application Logic
+
+// Current state
 let currentUser = null;
-let currentUserProfile = null;
+let isLoggedIn = false;
+let currentChatDocument = null;
 let currentLanguage = 'pt';
 let currentTheme = 'light';
-let currentChat = null;
-let feedSubscription = null;
-let notificationSubscription = null;
-let selectedLocation = null;
-let currentMap = null;
 
-// Storage keys (keeping for theme and language preferences only)
-const STORAGE_KEYS = {
-    LANGUAGE: 'findmydocs_language',
-    THEME: 'findmydocs_theme'
-};
+// DOM Elements
+const appSection = document.getElementById('app-section');
+const navLinks = document.querySelectorAll('.nav-link');
+const contentSections = document.querySelectorAll('.content-section');
+const themeToggle = document.getElementById('theme-toggle');
+const languageSelector = document.getElementById('language-selector');
 
-// Initialize app
-document.addEventListener('DOMContentLoaded', async () => {
-    // Load saved preferences
-    currentLanguage = localStorage.getItem(STORAGE_KEYS.LANGUAGE) || 'pt';
-    currentTheme = localStorage.getItem(STORAGE_KEYS.THEME) || 'light';
-    
-    // Apply theme and language
-    document.body.setAttribute('data-theme', currentTheme);
-    updateTranslations();
-    
-    // Initialize auth state listener
-    await auth.onAuthStateChange((event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-            handleUserSignedIn(session.user);
-        } else if (event === 'SIGNED_OUT') {
-            handleUserSignedOut();
-        }
-    });
-    
-    // Check if user is already logged in
-    const user = await auth.getCurrentUser();
-    if (user) {
-        await handleUserSignedIn(user);
-    } else {
-        showLogin();
-    }
-    
-    // Initialize event listeners
-    initializeEventListeners();
+// Initialize application
+document.addEventListener('DOMContentLoaded', () => {
+    initializeApp();
 });
 
-// Event listeners
-function initializeEventListeners() {
-    // Theme toggle
-    document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
-    document.getElementById('theme-toggle-app')?.addEventListener('click', toggleTheme);
-    
-    // Language toggle
-    document.getElementById('lang-pt')?.addEventListener('click', () => setLanguage('pt'));
-    document.getElementById('lang-en')?.addEventListener('click', () => setLanguage('en'));
-    
-    // Auth forms
-    document.getElementById('login-form')?.addEventListener('submit', handleLogin);
-    document.getElementById('signup-form')?.addEventListener('submit', handleSignup);
-    document.getElementById('signup-btn')?.addEventListener('click', () => showModal('signup-modal'));
-    document.getElementById('google-login-btn')?.addEventListener('click', handleGoogleLogin);
-    document.getElementById('logout-btn')?.addEventListener('click', handleLogout);
-    
-    // Document management
-    document.getElementById('add-document')?.addEventListener('click', () => showModal('document-modal'));
-    document.getElementById('document-form')?.addEventListener('submit', handleAddDocument);
-    
-    // Lost/Found forms
-    document.getElementById('lost-form')?.addEventListener('submit', handleReportLost);
-    document.getElementById('found-form')?.addEventListener('submit', handleReportFound);
-    
-    // Feed tabs
-    document.querySelectorAll('.feed-tab').forEach(tab => {
-        tab.addEventListener('click', handleFeedTabChange);
-    });
-    
-    // Feed filters
-    document.getElementById('feed-type-filter')?.addEventListener('change', handleFeedFilterChange);
-    document.getElementById('feed-search')?.addEventListener('input', debounce(handleFeedFilterChange, 500));
-    
-    // Chat
-    document.getElementById('chat-input')?.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') handleSendMessage();
-    });
-    document.getElementById('send-message')?.addEventListener('click', handleSendMessage);
-    
-    // Location
-    document.getElementById('lost-location-btn')?.addEventListener('click', () => openLocationModal('lost'));
-    document.getElementById('found-location-btn')?.addEventListener('click', () => openLocationModal('found'));
-    document.getElementById('confirm-location')?.addEventListener('click', confirmLocation);
-    
-    // File uploads
-    setupFileUpload('document-upload-area', 'document-files');
-    setupFileUpload('lost-upload-area', 'lost-files');
-    setupFileUpload('found-upload-area', 'found-files');
-    
-    // Modal management
-    document.querySelectorAll('.close-modal').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const modal = e.target.closest('.modal');
-            hideModal(modal.id);
-        });
-    });
-    
-    // Bottom navigation
-    setupBottomNavigation();
-    
-    // Upgrade button
-    document.getElementById('upgrade-btn')?.addEventListener('click', () => showModal('upgrade-modal'));
-    
-    // Profile actions
-    document.getElementById('change-avatar-btn')?.addEventListener('click', () => {
-        document.getElementById('avatar-upload').click();
-    });
-    document.getElementById('avatar-upload')?.addEventListener('change', handleAvatarUpload);
-    
-    // Country prefix setup
-    setupCountryPrefix('lost-country', 'lost-prefix');
-    setupCountryPrefix('found-country', 'found-prefix');
-}
-
-// Auth functions
-async function handleLogin(e) {
-    e.preventDefault();
-    showLoading(true);
-    
+async function initializeApp() {
+    // Check for authenticated user
     try {
-        const email = document.getElementById('login-email').value;
-        const password = document.getElementById('login-password').value;
-        
-        await auth.signIn(email, password);
-        showToast(t('message.login_success') || 'Login realizado com sucesso!', 'success');
-    } catch (error) {
-        console.error('Login error:', error);
-        showToast(error.message || 'Erro no login. Verifique suas credenciais.', 'error');
-    } finally {
-        showLoading(false);
-    }
-}
-
-async function handleSignup(e) {
-    e.preventDefault();
-    showLoading(true);
-    
-    try {
-        const email = document.getElementById('signup-email').value;
-        const password = document.getElementById('signup-password').value;
-        const firstName = document.getElementById('signup-first-name').value;
-        const lastName = document.getElementById('signup-last-name').value;
-        
-        await auth.signUp(email, password, {
-            first_name: firstName,
-            last_name: lastName
-        });
-        
-        hideModal('signup-modal');
-        showToast('Conta criada com sucesso! Verifique seu email.', 'success');
-    } catch (error) {
-        console.error('Signup error:', error);
-        showToast(error.message || 'Erro ao criar conta.', 'error');
-    } finally {
-        showLoading(false);
-    }
-}
-
-async function handleGoogleLogin() {
-    try {
-        await auth.signInWithGoogle();
-    } catch (error) {
-        console.error('Google login error:', error);
-        showToast(error.message || 'Erro no login com Google.', 'error');
-    }
-}
-
-async function handleLogout() {
-    try {
-        await auth.signOut();
-        showToast('Logout realizado com sucesso!', 'success');
-    } catch (error) {
-        console.error('Logout error:', error);
-        showToast('Erro no logout.', 'error');
-    }
-}
-
-async function handleUserSignedIn(user) {
-    currentUser = user;
-    
-    try {
-        // Get or create user profile
-        try {
-            currentUserProfile = await database.getUserProfile(user.id);
-        } catch (error) {
-            if (error.code === 'PGRST116') { // Not found
-                currentUserProfile = await database.createUserProfile(user);
+        if (window.authApi) {
+            const user = await window.authApi.getCurrentUser();
+            if (user) {
+                currentUser = user;
+                isLoggedIn = true;
             } else {
-                throw error;
-            }
-        }
-        
-        // Update UI
-        updateUserInterface();
-        
-        // Load user data
-        await loadUserDocuments();
-        await loadFeedData();
-        
-        // Setup realtime subscriptions
-        setupRealtimeSubscriptions();
-        
-        showApp();
-    } catch (error) {
-        console.error('Error handling signed in user:', error);
-        showToast('Erro ao carregar dados do usuário.', 'error');
-    }
-}
-
-function handleUserSignedOut() {
-    currentUser = null;
-    currentUserProfile = null;
-    
-    // Clean up subscriptions
-    if (feedSubscription) {
-        realtime.unsubscribe(feedSubscription);
-        feedSubscription = null;
-    }
-    if (notificationSubscription) {
-        realtime.unsubscribe(notificationSubscription);
-        notificationSubscription = null;
-    }
-    
-    showLogin();
-}
-
-// Document management
-async function handleAddDocument(e) {
-    e.preventDefault();
-    showLoading(true);
-    
-    try {
-        const formData = new FormData(e.target);
-        const files = document.getElementById('document-files').files;
-        
-        // Check free plan limits
-        if (!currentUserProfile.is_premium) {
-            const userDocs = await database.getUserDocuments(currentUser.id);
-            if (userDocs.length >= 1) {
-                showModal('upgrade-modal');
+                // No authenticated user found
+                window.location.href = 'login.html';
                 return;
             }
+        } else {
+            // No auth API available
+            window.location.href = 'login.html';
+            return;
         }
-        
-        // Upload files if any
-        let uploadedFiles = [];
-        if (files.length > 0) {
-            const documentId = `doc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            uploadedFiles = await storage.uploadDocumentFiles(Array.from(files), documentId);
-        }
-        
-        // Create document
-        const documentData = {
-            id: `doc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            user_id: currentUser.id,
-            type: formData.get('type'),
-            name: formData.get('name'),
-            number: formData.get('number'),
-            description: formData.get('description') || null,
-            status: 'normal',
-            files: uploadedFiles,
-            created_at: new Date().toISOString()
-        };
-        
-        await database.createDocument(documentData);
-        
-        // Reset form and close modal
-        e.target.reset();
-        hideModal('document-modal');
-        
-        // Reload documents
-        await loadUserDocuments();
-        
-        showToast(t('message.document_added') || 'Documento adicionado com sucesso!', 'success');
     } catch (error) {
-        console.error('Error adding document:', error);
-        showToast(error.message || 'Erro ao adicionar documento.', 'error');
-    } finally {
-        showLoading(false);
+        console.error('Error initializing app:', error);
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    setupNavigation();
+    setupTheme();
+    setupLanguage();
+    loadUserData();
+    initializeForms();
+    
+    // Load initial section
+    showSection('documentos');
+}
+
+function setupNavigation() {
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const sectionId = link.getAttribute('data-section');
+            if (sectionId) {
+                showSection(sectionId);
+            }
+        });
+    });
+    
+    // Close tip cards
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('tip-close')) {
+            e.target.closest('.tip-card').remove();
+        }
+    });
+}
+
+function setupTheme() {
+    if (themeToggle) {
+        themeToggle.addEventListener('click', toggleTheme);
+    }
+    
+    // Load saved theme
+    const savedTheme = localStorage.getItem('findmydocs_theme') || 'light';
+    currentTheme = savedTheme;
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    updateThemeIcon();
+}
+
+function setupLanguage() {
+    if (languageSelector) {
+        languageSelector.addEventListener('change', (e) => {
+            changeLanguage(e.target.value);
+        });
+    }
+    
+    // Load saved language
+    const savedLanguage = localStorage.getItem('findmydocs_language') || 'pt';
+    currentLanguage = savedLanguage;
+    if (languageSelector) {
+        languageSelector.value = currentLanguage;
     }
 }
 
-async function handleReportLost(e) {
-    e.preventDefault();
-    showLoading(true);
+function loadUserData() {
+    // Load user documents
+    loadDocuments();
+    
+    // Update profile info
+    updateProfileInfo();
+    
+    // Update document count
+    updateDocumentCount();
+}
+
+function initializeForms() {
+    // Lost document form
+    const lostForm = document.getElementById('lost-form');
+    if (lostForm) {
+        lostForm.addEventListener('submit', handleLostForm);
+    }
+    
+    // Found document form
+    const foundForm = document.getElementById('found-form');
+    if (foundForm) {
+        foundForm.addEventListener('submit', handleFoundForm);
+    }
+    
+    // Add document button
+    const addDocumentBtn = document.getElementById('add-document');
+    if (addDocumentBtn) {
+        addDocumentBtn.addEventListener('click', () => {
+            showAddDocumentModal();
+        });
+    }
+}
+
+function showSection(sectionId) {
+    // Hide all sections
+    contentSections.forEach(section => {
+        section.classList.remove('active');
+    });
+    
+    // Show target section
+    const targetSection = document.getElementById(sectionId);
+    if (targetSection) {
+        targetSection.classList.add('active');
+    }
+    
+    // Update nav links
+    navLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('data-section') === sectionId) {
+            link.classList.add('active');
+        }
+    });
+    
+    // Load section-specific data
+    loadSectionData(sectionId);
+}
+
+function loadSectionData(sectionId) {
+    switch(sectionId) {
+        case 'documentos':
+            loadDocuments();
+            break;
+        case 'feed':
+            loadFeed();
+            break;
+        case 'perfil':
+            renderProfilePage();
+            break;
+    }
+}
+
+async function loadDocuments() {
+    const grid = document.getElementById('documents-grid');
+    if (!grid) return;
     
     try {
-        const formData = new FormData(e.target);
-        const files = document.getElementById('lost-files').files;
+        const documents = await window.documentsApi.getByUser(currentUser.id);
+        grid.innerHTML = '';
         
-        // Upload files if any
-        let uploadedFiles = [];
-        if (files.length > 0) {
-            const documentId = `lost_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            uploadedFiles = await storage.uploadDocumentFiles(Array.from(files), documentId);
+        if (documents && documents.length > 0) {
+            documents.forEach(doc => {
+                const card = createDocumentCard(doc);
+                grid.appendChild(card);
+            });
+        } else {
+            grid.innerHTML = '<p class="text-center muted">Nenhum documento adicionado ainda</p>';
         }
         
-        // Create lost document report
-        const documentData = {
-            id: `lost_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            user_id: currentUser.id,
-            type: formData.get('document_type'),
-            name: formData.get('document_name'),
-            description: formData.get('description'),
-            location: formData.get('location'),
-            contact_info: formData.get('contact_info'),
-            status: 'lost',
-            files: uploadedFiles,
-            latitude: selectedLocation?.lat || null,
-            longitude: selectedLocation?.lng || null,
-            created_at: new Date().toISOString()
-        };
-        
-        await database.createDocument(documentData);
-        
-        // Reset form
-        e.target.reset();
-        selectedLocation = null;
-        
-        // Reload feed data
-        await loadFeedData();
-        
-        showToast(t('message.lost_reported') || 'Documento perdido reportado com sucesso!', 'success');
-    } catch (error) {
-        console.error('Error reporting lost document:', error);
-        showToast(error.message || 'Erro ao reportar documento perdido.', 'error');
-    } finally {
-        showLoading(false);
-    }
-}
-
-async function handleReportFound(e) {
-    e.preventDefault();
-    showLoading(true);
-    
-    try {
-        const formData = new FormData(e.target);
-        const files = document.getElementById('found-files').files;
-        
-        // Upload files if any
-        let uploadedFiles = [];
-        if (files.length > 0) {
-            const documentId = `found_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            uploadedFiles = await storage.uploadDocumentFiles(Array.from(files), documentId);
-        }
-        
-        // Create found document report
-        const documentData = {
-            id: `found_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            user_id: currentUser.id,
-            type: formData.get('document_type'),
-            name: formData.get('document_name'),
-            description: formData.get('description'),
-            location: formData.get('location'),
-            contact_info: formData.get('contact_info'),
-            status: 'found',
-            files: uploadedFiles,
-            latitude: selectedLocation?.lat || null,
-            longitude: selectedLocation?.lng || null,
-            created_at: new Date().toISOString()
-        };
-        
-        await database.createDocument(documentData);
-        
-        // Check for potential matches and create notification
-        await checkForMatches(documentData);
-        
-        // Reset form
-        e.target.reset();
-        selectedLocation = null;
-        
-        // Reload feed data
-        await loadFeedData();
-        
-        showToast(t('message.found_reported') || 'Documento encontrado reportado com sucesso!', 'success');
-    } catch (error) {
-        console.error('Error reporting found document:', error);
-        showToast(error.message || 'Erro ao reportar documento encontrado.', 'error');
-    } finally {
-        showLoading(false);
-    }
-}
-
-// Data loading functions
-async function loadUserDocuments() {
-    try {
-        const documents = await database.getUserDocuments(currentUser.id);
-        renderDocuments(documents);
-        updateDocumentStats(documents);
+        updateDocumentCount(documents?.length || 0);
     } catch (error) {
         console.error('Error loading documents:', error);
-        showToast('Erro ao carregar documentos.', 'error');
+        grid.innerHTML = '<p class="text-center error">Erro ao carregar documentos</p>';
     }
 }
 
-async function loadFeedData() {
-    try {
-        const activeTab = document.querySelector('.feed-tab.active').dataset.tab;
-        const filters = {
-            type: document.getElementById('feed-type-filter').value,
-            search: document.getElementById('feed-search').value
-        };
-        
-        let documents;
-        if (activeTab === 'lost') {
-            documents = await database.getLostDocuments(filters);
-        } else {
-            documents = await database.getFoundDocuments(filters);
-        }
-        
-        renderFeedData(documents, activeTab);
-    } catch (error) {
-        console.error('Error loading feed data:', error);
-        showToast('Erro ao carregar feed.', 'error');
+function createDocumentCard(doc) {
+    const div = document.createElement('div');
+    div.className = 'document-card';
+    div.dataset.id = doc.id;
+    
+    const statusClass = doc.status === 'lost' ? 'danger' : doc.status === 'found' ? 'success' : 'primary';
+    
+    div.innerHTML = `
+        <div class="card-body">
+            <h4>${doc.title}</h4>
+            <p class="muted">Tipo: ${doc.type} • Status: ${doc.status}</p>
+            <div class="card-actions">
+                <button class="btn small ${statusClass} view-doc" data-id="${doc.id}">Ver</button>
+                <button class="btn danger small delete-doc" data-id="${doc.id}">Excluir</button>
+            </div>
+        </div>`;
+    
+    // Add event listeners
+    const viewBtn = div.querySelector('.view-doc');
+    const deleteBtn = div.querySelector('.delete-doc');
+    
+    if (viewBtn) {
+        viewBtn.addEventListener('click', () => viewDocument(doc));
     }
+    
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', () => deleteDocument(doc.id));
+    }
+    
+    return div;
 }
 
-// Render functions
-function renderDocuments(documents) {
-    const container = document.getElementById('documents-list');
+function loadFeed() {
+    const feedContent = document.getElementById('feed-content');
+    if (!feedContent) return;
     
-    if (!documents || documents.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-file-alt"></i>
-                <h3 data-i18n="documents.no_documents">Nenhum documento adicionado ainda</h3>
-                <p data-i18n="documents.add_first">Clique em "Adicionar Documento" para começar</p>
-            </div>
-        `;
-        updateTranslations();
-        return;
-    }
-    
-    container.innerHTML = documents.map(doc => `
-        <div class="document-card" data-document-id="${doc.id}">
-            <div class="document-header">
-                <div class="document-type">
-                    <i class="fas ${getDocumentIcon(doc.type)}"></i>
-                    <span data-i18n="type.${doc.type}">${t('type.' + doc.type)}</span>
+    // Sample feed data
+    feedContent.innerHTML = `
+        <div class="feed-item">
+            <div class="document-card">
+                <div class="card-body">
+                    <h4>BI Perdido - Maria Santos</h4>
+                    <p class="muted">Perdido em Maputo • Há 2 horas</p>
+                    <div class="card-actions">
+                        <button class="btn small primary">Contactar</button>
+                        <button class="btn small secondary">Ver Localização</button>
+                    </div>
                 </div>
-                <div class="document-status status-${doc.status}">
-                    <span data-i18n="status.${doc.status}">${t('status.' + doc.status)}</span>
-                </div>
-            </div>
-            <div class="document-content">
-                <h3>${doc.name}</h3>
-                ${doc.number ? `<p class="document-number">${doc.number}</p>` : ''}
-                ${doc.description ? `<p class="document-description">${doc.description}</p>` : ''}
-                <p class="document-date">${formatDate(doc.created_at)}</p>
-            </div>
-            <div class="document-actions">
-                <button class="btn icon" onclick="viewDocument('${doc.id}')" data-i18n="documents.view" title="Ver">
-                    <i class="fas fa-eye"></i>
-                </button>
-                <button class="btn icon" onclick="editDocument('${doc.id}')" data-i18n="documents.edit" title="Editar">
-                    <i class="fas fa-edit"></i>
-                </button>
-                ${doc.status === 'normal' ? `
-                    <button class="btn icon danger" onclick="markAsLost('${doc.id}')" data-i18n="documents.mark_lost" title="Marcar como Perdido">
-                        <i class="fas fa-exclamation-triangle"></i>
-                    </button>
-                ` : ''}
             </div>
         </div>
-    `).join('');
-    
-    updateTranslations();
-}
-
-function renderFeedData(documents, type) {
-    const container = document.getElementById('feed-content');
-    
-    if (!documents || documents.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="fas ${type === 'lost' ? 'fa-search' : 'fa-hand-holding'}"></i>
-                <h3 data-i18n="${type}.no_documents">Nenhum documento ${type === 'lost' ? 'perdido' : 'encontrado'}</h3>
-                <p data-i18n="${type}.be_first">Seja o primeiro a reportar</p>
-            </div>
-        `;
-        updateTranslations();
-        return;
-    }
-    
-    container.innerHTML = documents.map(doc => `
-        <div class="feed-card" data-document-id="${doc.id}">
-            <div class="feed-header">
-                <div class="document-type">
-                    <i class="fas ${getDocumentIcon(doc.type)}"></i>
-                    <span data-i18n="type.${doc.type}">${t('type.' + doc.type)}</span>
-                </div>
-                <div class="feed-date">${formatDate(doc.created_at)}</div>
-            </div>
-            <div class="feed-content">
-                <h3>${doc.name}</h3>
-                ${doc.description ? `<p>${doc.description}</p>` : ''}
-                <div class="feed-location">
-                    <i class="fas fa-map-marker-alt"></i>
-                    <span>${doc.location}</span>
+        <div class="feed-item">
+            <div class="document-card">
+                <div class="card-body">
+                    <h4>Passaporte Encontrado</h4>
+                    <p class="muted">Encontrado na Baixa • Há 4 horas</p>
+                    <div class="card-actions">
+                        <button class="btn small success">Este é meu</button>
+                        <button class="btn small secondary">Ver Detalhes</button>
+                    </div>
                 </div>
             </div>
-            <div class="feed-actions">
-                ${doc.user_id !== currentUser.id ? `
-                    <button class="btn primary" onclick="startChat('${doc.id}')">
-                        <i class="fas fa-comments"></i>
-                        <span data-i18n="documents.contact">Contatar</span>
-                    </button>
-                ` : ''}
-                ${doc.latitude && doc.longitude ? `
-                    <button class="btn secondary" onclick="showLocation(${doc.latitude}, ${doc.longitude})">
-                        <i class="fas fa-map"></i>
-                        <span data-i18n="common.location">Localização</span>
-                    </button>
-                ` : ''}
-            </div>
         </div>
-    `).join('');
-    
-    updateTranslations();
+    `;
 }
 
-// Chat functions
-async function startChat(documentId) {
-    try {
-        const document = await database.getDocumentById(documentId);
-        currentChat = {
-            documentId,
-            document,
-            otherUserId: document.user_id
-        };
-        
-        await loadChatMessages();
-        showModal('chat-modal');
-        
-        // Subscribe to new messages
-        setupChatSubscription(documentId);
-    } catch (error) {
-        console.error('Error starting chat:', error);
-        showToast('Erro ao iniciar conversa.', 'error');
+function loadProfile() {
+    updateProfileInfo();
+}
+
+function updateProfileInfo() {
+    const profileName = document.getElementById('profile-name');
+    const profileEmail = document.getElementById('profile-email');
+    const statDocuments = document.getElementById('stat-documents');
+    const statPoints = document.getElementById('stat-points');
+    const statHelped = document.getElementById('stat-helped');
+    
+    if (profileName) profileName.textContent = currentUser.name || 'Demo User';
+    if (profileEmail) profileEmail.textContent = currentUser.email || 'demo@example.com';
+    if (statDocuments) statDocuments.textContent = '1';
+    if (statPoints) statPoints.textContent = '250';
+    if (statHelped) statHelped.textContent = '3';
+}
+
+function updateDocumentCount(count = 0) {
+    const documentCount = document.getElementById('document-count');
+    if (documentCount) {
+        documentCount.textContent = `${count} total`;
     }
 }
 
-async function loadChatMessages() {
-    if (!currentChat) return;
+async function handleLostForm(e) {
+    e.preventDefault();
     
-    try {
-        const messages = await database.getChatMessages(currentChat.documentId);
-        renderChatMessages(messages);
-    } catch (error) {
-        console.error('Error loading chat messages:', error);
-        showToast('Erro ao carregar mensagens.', 'error');
-    }
-}
-
-function renderChatMessages(messages) {
-    const container = document.getElementById('chat-messages');
-    
-    if (!messages || messages.length === 0) {
-        container.innerHTML = `
-            <div class="chat-empty">
-                <p>Inicie a conversa enviando uma mensagem</p>
-            </div>
-        `;
-        return;
-    }
-    
-    container.innerHTML = messages.map(message => `
-        <div class="chat-message ${message.sender_id === currentUser.id ? 'own' : 'other'}">
-            <div class="message-content">${escapeHtml(message.message)}</div>
-            <div class="message-time">${formatTime(message.created_at)}</div>
-        </div>
-    `).join('');
-    
-    // Scroll to bottom
-    container.scrollTop = container.scrollHeight;
-}
-
-async function handleSendMessage() {
-    if (!currentChat) return;
-    
-    const input = document.getElementById('chat-input');
-    const message = input.value.trim();
-    
-    if (!message) return;
-    
-    try {
-        await database.createChat({
-            document_id: currentChat.documentId,
-            sender_id: currentUser.id,
-            receiver_id: currentChat.otherUserId,
-            message: message,
-            created_at: new Date().toISOString()
-        });
-        
-        input.value = '';
-    } catch (error) {
-        console.error('Error sending message:', error);
-        showToast('Erro ao enviar mensagem.', 'error');
-    }
-}
-
-// Location functions
-function openLocationModal(context) {
-    selectedLocation = null;
-    showModal('location-modal');
-    initializeMap();
-}
-
-function initializeMap() {
-    const mapContainer = document.getElementById('map');
-    
-    // Initialize Leaflet map
-    if (currentMap) {
-        currentMap.remove();
-    }
-    
-    currentMap = L.map('map').setView([-25.966, 32.583], 10); // Default to Maputo, Mozambique
-    
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(currentMap);
-    
-    // Add click event
-    currentMap.on('click', (e) => {
-        selectedLocation = e.latlng;
-        
-        // Clear previous markers
-        currentMap.eachLayer((layer) => {
-            if (layer instanceof L.Marker) {
-                currentMap.removeLayer(layer);
-            }
-        });
-        
-        // Add new marker
-        L.marker([e.latlng.lat, e.latlng.lng]).addTo(currentMap);
-        
-        // Update location display
-        document.getElementById('selected-location').innerHTML = `
-            <p><strong>Localização selecionada:</strong></p>
-            <p>Latitude: ${e.latlng.lat.toFixed(6)}</p>
-            <p>Longitude: ${e.latlng.lng.toFixed(6)}</p>
-        `;
-    });
-    
-    // Try to get user's current location
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition((position) => {
-            const { latitude, longitude } = position.coords;
-            currentMap.setView([latitude, longitude], 13);
-        });
-    }
-}
-
-function confirmLocation() {
-    if (!selectedLocation) {
-        showToast('Por favor, selecione uma localização no mapa.', 'error');
-        return;
-    }
-    
-    // Update the relevant location input
-    const activeForm = document.querySelector('.content-section.active form');
-    if (activeForm) {
-        const locationInput = activeForm.querySelector('input[id$="-location"]');
-        if (locationInput) {
-            locationInput.value = `${selectedLocation.lat.toFixed(6)}, ${selectedLocation.lng.toFixed(6)}`;
-        }
-    }
-    
-    hideModal('location-modal');
-    showToast('Localização selecionada com sucesso!', 'success');
-}
-
-function showLocation(lat, lng) {
-    selectedLocation = { lat, lng };
-    showModal('location-modal');
-    initializeMap();
-    
-    setTimeout(() => {
-        currentMap.setView([lat, lng], 15);
-        L.marker([lat, lng]).addTo(currentMap);
-    }, 500);
-}
-
-// Realtime subscriptions
-function setupRealtimeSubscriptions() {
-    // Subscribe to document updates
-    feedSubscription = realtime.subscribeToDocumentUpdates((payload) => {
-        if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            loadFeedData();
-        }
-    });
-    
-    // Subscribe to notifications
-    notificationSubscription = realtime.subscribeToNotifications(currentUser.id, (payload) => {
-        if (payload.eventType === 'INSERT') {
-            showNotification(payload.new);
-        }
-    });
-}
-
-function setupChatSubscription(documentId) {
-    if (currentChat?.subscription) {
-        realtime.unsubscribe(currentChat.subscription);
-    }
-    
-    currentChat.subscription = realtime.subscribeToChats(documentId, (payload) => {
-        if (payload.eventType === 'INSERT') {
-            loadChatMessages();
-        }
-    });
-}
-
-// Utility functions
-async function checkForMatches(foundDocument) {
-    try {
-        const lostDocuments = await database.getLostDocuments({
-            type: foundDocument.type
-        });
-        
-        // Simple matching logic - can be enhanced
-        const matches = lostDocuments.filter(lost => 
-            lost.type === foundDocument.type &&
-            lost.user_id !== foundDocument.user_id
-        );
-        
-        // Create notifications for potential matches
-        for (const match of matches) {
-            await database.createNotification({
-                user_id: match.user_id,
-                type: 'match_found',
-                title: 'Possível documento encontrado!',
-                message: `Alguém reportou ter encontrado um ${foundDocument.name} em ${foundDocument.location}`,
-                data: { 
-                    found_document_id: foundDocument.id,
-                    lost_document_id: match.id
-                },
-                read: false,
-                created_at: new Date().toISOString()
-            });
-        }
-    } catch (error) {
-        console.error('Error checking for matches:', error);
-    }
-}
-
-async function markAsLost(documentId) {
-    if (!confirm(t('message.confirm_mark_lost'))) return;
-    
-    try {
-        await database.updateDocument(documentId, {
-            status: 'lost',
-            updated_at: new Date().toISOString()
-        });
-        
-        await loadUserDocuments();
-        await loadFeedData();
-        
-        showToast(t('message.document_marked_lost'), 'success');
-    } catch (error) {
-        console.error('Error marking document as lost:', error);
-        showToast('Erro ao marcar documento como perdido.', 'error');
-    }
-}
-
-async function viewDocument(documentId) {
-    try {
-        const document = await database.getDocumentById(documentId);
-        // Implement document view modal
-        console.log('View document:', document);
-    } catch (error) {
-        console.error('Error viewing document:', error);
-    }
-}
-
-async function editDocument(documentId) {
-    try {
-        const document = await database.getDocumentById(documentId);
-        // Implement document edit functionality
-        console.log('Edit document:', document);
-    } catch (error) {
-        console.error('Error editing document:', error);
-    }
-}
-
-function getDocumentIcon(type) {
-    const icons = {
-        'bi': 'fa-id-card',
-        'passaporte': 'fa-passport',
-        'carta': 'fa-car',
-        'outros': 'fa-file-alt'
+    const formData = new FormData(e.target);
+    const data = {
+        userId: currentUser.id,
+        title: document.getElementById('lost-title').value,
+        type: document.getElementById('lost-type').value,
+        status: 'lost',
+        location: { address: document.getElementById('lost-location').value },
+        fileUrl: ''
     };
-    return icons[type] || 'fa-file-alt';
-}
-
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString(currentLanguage === 'pt' ? 'pt-BR' : 'en-US');
-}
-
-function formatTime(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString(currentLanguage === 'pt' ? 'pt-BR' : 'en-US', {
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-}
-
-// File upload setup
-function setupFileUpload(areaId, inputId) {
-    const area = document.getElementById(areaId);
-    const input = document.getElementById(inputId);
     
-    if (!area || !input) return;
-    
-    area.addEventListener('click', () => input.click());
-    
-    area.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        area.classList.add('dragover');
-    });
-    
-    area.addEventListener('dragleave', () => {
-        area.classList.remove('dragover');
-    });
-    
-    area.addEventListener('drop', (e) => {
-        e.preventDefault();
-        area.classList.remove('dragover');
+    try {
+        await window.documentsApi.create(data);
+        showToast('Documento perdido reportado com sucesso!', 'success');
         
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            input.files = files;
-            updateFileUploadDisplay(area, files);
-        }
-    });
-    
-    input.addEventListener('change', (e) => {
-        updateFileUploadDisplay(area, e.target.files);
-    });
-}
-
-function updateFileUploadDisplay(area, files) {
-    if (files.length > 0) {
-        const fileNames = Array.from(files).map(f => f.name).join(', ');
-        area.innerHTML = `
-            <i class="fas fa-check-circle" style="color: var(--success-color);"></i>
-            <p>${files.length} arquivo(s) selecionado(s)</p>
-            <small>${fileNames}</small>
-        `;
+        // Award points for reporting lost document
+        await trackDocumentLost();
+        
+        e.target.reset();
+        showSection('documentos');
+    } catch (error) {
+        console.error('Error reporting lost document:', error);
+        showToast('Erro ao reportar documento perdido', 'error');
     }
 }
 
-// Avatar upload
-async function handleAvatarUpload(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+async function handleFoundForm(e) {
+    e.preventDefault();
     
-    if (!file.type.startsWith('image/')) {
-        showToast('Por favor, selecione uma imagem válida.', 'error');
-        return;
+    const data = {
+        userId: currentUser.id,
+        title: document.getElementById('found-title').value,
+        type: document.getElementById('found-type').value,
+        status: 'found',
+        location: { address: document.getElementById('found-location').value },
+        fileUrl: ''
+    };
+    
+    try {
+        await window.documentsApi.create(data);
+        showToast('Documento encontrado reportado com sucesso!', 'success');
+        
+        // Award points for reporting found document
+        await trackDocumentFound();
+        
+        e.target.reset();
+        showSection('feed');
+    } catch (error) {
+        console.error('Error reporting found document:', error);
+        showToast('Erro ao reportar documento encontrado', 'error');
     }
-    
-    if (file.size > 5 * 1024 * 1024) {
-        showToast('Imagem muito grande. Máximo 5MB.', 'error');
+}
+
+function viewDocument(doc) {
+    showToast(`Visualizando: ${doc.title}`, 'info');
+}
+
+async function deleteDocument(docId) {
+    if (!confirm('Tem certeza que deseja excluir este documento?')) {
         return;
     }
     
     try {
-        showLoading(true);
-        const avatarUrl = await storage.uploadAvatar(file, currentUser.id);
-        
-        // Update user profile
-        await database.updateUserProfile(currentUser.id, { avatar_url: avatarUrl });
-        
-        // Update UI
-        document.getElementById('user-avatar').src = avatarUrl;
-        
-        showToast('Foto de perfil atualizada!', 'success');
+        await window.documentsApi.deleteDoc(docId);
+        showToast('Documento excluído com sucesso!', 'success');
+        loadDocuments();
     } catch (error) {
-        console.error('Error uploading avatar:', error);
-        showToast('Erro ao atualizar foto de perfil.', 'error');
-    } finally {
-        showLoading(false);
+        console.error('Error deleting document:', error);
+        showToast('Erro ao excluir documento', 'error');
     }
 }
 
-// Country prefix setup
-function setupCountryPrefix(selectId, prefixId) {
-    const select = document.getElementById(selectId);
-    const prefix = document.getElementById(prefixId);
-    
-    if (!select || !prefix) return;
-    
-    select.addEventListener('change', function() {
-        const selected = select.options[select.selectedIndex];
-        const p = selected.getAttribute('data-prefix') || '';
-        prefix.textContent = p;
-    });
-    
-    // Set default
-    select.value = 'AO';
-    prefix.textContent = '+244';
+function showAddDocumentModal() {
+    showToast('Modal de adicionar documento em desenvolvimento', 'info');
 }
 
-// Feed management
-function handleFeedTabChange(e) {
-    document.querySelectorAll('.feed-tab').forEach(tab => tab.classList.remove('active'));
-    e.target.classList.add('active');
-    loadFeedData();
-}
-
-function handleFeedFilterChange() {
-    loadFeedData();
-}
-
-// Bottom navigation
-function setupBottomNavigation() {
-    const navItems = document.querySelectorAll('#bottom-nav-bar .nav-item');
-    const sections = document.querySelectorAll('.content-section');
-    
-    navItems.forEach(item => {
-        item.addEventListener('click', (e) => {
-            e.preventDefault();
-            
-            const target = item.dataset.navTarget;
-            
-            // Update active nav item
-            navItems.forEach(nav => nav.classList.remove('active'));
-            item.classList.add('active');
-            
-            // Show target section
-            sections.forEach(section => section.classList.remove('active'));
-            document.getElementById(target)?.classList.add('active');
-            
-            // Hide welcome tips if not on documents page
-            const welcomeTips = document.getElementById('welcome-tips');
-            if (welcomeTips) {
-                welcomeTips.style.display = target === 'documentos' ? 'block' : 'none';
-            }
-        });
-    });
-}
-
-// UI update functions
-function updateUserInterface() {
-    if (!currentUserProfile) return;
-    
-    // Update user info
-    document.getElementById('user-name').textContent = 
-        `${currentUserProfile.first_name} ${currentUserProfile.last_name}`;
-    document.getElementById('user-email').textContent = currentUser.email;
-    
-    // Update points display
-    document.querySelectorAll('.points-value').forEach(el => {
-        el.textContent = currentUserProfile.points || 0;
-    });
-    document.getElementById('profile-points').textContent = currentUserProfile.points || 0;
-    
-    // Update avatar if available
-    if (currentUserProfile.avatar_url) {
-        document.getElementById('user-avatar').src = currentUserProfile.avatar_url;
-    }
-}
-
-function updateDocumentStats(documents) {
-    const total = documents.length;
-    const lost = documents.filter(doc => doc.status === 'lost').length;
-    
-    document.getElementById('total-documents').textContent = total;
-    document.getElementById('lost-documents').textContent = lost;
-    document.getElementById('profile-documents').textContent = total;
-}
-
-// Theme and language functions
 function toggleTheme() {
     currentTheme = currentTheme === 'light' ? 'dark' : 'light';
-    document.body.setAttribute('data-theme', currentTheme);
-    localStorage.setItem(STORAGE_KEYS.THEME, currentTheme);
-    
-    // Update theme toggle icons
-    const icons = document.querySelectorAll('#theme-toggle i, #theme-toggle-app i');
-    icons.forEach(icon => {
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    localStorage.setItem('findmydocs_theme', currentTheme);
+    updateThemeIcon();
+}
+
+function updateThemeIcon() {
+    const icon = themeToggle?.querySelector('i');
+    if (icon) {
         icon.className = currentTheme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
-    });
-}
-
-function setLanguage(lang) {
-    currentLanguage = lang;
-    localStorage.setItem(STORAGE_KEYS.LANGUAGE, lang);
-    
-    // Update language buttons
-    document.querySelectorAll('.lang-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    document.getElementById(`lang-${lang}`).classList.add('active');
-    
-    updateTranslations();
-}
-
-// UI helper functions
-function showApp() {
-    document.getElementById('login-section').classList.add('hidden');
-    document.getElementById('app-section').classList.remove('hidden');
-}
-
-function showLogin() {
-    document.getElementById('login-section').classList.remove('hidden');
-    document.getElementById('app-section').classList.add('hidden');
-}
-
-function showModal(modalId) {
-    document.getElementById(modalId).classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-}
-
-function hideModal(modalId) {
-    document.getElementById(modalId).classList.add('hidden');
-    document.body.style.overflow = 'auto';
-    
-    // Clean up chat subscription when closing chat modal
-    if (modalId === 'chat-modal' && currentChat?.subscription) {
-        realtime.unsubscribe(currentChat.subscription);
-        currentChat = null;
     }
 }
 
-function showLoading(show) {
-    const spinner = document.getElementById('loading-spinner');
-    if (show) {
-        spinner.classList.remove('hidden');
-    } else {
-        spinner.classList.add('hidden');
+function changeLanguage(lang) {
+    currentLanguage = lang;
+    localStorage.setItem('findmydocs_language', currentLanguage);
+    if (languageSelector) {
+        languageSelector.value = currentLanguage;
     }
 }
 
 function showToast(message, type = 'info') {
-    const container = document.getElementById('toast-container');
+    const toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) return;
+    
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     toast.innerHTML = `
-        <i class="fas ${getToastIcon(type)}"></i>
-        <span>${message}</span>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>${message}</span>
+            <button onclick="this.parentElement.parentElement.remove()" 
+                    style="background: none; border: none; cursor: pointer; margin-left: 10px; color: inherit;"
+                    aria-label="Fechar">&times;</button>
+        </div>
     `;
     
-    container.appendChild(toast);
+    toastContainer.appendChild(toast);
     
-    // Remove toast after 5 seconds
     setTimeout(() => {
-        toast.remove();
+        if (toast.parentElement) {
+            toast.remove();
+        }
     }, 5000);
 }
 
-function getToastIcon(type) {
-    const icons = {
-        success: 'fa-check-circle',
-        error: 'fa-exclamation-circle',
-        warning: 'fa-exclamation-triangle',
-        info: 'fa-info-circle'
-    };
-    return icons[type] || 'fa-info-circle';
-}
-
-function showNotification(notification) {
-    showToast(notification.message, 'info');
+// Profile Page Functions
+async function renderProfilePage() {
+    const loadingDiv = document.getElementById('profile-loading');
+    const profileName = document.getElementById('profile-name');
+    const profileEmail = document.getElementById('profile-email');
+    const profilePlan = document.getElementById('profile-plan');
+    const profileDocCount = document.getElementById('profile-doc-count');
+    const profileDocumentsGrid = document.getElementById('profile-documents-grid');
     
-    // Play notification sound if available
+    // Show loading state
+    if (loadingDiv) {
+        loadingDiv.style.display = 'block';
+    }
+    
     try {
-        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+Nps2MdBDuY3vLEbCcH');
-        audio.play();
-    } catch (e) {
-        // Ignore if audio fails
+        // Get user session
+        let user = currentUser;
+        if (window.authApi) {
+            const sessionUser = await window.authApi.getCurrentUser();
+            if (sessionUser) {
+                user = sessionUser;
+                currentUser = user;
+            }
+        }
+        
+        // Get user profile data
+        let userProfile = null;
+        if (window.profilesApi && user.id) {
+            try {
+                userProfile = await window.profilesApi.get(user.id);
+            } catch (error) {
+                console.log('Profile not found, using defaults');
+            }
+        }
+        
+        // Update profile info
+        if (profileName) profileName.textContent = user.user_metadata?.full_name || user.email || 'User';
+        if (profileEmail) profileEmail.textContent = user.email || 'user@example.com';
+        
+        // Update avatar if available
+        const avatarImg = document.getElementById('profile-avatar');
+        if (avatarImg && userProfile?.avatar_url) {
+            avatarImg.src = userProfile.avatar_url;
+        }
+        
+        const plan = userProfile?.plan || 'free';
+        if (profilePlan) {
+            profilePlan.textContent = plan;
+            profilePlan.className = `plan-badge ${plan}`;
+        }
+        
+        // Load user documents
+        await loadProfileDocuments(user.id);
+        
+        // Update document count
+        const documents = await window.documentsApi.getByUser(user.id);
+        const docCount = documents?.length || 0;
+        if (profileDocCount) profileDocCount.textContent = docCount.toString();
+        
+        // Update points display
+        const userPoints = userProfile?.points || 0;
+        updatePointsDisplay(userPoints);
+        
+    } catch (error) {
+        console.error('Error loading profile:', error);
+        showToast('Erro ao carregar perfil', 'error');
+    } finally {
+        // Hide loading state
+        if (loadingDiv) {
+            loadingDiv.style.display = 'none';
+        }
     }
 }
 
-// Utility functions
-function escapeHtml(text) {
+async function loadProfileDocuments(userId) {
+    const grid = document.getElementById('profile-documents-grid');
+    if (!grid) return;
+    
+    try {
+        const documents = await window.documentsApi.getByUser(userId);
+        grid.innerHTML = '';
+        
+        if (documents && documents.length > 0) {
+            documents.forEach(doc => {
+                const card = createProfileDocumentCard(doc);
+                grid.appendChild(card);
+            });
+        } else {
+            grid.innerHTML = '<p class="text-center muted">Nenhum documento adicionado ainda</p>';
+        }
+    } catch (error) {
+        console.error('Error loading profile documents:', error);
+        grid.innerHTML = '<p class="text-center error">Erro ao carregar documentos</p>';
+    }
+}
+
+function createProfileDocumentCard(doc) {
     const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    div.className = 'document-card';
+    div.dataset.id = doc.id;
+    
+    const statusClass = doc.status === 'lost' ? 'danger' : doc.status === 'found' ? 'success' : 'primary';
+    const statusText = doc.status === 'lost' ? 'Perdido' : doc.status === 'found' ? 'Encontrado' : 'Normal';
+    
+    div.innerHTML = `
+        <div class="card-body">
+            <h4>${doc.title}</h4>
+            <p class="muted">Tipo: ${doc.type} • Status: ${statusText}</p>
+            <div class="card-actions">
+                <button class="btn small ${statusClass} view-profile-doc" data-id="${doc.id}">Ver</button>
+                <button class="btn small secondary edit-profile-doc" data-id="${doc.id}">Editar</button>
+                ${doc.status === 'normal' ? 
+                    `<button class="btn small warning mark-lost-doc" data-id="${doc.id}">Marcar Perdido</button>` :
+                    doc.status === 'lost' ? 
+                    `<button class="btn small success cancel-lost-doc" data-id="${doc.id}">Cancelar Perdido</button>` : ''
+                }
+                <button class="btn small info chat-doc-btn" data-id="${doc.id}" data-title="${doc.title}">
+                    <i class="fas fa-comments"></i> Chat
+                </button>
+                <button class="btn danger small delete-profile-doc" data-id="${doc.id}">Excluir</button>
+            </div>
+        </div>`;
+    
+    // Add event listeners
+    const viewBtn = div.querySelector('.view-profile-doc');
+    const editBtn = div.querySelector('.edit-profile-doc');
+    const markLostBtn = div.querySelector('.mark-lost-doc');
+    const cancelLostBtn = div.querySelector('.cancel-lost-doc');
+    const chatBtn = div.querySelector('.chat-doc-btn');
+    const deleteBtn = div.querySelector('.delete-profile-doc');
+    
+    if (viewBtn) viewBtn.addEventListener('click', () => viewProfileDocument(doc));
+    if (editBtn) editBtn.addEventListener('click', () => editProfileDocument(doc));
+    if (markLostBtn) markLostBtn.addEventListener('click', () => markDocumentAsLost(doc.id));
+    if (cancelLostBtn) cancelLostBtn.addEventListener('click', () => cancelDocumentLost(doc.id));
+    if (chatBtn) chatBtn.addEventListener('click', () => window.chat.openChatModal(doc.id, doc.title));
+    if (deleteBtn) deleteBtn.addEventListener('click', () => deleteProfileDocument(doc.id));
+    
+    return div;
 }
 
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
+// Document Actions
+function viewProfileDocument(doc) {
+    showToast(`Visualizando: ${doc.title}`, 'info');
+}
+
+function editProfileDocument(doc) {
+    showToast(`Editando: ${doc.title}`, 'info');
+}
+
+async function markDocumentAsLost(docId) {
+    if (!confirm('Tem certeza que deseja marcar este documento como perdido? Ele será visível no feed público.')) {
+        return;
+    }
+    
+    try {
+        await window.documentsApi.update(docId, { status: 'lost' });
+        showToast('Documento marcado como perdido!', 'success');
+        renderProfilePage(); // Reload profile
+    } catch (error) {
+        console.error('Error marking document as lost:', error);
+        showToast('Erro ao marcar documento como perdido', 'error');
+    }
+}
+
+async function cancelDocumentLost(docId) {
+    if (!confirm('Tem certeza que deseja cancelar o status de perdido?')) {
+        return;
+    }
+    
+    try {
+        await window.documentsApi.update(docId, { status: 'normal' });
+        showToast('Status de perdido cancelado!', 'success');
+        renderProfilePage(); // Reload profile
+    } catch (error) {
+        console.error('Error canceling lost status:', error);
+        showToast('Erro ao cancelar status de perdido', 'error');
+    }
+}
+
+async function deleteProfileDocument(docId) {
+    if (!confirm('Tem certeza que deseja excluir este documento permanentemente?')) {
+        return;
+    }
+    
+    try {
+        await window.documentsApi.deleteDoc(docId);
+        showToast('Documento excluído com sucesso!', 'success');
+        renderProfilePage(); // Reload profile
+    } catch (error) {
+        console.error('Error deleting document:', error);
+        showToast('Erro ao excluir documento', 'error');
+    }
+}
+
+// Logout Function
+async function handleLogout() {
+    try {
+        if (window.authApi) {
+            await window.authApi.signOut();
+        }
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('remember_me');
+        window.location.href = 'login.html';
+    } catch (error) {
+        console.error('Logout error:', error);
+        // Force logout even if API fails
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('remember_me');
+        window.location.href = 'login.html';
+    }
+}
+
+// Upload Modal Functions
+let selectedFile = null;
+let processedImageBlob = null;
+
+function initializeUploadModal() {
+    const uploadModal = document.getElementById('upload-modal');
+    const profileAddBtn = document.getElementById('profile-add-document');
+    const addDocumentBtn = document.getElementById('add-document');
+    const uploadModalClose = document.getElementById('upload-modal-close');
+    const uploadCancel = document.getElementById('upload-cancel');
+    const uploadForm = document.getElementById('upload-form');
+    const fileInput = document.getElementById('upload-file');
+    const dropzone = document.getElementById('file-upload-dropzone');
+    
+    // Open modal events
+    if (profileAddBtn) {
+        profileAddBtn.addEventListener('click', openUploadModal);
+    }
+    if (addDocumentBtn) {
+        addDocumentBtn.addEventListener('click', openUploadModal);
+    }
+    
+    // Close modal events
+    if (uploadModalClose) {
+        uploadModalClose.addEventListener('click', closeUploadModal);
+    }
+    if (uploadCancel) {
+        uploadCancel.addEventListener('click', closeUploadModal);
+    }
+    
+    // File input and dropzone
+    if (dropzone && fileInput) {
+        dropzone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileSelect);
+        
+        // Drag and drop
+        dropzone.addEventListener('dragover', handleDragOver);
+        dropzone.addEventListener('drop', handleFileDrop);
+        dropzone.addEventListener('dragleave', handleDragLeave);
+    }
+    
+    // Form submission
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', handleUploadSubmit);
+    }
+}
+
+async function openUploadModal() {
+    // Check user plan limits
+    const plan = document.getElementById('profile-plan')?.textContent || 'free';
+    const docCount = parseInt(document.getElementById('profile-doc-count')?.textContent || '0');
+    
+    if (plan === 'free' && docCount >= 1) {
+        showToast('Plano Gratuito: Limite de 1 documento (BI) atingido', 'warning');
+        return;
+    }
+    
+    const modal = document.getElementById('upload-modal');
+    if (modal) {
+        modal.style.display = 'block';
+        resetUploadForm();
+    }
+}
+
+function closeUploadModal() {
+    const modal = document.getElementById('upload-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        resetUploadForm();
+    }
+}
+
+function resetUploadForm() {
+    const form = document.getElementById('upload-form');
+    const previewContainer = document.getElementById('image-preview-container');
+    const uploadSubmit = document.getElementById('upload-submit');
+    
+    if (form) form.reset();
+    if (previewContainer) previewContainer.style.display = 'none';
+    if (uploadSubmit) uploadSubmit.disabled = true;
+    
+    selectedFile = null;
+    processedImageBlob = null;
+}
+
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (file) {
+        processSelectedFile(file);
+    }
+}
+
+function handleDragOver(event) {
+    event.preventDefault();
+    event.currentTarget.classList.add('drag-over');
+}
+
+function handleDragLeave(event) {
+    event.currentTarget.classList.remove('drag-over');
+}
+
+function handleFileDrop(event) {
+    event.preventDefault();
+    event.currentTarget.classList.remove('drag-over');
+    
+    const files = event.dataTransfer.files;
+    if (files.length > 0) {
+        processSelectedFile(files[0]);
+    }
+}
+
+function processSelectedFile(file) {
+    // Validate file
+    if (!file.type.startsWith('image/')) {
+        showToast('Por favor, selecione apenas arquivos de imagem', 'error');
+        return;
+    }
+    
+    if (file.size > 5 * 1024 * 1024) { // 5MB
+        showToast('Arquivo muito grande. Máximo 5MB', 'error');
+        return;
+    }
+    
+    selectedFile = file;
+    previewAndProcessImage(file);
+}
+
+function previewAndProcessImage(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            processImageWithWatermark(img);
         };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
+        img.src = e.target.result;
     };
+    reader.readAsDataURL(file);
 }
 
-function updateTranslations() {
-    document.querySelectorAll('[data-i18n]').forEach(element => {
-        const key = element.getAttribute('data-i18n');
-        element.textContent = t(key);
+function processImageWithWatermark(img) {
+    const canvas = document.getElementById('image-preview-canvas');
+    const ctx = canvas.getContext('2d');
+    const previewContainer = document.getElementById('image-preview-container');
+    const uploadSubmit = document.getElementById('upload-submit');
+    
+    // Calculate dimensions (compress for mobile)
+    const maxWidth = 800;
+    const maxHeight = 600;
+    let { width, height } = img;
+    
+    if (width > maxWidth || height > maxHeight) {
+        const ratio = Math.min(maxWidth / width, maxHeight / height);
+        width *= ratio;
+        height *= ratio;
+    }
+    
+    canvas.width = width;
+    canvas.height = height;
+    
+    // Draw image
+    ctx.drawImage(img, 0, 0, width, height);
+    
+    // Add watermark
+    ctx.font = '20px Arial';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+    ctx.lineWidth = 2;
+    
+    const watermarkText = 'FMD - Identificação Apenas';
+    const textWidth = ctx.measureText(watermarkText).width;
+    const x = (width - textWidth) / 2;
+    const y = height - 30;
+    
+    ctx.strokeText(watermarkText, x, y);
+    ctx.fillText(watermarkText, x, y);
+    
+    // Show preview
+    if (previewContainer) {
+        previewContainer.style.display = 'block';
+    }
+    
+    // Convert to blob for upload
+    canvas.toBlob((blob) => {
+        processedImageBlob = blob;
+        if (uploadSubmit) {
+            uploadSubmit.disabled = false;
+        }
+    }, 'image/jpeg', 0.8); // 80% quality compression
+}
+
+async function handleUploadSubmit(event) {
+    event.preventDefault();
+    
+    if (!processedImageBlob) {
+        showToast('Por favor, selecione uma imagem primeiro', 'error');
+        return;
+    }
+    
+    const docType = document.getElementById('upload-doc-type').value;
+    const docTitle = document.getElementById('upload-doc-title').value;
+    const loadingDiv = document.getElementById('upload-loading');
+    const uploadSubmit = document.getElementById('upload-submit');
+    
+    if (!docType || !docTitle) {
+        showToast('Por favor, preencha todos os campos', 'error');
+        return;
+    }
+    
+    // Show loading
+    if (loadingDiv) loadingDiv.style.display = 'block';
+    if (uploadSubmit) uploadSubmit.disabled = true;
+    
+    try {
+        const userId = currentUser.id;
+        const fileName = `${userId}/${Date.now()}_${docType.replace(' ', '_')}.jpg`;
+        
+        let fileUrl = '';
+        
+        // Try to upload to Supabase Storage
+        if (window.supabase && window.supabase.storage) {
+            try {
+                const { data, error } = await window.supabase.storage
+                    .from('documents')
+                    .upload(fileName, processedImageBlob, { upsert: false });
+                
+                if (error) {
+                    console.error('Storage upload error:', error);
+                    if (error.message.includes('Bucket not found')) {
+                        showToast('Storage bucket not configured. Please create a "documents" bucket in Supabase.', 'warning');
+                    } else {
+                        showToast('Storage upload failed: ' + error.message, 'warning');
+                    }
+                    // Continue without file URL
+                } else {
+                    // Get public URL
+                    const { data: urlData } = window.supabase.storage
+                        .from('documents')
+                        .getPublicUrl(fileName);
+                    
+                    fileUrl = urlData.publicUrl;
+                    console.log('File uploaded successfully:', fileUrl);
+                }
+            } catch (storageError) {
+                console.error('Storage upload error:', storageError);
+                showToast('Storage upload failed. Document will be saved without file.', 'warning');
+                // Continue with local fallback
+            }
+        } else {
+            console.log('Supabase storage not available, saving without file URL');
+        }
+        
+        // Create document record
+        const documentData = {
+            userId: userId,
+            title: docTitle,
+            type: docType,
+            status: 'normal',
+            location: { address: 'Não especificado' },
+            fileUrl: fileUrl
+        };
+        
+        await window.documentsApi.create(documentData);
+        
+        // Update user profile document count
+        if (window.profilesApi) {
+            try {
+                const profile = await window.profilesApi.get(userId);
+                if (profile) {
+                    await window.profilesApi.update(userId, {
+                        ...profile,
+                        document_count: (profile.document_count || 0) + 1
+                    });
+                }
+            } catch (profileError) {
+                console.log('Profile update skipped:', profileError);
+            }
+        }
+        
+        showToast('Documento enviado com sucesso!', 'success');
+        
+        // Award points for uploading document
+        await trackDocumentUpload();
+        closeUploadModal();
+        
+        // Reload profile if we're on profile page
+        const profileSection = document.getElementById('perfil');
+        if (profileSection && profileSection.classList.contains('active')) {
+            renderProfilePage();
+        }
+        
+    } catch (error) {
+        console.error('Upload error:', error);
+        showToast('Erro ao enviar documento: ' + error.message, 'error');
+    } finally {
+        // Hide loading
+        if (loadingDiv) loadingDiv.style.display = 'none';
+        if (uploadSubmit) uploadSubmit.disabled = false;
+    }
+}
+
+// Initialize upload modal when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(initializeUploadModal, 100);
+    setTimeout(initializeAvatarUpload, 100);
+    
+    // Initialize profile logout button
+    const profileLogoutBtn = document.getElementById('profile-logout-btn');
+    if (profileLogoutBtn) {
+        profileLogoutBtn.addEventListener('click', handleLogout);
+    }
+});
+
+// Avatar Upload Functions
+function initializeAvatarUpload() {
+    const avatarUploadBtn = document.getElementById('avatar-upload-btn');
+    if (avatarUploadBtn) {
+        avatarUploadBtn.addEventListener('click', openAvatarUpload);
+    }
+}
+
+function openAvatarUpload() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.style.display = 'none';
+    
+    input.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            handleAvatarUpload(file);
+        }
     });
     
-    document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
-        const key = element.getAttribute('data-i18n-placeholder');
-        element.placeholder = t(key);
+    document.body.appendChild(input);
+    input.click();
+    document.body.removeChild(input);
+}
+
+async function handleAvatarUpload(file) {
+    // Validate file
+    if (!file.type.startsWith('image/')) {
+        showToast('Por favor, selecione apenas arquivos de imagem', 'error');
+        return;
+    }
+    
+    if (file.size > 2 * 1024 * 1024) { // 2MB
+        showToast('Arquivo muito grande. Máximo 2MB', 'error');
+        return;
+    }
+    
+    try {
+        showToast('Enviando foto do perfil...', 'info');
+        
+        const userId = currentUser.id;
+        const fileName = `avatars/${userId}/avatar_${Date.now()}.jpg`;
+        
+        // Process and compress image
+        const processedBlob = await processAvatarImage(file);
+        
+        let avatarUrl = '';
+        
+        // Try to upload to Supabase Storage
+        if (window.supabase && window.supabase.storage) {
+            try {
+                const { data, error } = await window.supabase.storage
+                    .from('documents')
+                    .upload(fileName, processedBlob, { upsert: true });
+                
+                if (error) throw error;
+                
+                // Get public URL
+                const { data: urlData } = window.supabase.storage
+                    .from('documents')
+                    .getPublicUrl(fileName);
+                
+                avatarUrl = urlData.publicUrl;
+            } catch (storageError) {
+                console.error('Avatar storage upload error:', storageError);
+                showToast('Erro ao enviar foto. Tente novamente.', 'error');
+                return;
+            }
+        }
+        
+        // Update user profile with new avatar URL
+        if (window.profilesApi && avatarUrl) {
+            try {
+                await window.profilesApi.update(userId, {
+                    avatar_url: avatarUrl
+                });
+                
+                // Update the avatar image in the UI
+                const avatarImg = document.getElementById('profile-avatar');
+                if (avatarImg) {
+                    avatarImg.src = avatarUrl;
+                }
+                
+                showToast('Foto do perfil atualizada com sucesso!', 'success');
+                
+                // Award points for updating profile
+                await awardPoints('profile_updated', 10);
+                
+            } catch (profileError) {
+                console.error('Error updating profile:', profileError);
+                showToast('Erro ao atualizar perfil', 'error');
+            }
+        }
+        
+    } catch (error) {
+        console.error('Avatar upload error:', error);
+        showToast('Erro ao enviar foto do perfil', 'error');
+    }
+}
+
+function processAvatarImage(file) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Set canvas size for avatar (square, 200x200)
+                const size = 200;
+                canvas.width = size;
+                canvas.height = size;
+                
+                // Draw image centered and cropped to square
+                const scale = Math.max(size / img.width, size / img.height);
+                const scaledWidth = img.width * scale;
+                const scaledHeight = img.height * scale;
+                const x = (size - scaledWidth) / 2;
+                const y = (size - scaledHeight) / 2;
+                
+                ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
+                
+                // Convert to blob
+                canvas.toBlob((blob) => {
+                    resolve(blob);
+                }, 'image/jpeg', 0.8);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
     });
 }
 
-function t(key) {
-    return translations[currentLanguage]?.[key] || translations['pt']?.[key] || key;
+// Points System
+async function awardPoints(activity, points) {
+    try {
+        if (!currentUser?.id) return;
+        
+        // Get current user profile
+        const userProfile = await window.profilesApi.get(currentUser.id);
+        if (!userProfile) return;
+        
+        // Calculate new points total
+        const currentPoints = userProfile.points || 0;
+        const newPoints = currentPoints + points;
+        
+        // Update profile with new points
+        await window.profilesApi.update(currentUser.id, {
+            points: newPoints
+        });
+        
+        // Show points notification
+        showToast(`+${points} pontos! (${activity})`, 'success');
+        
+        // Update points display if on profile page
+        updatePointsDisplay(newPoints);
+        
+        console.log(`Awarded ${points} points for ${activity}. Total: ${newPoints}`);
+        
+    } catch (error) {
+        console.error('Error awarding points:', error);
+    }
 }
+
+function updatePointsDisplay(points) {
+    const pointsElement = document.getElementById('profile-points');
+    if (pointsElement) {
+        pointsElement.textContent = points.toString();
+    }
+    
+    // Update rank badge
+    updateRankDisplay(points);
+}
+
+function updateRankDisplay(points) {
+    const rankElement = document.getElementById('profile-rank');
+    if (!rankElement) return;
+    
+    let rank = 'Novato';
+    let rankClass = 'rank-badge';
+    
+    if (points >= 1000) {
+        rank = 'Lenda';
+        rankClass = 'rank-badge rank-legend';
+    } else if (points >= 500) {
+        rank = 'Expert';
+        rankClass = 'rank-badge rank-expert';
+    } else if (points >= 200) {
+        rank = 'Avançado';
+        rankClass = 'rank-badge rank-advanced';
+    } else if (points >= 100) {
+        rank = 'Intermediário';
+        rankClass = 'rank-badge rank-intermediate';
+    } else if (points >= 50) {
+        rank = 'Iniciante';
+        rankClass = 'rank-badge rank-beginner';
+    }
+    
+    rankElement.textContent = rank;
+    rankElement.className = rankClass;
+}
+
+// Activity tracking functions
+async function trackDocumentUpload() {
+    await awardPoints('document_uploaded', 20);
+}
+
+async function trackDocumentFound() {
+    await awardPoints('document_found', 50);
+}
+
+async function trackDocumentLost() {
+    await awardPoints('document_lost', 10);
+}
+
+async function trackProfileUpdate() {
+    await awardPoints('profile_updated', 10);
+}
+
+async function trackHelpProvided() {
+    await awardPoints('help_provided', 30);
+}
+
+// Make functions globally available
+window.showSection = showSection;
+window.showToast = showToast;
+window.renderProfilePage = renderProfilePage;
+window.handleLogout = handleLogout;
+window.awardPoints = awardPoints;
