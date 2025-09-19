@@ -111,7 +111,7 @@
 
     let subscription = null;
     let currentDocumentId = null;
-    let currentChatId = null;
+    let currentReceiverId = null; // To know who we are talking to
 
     window.chat = {
         init(documentId, onNewMessage) {
@@ -152,17 +152,25 @@
             }
         },
 
-        loadChatHistory() {
+        async loadChatHistory() {
             const container = messagesEl();
             if (!container) return;
             
             container.innerHTML = '';
             
-            // Load mock chat data for demonstration
-            const mockMessages = createMockChatData();
-            mockMessages.forEach(msg => {
-                appendMessage(msg, false);
-            });
+            try {
+                if (!window.chatsApi) throw new Error('Chat API not available.');
+                const messages = await window.chatsApi.getConversation(currentDocumentId, window.currentUser.id);
+                
+                messages.forEach(msg => {
+                    const isOwn = msg.sender_id === window.currentUser.id;
+                    appendMessage(msg, isOwn);
+                });
+
+            } catch (error) {
+                console.error('Failed to load chat history:', error);
+                container.innerHTML = '<p class="text-center error">Não foi possível carregar o histórico.</p>';
+            }
         },
 
         async send(messageText) {
@@ -185,38 +193,27 @@
             // Try to send through API if available
             if (window.chatsApi) {
                 try {
-                    const senderId = window.currentUser?.id || null;
-                    const receiverId = window.currentChatParticipant?.id || null;
-                    await window.chatsApi.send({ 
-                        documentId: currentDocumentId, 
-                        senderId, 
-                        receiverId, 
+                    const senderId = window.currentUser?.id;
+                    if (!senderId || !currentReceiverId) {
+                        throw new Error('Sender or receiver ID is missing.');
+                    }
+
+                    await window.chatsApi.send({
+                        documentId: currentDocumentId,
+                        senderId: senderId,
+                        receiverId: currentReceiverId,
                         message: text,
                         location: userLocation
                     });
                 } catch (err) {
                     console.error('Failed to send chat message:', err);
                     window.showToast?.('Erro ao enviar mensagem', 'error');
+                    // Optional: remove the message from UI if it failed to send
                 }
-            } else {
-                // Mock successful send
-                console.log('Mock message sent:', message);
-                
-                // Simulate reply after 2 seconds
-                setTimeout(() => {
-                    const reply = {
-                        id: Date.now() + 1,
-                        message: "Obrigado pela mensagem! Vou verificar se é o seu documento.",
-                        created_at: new Date().toISOString(),
-                        sender_id: 'other-user',
-                        location: { lat: -25.9720, lng: 32.5750 }
-                    };
-                    appendMessage(reply, false);
-                }, 2000);
             }
         },
 
-        openChatModal(documentId, documentTitle) {
+        openChatModal(documentId, documentTitle, receiverId) {
             const modal = document.getElementById('chat-modal');
             const modalTitle = modal.querySelector('.modal-header h3');
             
@@ -225,6 +222,7 @@
             }
             
             modal.style.display = 'block';
+            currentReceiverId = receiverId; // Store the receiver's ID
             this.init(documentId);
         },
 

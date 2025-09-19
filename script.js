@@ -19,7 +19,30 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeApp();
 });
 
+function waitForTranslations(timeout = 3000) {
+    return new Promise((resolve, reject) => {
+        const startTime = Date.now();
+        const interval = setInterval(() => {
+            if (window.translations) {
+                clearInterval(interval);
+                resolve();
+            } else if (Date.now() - startTime > timeout) {
+                clearInterval(interval);
+                console.error('Translations object failed to load in time.');
+                reject(new Error('Translations failed to load.'));
+            }
+        }, 50); // Check every 50ms
+    });
+}
+
 async function initializeApp() {
+    try {
+        await waitForTranslations();
+    } catch (error) {
+        console.error(error);
+        // We can still try to run the app, but translations will be broken.
+    }
+
     // Check for authenticated user
     try {
         if (window.authApi) {
@@ -91,12 +114,32 @@ function setupLanguage() {
         });
     }
     
-    // Load saved language
+    // Load saved language and apply translations
     const savedLanguage = localStorage.getItem('findmydocs_language') || 'pt';
-    currentLanguage = savedLanguage;
+    // Set the value and apply translations without waiting for DOMContentLoaded again
     if (languageSelector) {
-        languageSelector.value = currentLanguage;
+        languageSelector.value = savedLanguage;
     }
+    currentLanguage = savedLanguage;
+    applyTranslations(savedLanguage);
+}
+
+function applyTranslations(lang) {
+    if (!window.translations || !window.translations[lang]) {
+        console.warn(`Translations for language '${lang}' not found.`);
+        return;
+    }
+
+    const elements = document.querySelectorAll('[data-i18n]');
+    elements.forEach(el => {
+        const key = el.dataset.i18n;
+        const translation = window.translations[lang][key];
+        if (translation) {
+            el.textContent = translation;
+        } else {
+            console.warn(`Translation key '${key}' not found for language '${lang}'.`);
+        }
+    });
 }
 
 function loadUserData() {
@@ -226,37 +269,96 @@ function createDocumentCard(doc) {
     return div;
 }
 
-function loadFeed() {
+async function loadFeed() {
     const feedContent = document.getElementById('feed-content');
     if (!feedContent) return;
-    
-    // Sample feed data
-    feedContent.innerHTML = `
-        <div class="feed-item">
-            <div class="document-card">
-                <div class="card-body">
-                    <h4>BI Perdido - Maria Santos</h4>
-                    <p class="muted">Perdido em Maputo • Há 2 horas</p>
-                    <div class="card-actions">
-                        <button class="btn small primary">Contactar</button>
-                        <button class="btn small secondary">Ver Localização</button>
-                    </div>
+
+    feedContent.innerHTML = '<div class="loading-state"><i class="fas fa-spinner fa-spin"></i><p>A carregar o feed...</p></div>';
+
+    try {
+        if (!window.documentsApi) throw new Error('API de documentos não inicializada.');
+
+        const documents = await window.documentsApi.getAllPublicDocuments();
+
+        if (!documents || documents.length === 0) {
+            feedContent.innerHTML = '<p class="text-center muted">Nenhum documento perdido ou encontrado reportado ainda.</p>';
+            return;
+        }
+
+        // Get all unique user IDs from the documents
+        const userIds = [...new Set(documents.map(doc => doc.user_id))];
+        
+        // Fetch the profiles for these users
+        const profiles = await window.profilesApi.getProfilesByIds(userIds);
+        const profilesMap = new Map(profiles.map(p => [p.id, p]));
+
+        feedContent.innerHTML = ''; // Clear loading state
+        documents.forEach(doc => {
+            const reporterProfile = profilesMap.get(doc.user_id);
+            const card = createFeedCard(doc, reporterProfile);
+            feedContent.appendChild(card);
+        });
+
+    } catch (error) {
+        console.error('Error loading feed:', error);
+        feedContent.innerHTML = '<p class="text-center error">Não foi possível carregar o feed. Tente novamente mais tarde.</p>';
+    }
+}
+
+// --- Chat Initiation from Feed ---
+document.body.addEventListener('click', (e) => {
+    if (e.target.matches('.contact-reporter-btn')) {
+        const docId = e.target.dataset.docId;
+        const reporterId = e.target.dataset.reporterId;
+
+        if (!docId || !reporterId) {
+            console.error('Missing document or reporter ID for chat.');
+            return;
+        }
+
+        if (window.chat && typeof window.chat.openChatModal === 'function') {
+            // We need the document title to display in the chat header.
+            // We can fetch the document again or get it from the card.
+            const docTitle = e.target.closest('.document-card').querySelector('h4').textContent;
+            window.chat.openChatModal(docId, docTitle, reporterId);
+        } else {
+            console.error('Chat module not available.');
+            showToast('A funcionalidade de chat não está disponível.', 'error');
+        }
+    }
+});
+
+function createFeedCard(doc, reporterProfile) {
+    const div = document.createElement('div');
+    div.className = 'feed-item';
+
+    const isOwnDocument = doc.user_id === currentUser?.id;
+    const reporterName = reporterProfile?.full_name || 'Utilizador Anónimo';
+    const statusText = doc.status === 'lost' ? 'perdido' : 'encontrado';
+    const location = doc.location?.address || 'local não especificado';
+
+    // Determine which buttons to show
+    let actionsHtml = '';
+    if (isOwnDocument) {
+        actionsHtml = `<button class="btn small secondary view-doc" data-id="${doc.id}">Ver Detalhes</button>`;
+    } else {
+        actionsHtml = `<button class="btn small primary contact-reporter-btn" data-doc-id="${doc.id}" data-reporter-id="${doc.user_id}">Contactar</button>`;
+    }
+
+    div.innerHTML = `
+        <div class="document-card">
+            <div class="card-body">
+                <h4>${doc.title}</h4>
+                <p class="muted">Status: <span class="status-${doc.status}">${statusText}</span></p>
+                <p class="muted">Local: ${location}</p>
+                <p class="muted">Reportado por: ${reporterName}</p>
+                <div class="card-actions">
+                    ${actionsHtml}
                 </div>
             </div>
-        </div>
-        <div class="feed-item">
-            <div class="document-card">
-                <div class="card-body">
-                    <h4>Passaporte Encontrado</h4>
-                    <p class="muted">Encontrado na Baixa • Há 4 horas</p>
-                    <div class="card-actions">
-                        <button class="btn small success">Este é meu</button>
-                        <button class="btn small secondary">Ver Detalhes</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
+        </div>`;
+
+    return div;
 }
 
 function loadProfile() {
@@ -305,7 +407,8 @@ async function handleLostForm(e) {
         await trackDocumentLost();
         
         e.target.reset();
-        showSection('documentos');
+        loadFeed(); // Refresh the feed with the new document
+        showSection('feed'); // Redirect to the feed section
     } catch (error) {
         console.error('Error reporting lost document:', error);
         showToast('Erro ao reportar documento perdido', 'error');
@@ -332,7 +435,8 @@ async function handleFoundForm(e) {
         await trackDocumentFound();
         
         e.target.reset();
-        showSection('feed');
+        loadFeed(); // Refresh the feed with the new document
+        showSection('feed'); // Ensure user is on the feed section
     } catch (error) {
         console.error('Error reporting found document:', error);
         showToast('Erro ao reportar documento encontrado', 'error');
@@ -382,6 +486,7 @@ function changeLanguage(lang) {
     if (languageSelector) {
         languageSelector.value = currentLanguage;
     }
+    applyTranslations(lang); // Apply the new language
 }
 
 function showToast(message, type = 'info') {
@@ -407,6 +512,16 @@ function showToast(message, type = 'info') {
         }
     }, 5000);
 }
+
+// Country flag mapping
+const countryFlags = {
+    'MZ': '🇲🇿',
+    'ZA': '🇿🇦',
+    'FR': '🇫🇷',
+    'GB': '🇬🇧',
+    'US': '🇺🇸',
+    // Add more countries as needed
+};
 
 // Profile Page Functions
 async function renderProfilePage() {
@@ -451,6 +566,12 @@ async function renderProfilePage() {
         const avatarImg = document.getElementById('profile-avatar');
         if (avatarImg && userProfile?.avatar_url) {
             avatarImg.src = userProfile.avatar_url;
+        }
+
+        // Update country flag
+        const flagSpan = document.getElementById('profile-country-flag');
+        if (flagSpan && userProfile?.country) {
+            flagSpan.textContent = countryFlags[userProfile.country.toUpperCase()] || '🏳️';
         }
         
         const plan = userProfile?.plan || 'free';
@@ -961,109 +1082,271 @@ function openAvatarUpload() {
 
 async function handleAvatarUpload(file) {
     // Validate file
-    if (!file.type.startsWith('image/')) {
-        showToast('Por favor, selecione apenas arquivos de imagem', 'error');
+    if (!file || !file.type) {
+        showToast('Arquivo inválido. Por favor, selecione um arquivo de imagem.', 'error');
         return;
     }
     
-    if (file.size > 2 * 1024 * 1024) { // 2MB
-        showToast('Arquivo muito grande. Máximo 2MB', 'error');
+    if (!file.type.startsWith('image/')) {
+        showToast('Por favor, selecione apenas arquivos de imagem (JPEG, PNG, etc.)', 'error');
+        return;
+    }
+    
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    if (file.size > maxSize) {
+        showToast(`Arquivo muito grande. Tamanho máximo permitido: ${(maxSize / (1024 * 1024)).toFixed(1)}MB`, 'error');
         return;
     }
     
     try {
-        showToast('Enviando foto do perfil...', 'info');
+        showToast('Processando imagem...', 'info');
         
-        const userId = currentUser.id;
-        const fileName = `avatars/${userId}/avatar_${Date.now()}.jpg`;
-        
-        // Process and compress image
-        const processedBlob = await processAvatarImage(file);
-        
-        let avatarUrl = '';
-        
-        // Try to upload to Supabase Storage
-        if (window.supabase && window.supabase.storage) {
-            try {
-                const { data, error } = await window.supabase.storage
-                    .from('documents')
-                    .upload(fileName, processedBlob, { upsert: true });
-                
-                if (error) throw error;
-                
-                // Get public URL
-                const { data: urlData } = window.supabase.storage
-                    .from('documents')
-                    .getPublicUrl(fileName);
-                
-                avatarUrl = urlData.publicUrl;
-            } catch (storageError) {
-                console.error('Avatar storage upload error:', storageError);
-                showToast('Erro ao enviar foto. Tente novamente.', 'error');
-                return;
-            }
+        // Get current user with error handling
+        let user;
+        try {
+            const { data: { user: authUser }, error: userError } = await window.supabase.auth.getUser();
+            if (userError) throw userError;
+            if (!authUser) throw new Error('Usuário não autenticado');
+            user = authUser;
+        } catch (authError) {
+            console.error('Erro de autenticação:', authError);
+            showToast('Sessão expirada. Por favor, faça login novamente.', 'error');
+            setTimeout(() => window.location.href = 'login.html', 2000);
+            return;
         }
+
+        // Process image to create avatar with error handling
+        let processedBlob;
+        try {
+            processedBlob = await processAvatarImage(file);
+        } catch (processError) {
+            console.error('Erro ao processar imagem:', processError);
+            showToast('Erro ao processar a imagem. Tente com outra foto.', 'error');
+            return;
+        }
+
+        // Generate a simple filename with user ID and timestamp
+        const timestamp = Date.now();
+        const fileExt = file.name.split('.').pop().toLowerCase();
+        const fileName = `${user.id}_${timestamp}.${fileExt}`;  // Simple filename with user ID and timestamp
         
-        // Update user profile with new avatar URL
-        if (window.profilesApi && avatarUrl) {
+        try {
+            showToast('Enviando foto do perfil...', 'info');
+            
+            // First, try to find and delete existing avatars for this user
             try {
-                await window.profilesApi.update(userId, {
-                    avatar_url: avatarUrl
-                });
-                
-                // Update the avatar image in the UI
-                const avatarImg = document.getElementById('profile-avatar');
-                if (avatarImg) {
-                    avatarImg.src = avatarUrl;
+                const { data: existingFiles, error: listError } = await window.supabase.storage
+                    .from('avatars')
+                    .list('', { search: `${user.id}_` });
+                    
+                if (!listError && Array.isArray(existingFiles) && existingFiles.length > 0) {
+                    const filesToDelete = existingFiles.map(f => f.name);
+                    const { error: deleteError } = await window.supabase.storage
+                        .from('avatars')
+                        .remove(filesToDelete);
+                        
+                    if (deleteError) {
+                        console.warn('Aviso: Não foi possível remover avatares antigos:', deleteError);
+                    }
                 }
-                
-                showToast('Foto do perfil atualizada com sucesso!', 'success');
-                
-                // Award points for updating profile
-                await awardPoints('profile_updated', 10);
-                
-            } catch (profileError) {
-                console.error('Error updating profile:', profileError);
-                showToast('Erro ao atualizar perfil', 'error');
+            } catch (cleanupError) {
+                console.warn('Aviso ao limpar avatares antigos:', cleanupError);
+                // Continue with upload even if cleanup fails
             }
+            
+            // First, try to delete any existing avatars for this user
+            try {
+                const { data: existingFiles, error: listError } = await window.supabase.storage
+                    .from('avatars')
+                    .list('', { search: `${user.id}_` });
+                    
+                if (!listError && Array.isArray(existingFiles) && existingFiles.length > 0) {
+                    const filesToDelete = existingFiles.map(f => f.name);
+                    await window.supabase.storage
+                        .from('avatars')
+                        .remove(filesToDelete);
+                }
+            } catch (cleanupError) {
+                console.warn('Warning cleaning up old avatars:', cleanupError);
+                // Continue with upload even if cleanup fails
+            }
+            
+            // Upload new avatar
+            const { error: uploadError } = await window.supabase.storage
+                .from('avatars')
+                .upload(fileName, processedBlob, {
+                    contentType: `image/${fileExt === 'jpg' ? 'jpeg' : fileExt}`,
+                    cacheControl: '3600',
+                    upsert: false
+                });
+            
+            if (uploadError) throw uploadError;
+            
+            // Get public URL with cache busting
+            const { data: { publicUrl } } = window.supabase.storage
+                .from('avatars')
+                .getPublicUrl(fileName);
+                
+            const avatarUrl = `${publicUrl}?t=${timestamp}`;
+            
+            // Update user profile with new avatar URL
+            const { error: updateError } = await window.supabase
+                .from('user_profiles')
+                .update({ 
+                    avatar_url: avatarUrl,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', user.id);
+                
+            if (updateError) throw updateError;
+            
+            // Update the avatar image in the UI
+            const avatarImg = document.getElementById('profile-avatar');
+            const avatarPreview = document.getElementById('avatar-preview');
+            const elementsToUpdate = [avatarImg, avatarPreview].filter(el => el);
+            
+            elementsToUpdate.forEach(el => {
+                el.src = avatarUrl;
+                el.onload = () => URL.revokeObjectURL(avatarUrl);
+            });
+            
+            // Close the modal if open
+            const avatarModal = document.getElementById('avatar-upload-modal');
+            if (avatarModal) {
+                avatarModal.style.display = 'none';
+            }
+            
+            showToast('Foto do perfil atualizada com sucesso!', 'success');
+            
+            // Award points for updating profile
+            try {
+                await awardPoints('profile_updated', 10);
+            } catch (pointsError) {
+                console.warn('Não foi possível adicionar pontos:', pointsError);
+                // Don't show error to user for points failure
+            }
+            
+        } catch (error) {
+            console.error('Erro no upload do avatar:', error);
+            let errorMessage = 'Erro ao atualizar a foto do perfil';
+            
+            // More specific error messages based on the error
+            if (error.message && error.message.includes('new row violates row-level security policy')) {
+                errorMessage = 'Permissão negada. Verifique as configurações de segurança.';
+            } else if (error.message && error.message.includes('not found')) {
+                errorMessage = 'Pasta de destino não encontrada. Contate o suporte.';
+            } else if (error.message && error.message.includes('file size limit exceeded')) {
+                errorMessage = 'Arquivo muito grande. Tente uma imagem menor.';
+            }
+            
+            showToast(`${errorMessage} (${error.message || 'Erro desconhecido'})`, 'error');
         }
         
     } catch (error) {
-        console.error('Avatar upload error:', error);
-        showToast('Erro ao enviar foto do perfil', 'error');
+        console.error('Erro inesperado no upload do avatar:', error);
+        showToast('Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.', 'error');
     }
 }
 
 function processAvatarImage(file) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+        // Validate input
+        if (!file || !(file instanceof Blob)) {
+            return reject(new Error('Arquivo inválido'));
+        }
+        
         const reader = new FileReader();
+        
+        reader.onerror = () => {
+            reject(new Error('Erro ao ler o arquivo'));
+        };
+        
         reader.onload = function(e) {
             const img = new Image();
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                // Set canvas size for avatar (square, 200x200)
-                const size = 200;
-                canvas.width = size;
-                canvas.height = size;
-                
-                // Draw image centered and cropped to square
-                const scale = Math.max(size / img.width, size / img.height);
-                const scaledWidth = img.width * scale;
-                const scaledHeight = img.height * scale;
-                const x = (size - scaledWidth) / 2;
-                const y = (size - scaledHeight) / 2;
-                
-                ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
-                
-                // Convert to blob
-                canvas.toBlob((blob) => {
-                    resolve(blob);
-                }, 'image/jpeg', 0.8);
+            
+            img.onerror = () => {
+                reject(new Error('Erro ao carregar a imagem'));
             };
+            
+            img.onload = function() {
+                try {
+                    // Create canvas with optimal size (400x400 for better quality)
+                    const targetSize = 400;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = targetSize;
+                    canvas.height = targetSize;
+                    
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) {
+                        throw new Error('Não foi possível obter o contexto 2D');
+                    }
+                    
+                    // Calculate dimensions to maintain aspect ratio and center
+                    const sourceAspect = img.width / img.height;
+                    const targetAspect = 1; // Square
+                    let drawWidth = targetSize;
+                    let drawHeight = targetSize;
+                    let offsetX = 0;
+                    let offsetY = 0;
+                    
+                    if (sourceAspect > targetAspect) {
+                        // Source is wider than target
+                        drawHeight = targetSize;
+                        drawWidth = targetSize * sourceAspect;
+                        offsetX = (drawWidth - targetSize) / -2;
+                    } else {
+                        // Source is taller than target or square
+                        drawWidth = targetSize;
+                        drawHeight = targetSize / sourceAspect;
+                        offsetY = (drawHeight - targetSize) / -2;
+                    }
+                    
+                    // Draw image with high quality settings
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
+                    ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+                    
+                    // Convert to blob with quality based on file size
+                    let quality = 0.8; // Default quality
+                    if (file.size > 1024 * 1024) { // If file > 1MB
+                        quality = 0.7;
+                    } else if (file.size > 500 * 1024) { // If file > 500KB
+                        quality = 0.8;
+                    }
+                    
+                    canvas.toBlob(
+                        (blob) => {
+                            if (!blob) {
+                                reject(new Error('Falha ao processar a imagem'));
+                                return;
+                            }
+                            
+                            // If the resulting blob is still too large, reduce quality further
+                            if (blob.size > 500 * 1024) { // 500KB
+                                canvas.toBlob(
+                                    (smallerBlob) => resolve(smallerBlob || blob),
+                                    'image/jpeg',
+                                    0.6
+                                );
+                            } else {
+                                resolve(blob);
+                            }
+                        },
+                        'image/jpeg',
+                        quality
+                    );
+                    
+                } catch (error) {
+                    console.error('Erro no processamento da imagem:', error);
+                    reject(new Error('Erro ao processar a imagem'));
+                }
+            };
+            
+            // Start loading the image
             img.src = e.target.result;
         };
+        
+        // Start reading the file
         reader.readAsDataURL(file);
     });
 }

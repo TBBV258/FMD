@@ -1,5 +1,5 @@
 // Translations for the FindMyDocs application
-const translations = {
+window.translations = {
     pt: {
         // Navigation
         'nav.home': 'Início',
@@ -117,5 +117,44 @@ const translations = {
         'documents.contact': 'Contact',
         'documents.this_is_mine': 'This is mine',
         'documents.verified_finder': 'Verified finder'
+    },
+    fr: {
+        'nav.home': 'Accueil',
+        'nav.report_lost': 'Signaler Perdu',
+        'nav.report_found': 'Signaler Trouvé',
+        'welcome.title': 'Bienvenue, Google User!',
+        'tip.report_immediately.title': 'Signalez Immédiatement',
+        'tip.report_immediately.description': 'Signalez les documents perdus ou trouvés le plus rapidement possible pour augmenter les chances de récupération.',
+        'tip.photo_safety.title': 'Sécurité des Photos',
+        'tip.photo_safety.description': 'Lors du téléchargement de photos de documents, couvrez ou floutez toute information personnelle.',
+        'tip.earn_points.title': 'Gagnez Plus de Points',
+        'tip.earn_points.description': 'Complétez votre profil, signalez les documents trouvés et aidez les autres pour gagner plus de points.',
+        'documents.title': 'Vos Documents'
+    },
+    zu: {
+        'nav.home': 'Ekhaya',
+        'nav.report_lost': 'Bika Okulahlekile',
+        'nav.report_found': 'Bika Okutholakele',
+        'welcome.title': 'Siyakwamukela, Google User!',
+        'tip.report_immediately.title': 'Bika Ngokushesha',
+        'tip.report_immediately.description': 'Bika amadokhumenti alahlekile noma atholakele ngokushesha ngangokunokwenzeka ukwandisa amathuba okubuyiselwa.',
+        'tip.photo_safety.title': 'Ukuphepha Kwezithombe',
+        'tip.photo_safety.description': 'Lapho ulayisha izithombe zamadokhumenti, vala noma fiphaza noma yiluphi ulwazi lomuntu siqu.',
+        'tip.earn_points.title': 'Zuza Amaphuzu Angeziwe',
+        'tip.earn_points.description': 'Gcwalisa iphrofayela yakho, bika amadokhumenti atholakele futhi usize abanye ukuzuza amaphuzu engeziwe.',
+        'documents.title': 'Amadokhumenti Akho'
+    },
+    ts: {
+        'nav.home': 'Kaya',
+        'nav.report_lost': 'Vika Ku Lahleka',
+        'nav.report_found': 'Vika Ku Kuma',
+        'welcome.title': 'Wa Amukeriwa, Google User!',
+        'tip.report_immediately.title': 'Vika Hi Ku Hatlisa',
+        'tip.report_immediately.description': 'Vika matsalwa lama lahlekeke kumbe lama kumiweke hi ku hatlisa leswaku ku ta engetela mikhigayelo yo ma kuma.',
+        'tip.photo_safety.title': 'Vuhlayiseki Bya Swifaniso',
+        'tip.photo_safety.description': 'Loko u layicha swifaniso swa matsalwa, funengeta kumbe u endla leswaku vuxokoxoko bya munhu byi nga vonakali.',
+        'tip.earn_points.title': 'Kuma Tiphoyinti To Tala',
+        'tip.earn_points.description': 'Hetisa phurofayili ya wena, vika matsalwa lama kumiweke na ku pfuna vanwana ku kuma tiphoyinti to tala.',
+        'documents.title': 'Matsalwa Ya Wena'
     }
 };

@@ -6,6 +6,8 @@
     <title>FindMyDocs - Gestão de Documentos Perdidos</title>
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/document-uploader.css">
+    <link rel="stylesheet" href="css/profile.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -42,6 +44,9 @@
                     <select id="language-selector" class="language-selector" aria-label="Selecionar idioma">
                         <option value="pt">🇵🇹 Português</option>
                         <option value="en">🇬🇧 English</option>
+                        <option value="fr">🇫🇷 Français</option>
+                        <option value="zu">🇿🇦 isiZulu</option>
+                        <option value="ts">🇲🇿 Xitsonga</option>
                     </select>
                     <button class="nav-link active" data-section="documentos" aria-label="Início">
                         <i class="fas fa-home"></i>
@@ -261,6 +266,7 @@
                         </div>
                         <div class="profile-details">
                             <h2 id="profile-name">Carregando...</h2>
+                            <span id="profile-country-flag" class="country-flag"></span>
                             <p id="profile-email">Carregando...</p>
                             <div class="profile-badges">
                                 <span id="profile-plan" class="plan-badge">free</span>
@@ -303,7 +309,118 @@
                         <!-- Documents will be loaded here -->
                     </div>
                 </div>
+
+                <!-- Subscription Plans Section -->
+                <div class="profile-section">
+                    <h3>Planos de Subscrição</h3>
+                    <div class="plans-container">
+                        <div class="plan-card">
+                            <h4>Premium Mensal</h4>
+                            <p class="price">150 MT<span>/mês</span></p>
+                            <ul>
+                                <li><i class="fas fa-check"></i> Uploads ilimitados</li>
+                                <li><i class="fas fa-check"></i> Suporte prioritário</li>
+                                <li><i class="fas fa-check"></i> Sem anúncios</li>
+                            </ul>
+                            <div class="payment-options">
+                                <button class="btn success small payment-btn" data-method="mpesa"><i class="fas fa-mobile-alt"></i> Pagar com M-Pesa</button>
+                                <button class="btn warning small payment-btn" data-method="emola"><i class="fas fa-mobile-alt"></i> Pagar com e-Mola</button>
+                            </div>
+                        </div>
+                        <div class="plan-card recommended">
+                             <span class="recommended-badge">Recomendado</span>
+                            <h4>Premium Anual</h4>
+                            <p class="price">1500 MT<span>/ano</span></p>
+                            <ul>
+                                <li><i class="fas fa-check"></i> Todas as vantagens do Premium</li>
+                                <li><i class="fas fa-check"></i> Desconto de 2 meses</li>
+                                <li><i class="fas fa-check"></i> Acesso antecipado a recursos</li>
+                            </ul>
+                            <div class="payment-options">
+                                <button class="btn success small payment-btn" data-method="mpesa"><i class="fas fa-mobile-alt"></i> Pagar com M-Pesa</button>
+                                <button class="btn warning small payment-btn" data-method="emola"><i class="fas fa-mobile-alt"></i> Pagar com e-Mola</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Management Section -->
+                <div class="profile-section">
+                    <h3>Gerir Dados</h3>
+                    <div class="data-management-card">
+                        <p>Faça o download de todos os seus documentos enviados num único arquivo .zip.</p>
+                        <button id="download-all-docs" class="btn primary">
+                            <i class="fas fa-download"></i> Baixar Meus Documentos
+                            <span id="download-spinner" class="loading-spinner" style="display: none; margin-left: 8px;">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </span>
+                        </button>
+                    </div>
+                </div>
             </section>
+        </div>
+    </div>
+
+    <!-- Document Upload Modal -->
+    <div id="upload-modal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>Carregar Documento</h3>
+                <button class="close-btn" id="close-upload-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="upload-form">
+                    <div id="drop-zone" class="drop-zone">
+                        <div class="drop-zone-message">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Arraste e solte o seu documento aqui</p>
+                            <span class="muted">ou</span>
+                            <button type="button" id="browse-btn" class="btn secondary small">Procurar Arquivo</button>
+                            <input type="file" id="file-input" style="display: none;" multiple>
+                        </div>
+                        <div id="file-preview" class="file-preview-container"></div>
+                    </div>
+                    
+                    <div id="file-info">
+                        <div class="form-group">
+                            <label for="document-title">Título do Documento</label>
+                            <input type="text" id="document-title" required 
+                                   placeholder="Ex: BI de João Silva" 
+                                   minlength="3" maxlength="100">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="document-type">Tipo de Documento</label>
+                            <select id="document-type" required>
+                                <option value="ID card">Bilhete de Identidade</option>
+                                <option value="DIRE">DIRE</option>
+                                <option value="Passport">Passaporte</option>
+                                <option value="Bank Card">Cartão Bancário</option>
+                                <option value="Driver License">Carta de Condução</option>
+                                <option value="Student ID">Cartão de Estudante</option>
+                                <option value="Other">Outro</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="upload-actions" class="form-actions" style="margin-top: 20px;">
+                        <button type="button" id="cancel-upload" class="btn secondary">Cancelar</button>
+                        <button type="submit" id="submit-upload" class="btn primary" disabled>
+                            <span class="btn-text">Enviar Documento</span>
+                            <span class="loading-spinner" style="display: none; margin-left: 8px;">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </span>
+                        </button>
+                    </div>
+                    
+                    <div id="retry-section" style="display: none; margin-top: 15px; text-align: center;">
+                        <p>Alguns arquivos falharam ao enviar.</p>
+                        <button type="button" id="retry-upload" class="btn warning">
+                            <i class="fas fa-redo"></i> Tentar Novamente
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -326,70 +443,6 @@
         </div>
     </div>
 
-    <!-- Upload Modal -->
-    <div id="upload-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Adicionar Novo Documento</h3>
-                <span class="close" id="upload-modal-close">&times;</span>
-            </div>
-            <div class="modal-body">
-                <form id="upload-form">
-                    <div class="form-group">
-                        <label for="upload-doc-type">Tipo de Documento</label>
-                        <select id="upload-doc-type" required>
-                            <option value="">Selecione o tipo</option>
-                            <option value="ID card">BI (Bilhete de Identidade)</option>
-                            <option value="Passport">Passaporte</option>
-                            <option value="DIRE">DIRE</option>
-                            <option value="Bank Doc">Documento Bancário</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="upload-doc-title">Título do Documento</label>
-                        <input type="text" id="upload-doc-title" required placeholder="Ex: BI de João Silva">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="upload-file">Selecionar Arquivo</label>
-                        <div class="file-upload-area">
-                            <input type="file" id="upload-file" accept="image/*" style="display: none;">
-                            <div id="file-upload-dropzone" class="file-dropzone">
-                                <i class="fas fa-cloud-upload-alt"></i>
-                                <p>Clique para selecionar ou arraste uma imagem</p>
-                                <small>Formatos aceitos: JPG, PNG • Máx 5MB</small>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Preview Area -->
-                    <div id="image-preview-container" class="image-preview" style="display: none;">
-                        <h4>Pré-visualização</h4>
-                        <canvas id="image-preview-canvas"></canvas>
-                        <p class="preview-info">
-                            <i class="fas fa-info-circle"></i>
-                            Marca d'água "FMD - Identificação Apenas" será adicionada automaticamente
-                        </p>
-                    </div>
-                    
-                    <!-- Loading Spinner -->
-                    <div id="upload-loading" class="loading-spinner" style="display: none;">
-                        <i class="fas fa-spinner fa-spin"></i>
-                        <p>Processando e enviando documento...</p>
-                    </div>
-                    
-                    <div class="modal-actions">
-                        <button type="button" id="upload-cancel" class="btn secondary">Cancelar</button>
-                        <button type="submit" id="upload-submit" class="btn primary" disabled>
-                            <i class="fas fa-upload"></i>
-                            Fazer Upload
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
 
     <!-- Load Supabase library first -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -400,14 +453,52 @@
     <!-- Load auth manager -->
     <script src="auth.js"></script>
     
-    <!-- Load other modules -->
+    <!-- Translations (must be before main script) -->
     <script src="translations.js"></script>
-    <script src="types.js"></script>
+
+    <!-- Initialize Scripts -->
+    <script src="script.js"></script>
     <script src="ui.js"></script>
     <script src="views.js"></script>
+    <script src="chat.js"></script>
     <script src="map.js"></script>
     <script src="documents.js"></script>
-    <script src="chat.js"></script>
-    <script src="script.js"></script>
+    
+    <!-- Enhanced Document Uploader -->
+    <script src="enhancedDocumentUploader.js"></script>
+    <script src="js/profile.js"></script>
+
+    <!-- JSZip Library for downloading documents -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <!-- Payment Modal -->
+    <div id="payment-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="payment-modal-title">Processar Pagamento</h3>
+                <button class="close-btn" id="close-payment-modal">&times;</button>
+            </div>
+            <div class="modal-body" id="payment-modal-body">
+                <!-- Payment steps will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Document Preview Modal -->
+    <div id="document-preview-modal" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3 id="preview-modal-title">Visualizar Documento</h3>
+                <button class="close-btn" id="close-preview-modal">&times;</button>
+            </div>
+            <div class="modal-body" id="preview-modal-body">
+                <!-- Document content will be loaded here -->
+                <div class="loading-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Carregando documento...</p>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

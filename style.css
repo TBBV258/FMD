@@ -1047,6 +1047,94 @@ body {
     border-top: 1px solid var(--border-color);
 }
 
+/* File Upload Styles */
+.file-upload-container {
+    margin: var(--spacing-md) 0;
+}
+
+.drop-zone {
+    border: 2px dashed var(--primary-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl) var(--spacing-md);
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    background-color: rgba(0, 123, 255, 0.05);
+    margin-bottom: var(--spacing-md);
+}
+
+.drop-zone:hover,
+.drop-zone.drag-over {
+    background-color: rgba(0, 123, 255, 0.1);
+    border-color: var(--primary-dark);
+}
+
+.drop-zone i {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+    margin-bottom: var(--spacing-sm);
+    display: block;
+}
+
+.drop-zone p {
+    margin: var(--spacing-sm) 0;
+    color: var(--text-color);
+}
+
+.drop-zone span {
+    display: block;
+    margin: var(--spacing-sm) 0;
+    font-size: var(--text-sm);
+    color: var(--text-light);
+}
+
+.file-info {
+    font-size: var(--text-sm);
+    color: var(--text-light);
+    margin-top: var(--spacing-sm);
+}
+
+.file-preview {
+    margin-top: var(--spacing-md);
+    text-align: center;
+    display: none;
+}
+
+.file-preview img {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+}
+
+.file-preview .file-details {
+    margin-top: var(--spacing-sm);
+    font-size: var(--text-sm);
+}
+
+.file-preview .file-name {
+    font-weight: 500;
+    margin-bottom: var(--spacing-xs);
+}
+
+.file-preview .file-size {
+    color: var(--text-light);
+    font-size: var(--text-xs);
+}
+
+.file-preview .remove-file {
+    color: var(--error-color);
+    cursor: pointer;
+    font-size: var(--text-sm);
+    display: inline-block;
+    margin-top: var(--spacing-sm);
+}
+
+.file-preview .remove-file:hover {
+    text-decoration: underline;
+}
+
 /* Modal Styles */
 .modal {
     display: none;
@@ -1060,22 +1148,35 @@ body {
 }
 
 .modal-content {
-    background-color: var(--card-bg);
-    margin: 5% auto;
+    background: var(--white);
+    margin: 10% auto;
     padding: 0;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     width: 90%;
     max-width: 600px;
-    max-height: 80vh;
-    overflow-y: auto;
+    position: relative;
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .modal-header {
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--spacing-lg);
-    border-bottom: 1px solid var(--border-color);
 }
 
 .modal-header h3 {

@@ -38,6 +38,21 @@
     function initializeAPIs() {
         // Documents API
         window.documentsApi = {
+            async getById(id) {
+                try {
+                    const { data: document, error } = await window.supabase
+                        .from('documents')
+                        .select('*')
+                        .eq('id', id)
+                        .single();
+                    if (error) throw error;
+                    return document;
+                } catch (error) {
+                    console.error('Get document by ID error:', error);
+                    return null;
+                }
+            },
+
             async create(data) {
                 try {
                     const { data: document, error } = await window.supabase
@@ -109,11 +124,40 @@
                     console.error('Delete document error:', error);
                     return false;
                 }
+            },
+
+            async getAllPublicDocuments() {
+                try {
+                    const { data: documents, error } = await window.supabase
+                        .from('documents')
+                        .select('*') // Removed problematic join
+                        .in('status', ['lost', 'found'])
+                        .order('created_at', { ascending: false });
+                    if (error) throw error;
+                    return documents;
+                } catch (error) {
+                    console.error('Get all public documents error:', error);
+                    return [];
+                }
             }
         };
         
         // Profiles API
         window.profilesApi = {
+            async getProfilesByIds(userIds) {
+                try {
+                    const { data: profiles, error } = await window.supabase
+                        .from('user_profiles')
+                        .select('id, full_name, avatar_url')
+                        .in('id', userIds);
+                    if (error) throw error;
+                    return profiles;
+                } catch (error) {
+                    console.error('Get profiles by IDs error:', error);
+                    return [];
+                }
+            },
+
             async create(userId, data) {
                 try {
                     const { data: profile, error } = await window.supabase
@@ -380,29 +424,14 @@
     }
     
     function createFallbackDocument(data) {
-        return {
-            id: 'doc_' + Date.now(),
-            user_id: data.userId,
-            title: data.title,
-            type: data.type,
-            status: data.status || 'normal',
-            location: data.location,
-            file_url: data.fileUrl || '',
-            created_at: new Date().toISOString()
-        };
+        // Return null instead of creating a fake document
+        console.warn('Fallback mode: Document creation failed.');
+        return null;
     }
     
     function getFallbackDocuments() {
-        return [
-            {
-                id: 'doc_1',
-                title: 'BI - João Silva',
-                type: 'ID card',
-                status: 'normal',
-                location: { address: 'Maputo, Moçambique' },
-                file_url: '',
-                created_at: new Date().toISOString()
-            }
-        ];
+        // Return an empty array instead of fake documents
+        console.warn('Fallback mode: Could not fetch documents.');
+        return [];
     }
 })();
