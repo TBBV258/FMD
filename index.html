@@ -328,13 +328,7 @@
                             <span class="stat-number" id="profile-doc-count">0</span>
                             <span class="stat-label" data-i18n="profile.documents">Documentos</span>
                         </div>
-                        <div class="stat-item clickable" id="points-display">
-                            <div class="points-container">
-                                <span class="stat-number" id="profile-points">0</span>
-                                <i class="fas fa-info-circle points-info"></i>
-                            </div>
-                            <span class="stat-label" data-i18n="profile.points">Pontos</span>
-                        </div>
+                        
                         <div class="stat-item">
                             <span class="stat-number" id="profile-helped">3</span>
                             <span class="stat-label" data-i18n="profile.helped">Ajudou</span>
@@ -586,13 +580,12 @@
 
     <!-- Document Preview Modal -->
     <div id="document-preview-modal" class="modal">
-        <div class="modal-content large">
+        <div class="modal-content">
             <div class="modal-header">
                 <h3 id="preview-modal-title" data-i18n="modal.document_preview">Visualizar Documento</h3>
                 <button class="close-btn" id="close-preview-modal" data-i18n-aria-label="modal.close" aria-label="Fechar">&times;</button>
             </div>
             <div class="modal-body" id="preview-modal-body">
-                <!-- Document content will be loaded here -->
                 <div class="loading-state">
                     <i class="fas fa-spinner fa-spin"></i>
                     <p data-i18n="modal.loading_document">Carregando documento...</p>

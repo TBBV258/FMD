@@ -502,10 +502,10 @@ async function initializePointsSystem() {
             console.log(`[Points] Initialized with ${activities.length} activities and ${totalPoints} points`);
             
             // Log a test activity if no activities found (for testing)
-            // Comment or remove this in production
+            // Log test activity if no activities found
             if (activities.length === 0) {
-                console.log('[Points] No activities found, logging test activity...');
-                await logTestActivity();
+                console.log('[Points] No activities found.');
+                // Test activity will be created on user's first action
             }
         } catch (error) {
             console.error('[Points] Error initializing points system:', error);
