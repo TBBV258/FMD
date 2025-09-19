@@ -766,6 +766,20 @@ class DocumentUploader {
                 throw new Error(`Failed to save document metadata: ${docError.message}`);
             }
             
+            // Log points for document upload
+            try {
+                if (window.logActivity) {
+                    await window.logActivity('document_upload', { 
+                        documentId: docData.id,
+                        title: docTitle,
+                        type: docType
+                    });
+                }
+            } catch (pointsError) {
+                console.error('Error logging points:', pointsError);
+                // Don't fail the upload if points logging fails
+            }
+            
             return {
                 ...docData,
                 file: fileData,

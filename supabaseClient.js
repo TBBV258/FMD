@@ -28,6 +28,11 @@
         // Initialize APIs
         initializeAPIs();
         
+        // Dispatch event that Supabase is ready
+        const event = new Event('supabaseReady');
+        document.dispatchEvent(event);
+        console.log('Dispatched supabaseReady event');
+        
     } catch (error) {
         console.error('Error initializing Supabase client:', error);
         // Continue with fallback mode

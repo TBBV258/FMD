@@ -1,3 +1,260 @@
+/* Badge System */
+.badge-container {
+    background: var(--card-bg);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: var(--spacing-md);
+    border: 1px solid var(--border-color);
+}
+
+.badge-icon {
+    font-size: 3rem;
+    margin-bottom: var(--spacing-sm);
+    color: var(--primary);
+}
+
+.badge-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: var(--spacing-sm) 0;
+    color: var(--text-dark);
+}
+
+.badge-description {
+    color: var(--text-light);
+    margin-bottom: var(--spacing-md);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.progress-container {
+    width: 100%;
+    background-color: var(--bg-light);
+    border-radius: 10px;
+    margin: var(--spacing-md) 0;
+    height: 10px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    transition: width 0.3s ease-in-out;
+    background: linear-gradient(90deg, var(--primary), var(--primary-light));
+    border-radius: 10px;
+}
+
+.points-info {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    margin-top: var(--spacing-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+}
+
+.current-points {
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.next-level-points {
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.divider {
+    margin: 0 4px;
+    color: var(--text-light);
+}
+
+.next-badge {
+    margin-top: var(--spacing-md);
+    font-size: 0.85rem;
+    color: var(--text-light);
+}
+
+.next-badge strong {
+    color: var(--primary);
+    font-weight: 500;
+}
+
+/* Points Popup */
+#points-popup {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+#points-popup .modal-content {
+    background-color: var(--card-bg);
+    border-radius: var(--radius-md);
+    max-width: 500px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+}
+
+#points-popup .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+#points-popup .modal-header h3 {
+    margin: 0;
+    color: var(--text-dark);
+}
+
+#points-popup .modal-body {
+    padding: var(--spacing-lg);
+}
+
+.points-summary {
+    text-align: center;
+    margin-bottom: var(--spacing-xl);
+}
+
+.points-display {
+    display: inline-flex;
+    align-items: center;
+    background: linear-gradient(135deg, var(--primary-color), #4a6cf7);
+    color: white;
+    padding: var(--spacing-md) var(--spacing-xl);
+    border-radius: 50px;
+    box-shadow: var(--shadow-sm);
+}
+
+.points-display i {
+    font-size: 2rem;
+    margin-right: var(--spacing-md);
+}
+
+.points-total {
+    font-size: 2.5rem;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.points-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.badge-container {
+    margin: var(--spacing-xl) 0;
+    text-align: center;
+}
+
+.recent-activity {
+    margin: var(--spacing-xl) 0;
+}
+
+.activities-list {
+    margin-top: var(--spacing-md);
+}
+
+.no-activities {
+    text-align: center;
+    color: var(--text-muted);
+    padding: var(--spacing-md);
+    background-color: var(--bg-color);
+    border-radius: var(--radius-sm);
+}
+
+.points-guide h4 {
+    margin-bottom: var(--spacing-md);
+    color: var(--text-dark);
+}
+
+.points-guide ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.points-guide li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px dashed var(--border-color);
+}
+
+.points-guide li i {
+    color: var(--primary-color);
+    width: 24px;
+    text-align: center;
+    margin-right: var(--spacing-sm);
+}
+
+.points-amount {
+    background-color: var(--success-light);
+    color: var(--success-dark);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+/* Clickable points display */
+#points-display {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: var(--radius-md);
+    padding: 0.5rem;
+    position: relative;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+#points-display:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background-color: rgba(74, 144, 226, 0.05);
+}
+
+#points-display:active {
+    transform: translateY(0);
+}
+
+.points-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+#profile-points {
+    font-weight: 600;
+    color: var(--primary-color);
+    transition: color 0.2s ease;
+}
+
+.points-info {
+    color: var(--primary-color);
+    font-size: 0.9em;
+    opacity: 0.7;
+    transition: all 0.2s ease;
+}
+
+#points-display:hover .points-info {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
 /* Profile Page - New Sections */
 .profile-section {
     background-color: var(--card-bg);

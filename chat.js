@@ -25,8 +25,10 @@
                     userLocation = {
                         lat: -25.9692,
                         lng: 32.5732,
-                        accuracy: 10000
+                        accuracy: 10000,
+                        isFallback: true
                     };
+                    console.warn('Using fallback location:', userLocation);
                 },
                 {
                     enableHighAccuracy: true,
@@ -35,12 +37,15 @@
                 }
             );
         } else {
+            console.warn('Geolocation is not supported by this browser.');
             // Fallback to Maputo center
             userLocation = {
                 lat: -25.9692,
                 lng: 32.5732,
-                accuracy: 10000
+                accuracy: 10000,
+                isFallback: true
             };
+            console.warn('Using fallback location (unsupported browser):', userLocation);
         }
     }
 
@@ -160,6 +165,22 @@
             
             try {
                 if (!window.chatsApi) throw new Error('Chat API not available.');
+                
+                // Ensure currentUser is available
+                if (!window.currentUser || !window.currentUser.id) {
+                    // Try to get current user from auth if available
+                    if (window.authApi) {
+                        const user = await window.authApi.getCurrentUser();
+                        if (user) {
+                            window.currentUser = { id: user.id };
+                        } else {
+                            throw new Error('User not authenticated');
+                        }
+                    } else {
+                        throw new Error('Current user not available');
+                    }
+                }
+                
                 const messages = await window.chatsApi.getConversation(currentDocumentId, window.currentUser.id);
                 
                 messages.forEach(msg => {
@@ -169,7 +190,7 @@
 
             } catch (error) {
                 console.error('Failed to load chat history:', error);
-                container.innerHTML = '<p class="text-center error">Não foi possível carregar o histórico.</p>';
+                container.innerHTML = '<p class="text-center error">Não foi possível carregar o histórico. Por favor, recarregue a página.</p>';
             }
         },
 
@@ -178,50 +199,82 @@
             const text = (messageText || (input && input.value))?.trim();
             if (!text) return;
 
-            const message = {
-                id: Date.now(),
-                message: text,
-                created_at: new Date().toISOString(),
-                sender_id: window.currentUser?.id || 'current-user',
-                location: userLocation
-            };
-
-            // Add message to UI immediately
-            appendMessage(message, true);
-            if (input) input.value = '';
-
-            // Try to send through API if available
-            if (window.chatsApi) {
-                try {
-                    const senderId = window.currentUser?.id;
-                    if (!senderId || !currentReceiverId) {
-                        throw new Error('Sender or receiver ID is missing.');
+            try {
+                // Ensure we have the current user ID
+                if (!window.currentUser || !window.currentUser.id) {
+                    if (window.authApi) {
+                        const user = await window.authApi.getCurrentUser();
+                        if (user) {
+                            window.currentUser = { id: user.id };
+                        } else {
+                            throw new Error('User not authenticated');
+                        }
+                    } else {
+                        throw new Error('Current user not available');
                     }
-
-                    await window.chatsApi.send({
-                        documentId: currentDocumentId,
-                        senderId: senderId,
-                        receiverId: currentReceiverId,
-                        message: text,
-                        location: userLocation
-                    });
-                } catch (err) {
-                    console.error('Failed to send chat message:', err);
-                    window.showToast?.('Erro ao enviar mensagem', 'error');
-                    // Optional: remove the message from UI if it failed to send
                 }
+
+                // Ensure we have a receiver ID
+                if (!currentReceiverId) {
+                    throw new Error('Recipient not specified');
+                }
+
+                const message = {
+                    id: Date.now(),
+                    message: text,
+                    created_at: new Date().toISOString(),
+                    sender_id: window.currentUser.id,
+                    location: userLocation
+                };
+
+                // Add message to UI immediately
+                appendMessage(message, true);
+                if (input) input.value = '';
+
+                // Try to send through API if available
+                if (window.chatsApi) {
+                    try {
+                        await window.chatsApi.send({
+                            documentId: currentDocumentId,
+                            senderId: window.currentUser.id,
+                            receiverId: currentReceiverId,
+                            message: text,
+                            location: userLocation
+                        });
+                    } catch (err) {
+                        console.error('Failed to send chat message:', err);
+                        window.showToast?.('Erro ao enviar mensagem', 'error');
+                        // Optional: remove the message from UI if it failed to send
+                    }
+                }
+            } catch (error) {
+                console.error('Error in send function:', error);
+                window.showToast?.(error.message || 'Erro ao enviar mensagem', 'error');
             }
         },
 
         openChatModal(documentId, documentTitle, receiverId) {
             const modal = document.getElementById('chat-modal');
+            if (!modal) {
+                console.error('Chat modal not found');
+                return;
+            }
+            
             const modalTitle = modal.querySelector('.modal-header h3');
             
             if (modalTitle) {
                 modalTitle.textContent = `Chat - ${documentTitle}`;
             }
             
+            // Ensure we have a valid receiver ID
+            if (!receiverId) {
+                console.error('No receiver ID provided');
+                window.showToast?.('Erro: Destinatário não especificado', 'error');
+                return;
+            }
+            
             modal.style.display = 'block';
+            currentDocumentId = documentId;
             currentReceiverId = receiverId; // Store the receiver's ID
             this.init(documentId);
         },

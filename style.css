@@ -417,6 +417,16 @@ body {
     background: #c82333;
 }
 
+/* M-Pesa Button */
+.btn.mpesa {
+    background: #e10a0a; /* Vermelho do M-Pesa */
+    color: var(--white);
+}
+
+.btn.mpesa:hover {
+    background: #c00808; /* Tom mais escuro para hover */
+}
+
 /* Social Login */
 .social-login {
     margin-top: var(--spacing-lg);
@@ -1219,6 +1229,182 @@ body {
     color: var(--white);
     margin-left: auto;
     border-bottom-right-radius: var(--radius-xs);
+}
+
+/* Points Popup Styles */
+#points-popup .modal-content {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.points-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md);
+    background: linear-gradient(135deg, #4a6cf7, #6a11cb);
+    color: white;
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.total-points {
+    text-align: center;
+}
+
+.points-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    display: block;
+    line-height: 1;
+}
+
+.points-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.rank-badge-large {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+}
+
+.rank-badge-large i {
+    color: gold;
+}
+
+.points-history {
+    margin: var(--spacing-lg) 0;
+}
+
+.activities-list {
+    margin-top: var(--spacing-md);
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: var(--spacing-xs);
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--primary-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: var(--spacing-md);
+    color: var(--primary-color);
+    font-size: 1.1rem;
+}
+
+.activity-details {
+    flex: 1;
+}
+
+.activity-title {
+    font-weight: 500;
+    margin-bottom: 0.1rem;
+}
+
+.activity-points {
+    font-size: 0.85rem;
+    color: var(--success-color);
+    font-weight: 600;
+}
+
+.activity-time {
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.next-rank {
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--border-color);
+}
+
+.progress-container {
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    margin: var(--spacing-sm) 0;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #4a6cf7, #6a11cb);
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+.rank-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    color: var(--text-light);
+}
+
+.rank-info span:last-child {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+/* Points display in profile */
+#points-display {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+#points-display:hover {
+    transform: translateY(-2px);
+}
+
+.points-container {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.points-info {
+    color: var(--primary-color);
+    font-size: 0.9rem;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+#points-display:hover .points-info {
+    opacity: 1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .points-summary {
+        flex-direction: column;
+        gap: var(--spacing-md);
+        text-align: center;
+    }
+    
+    .rank-badge-large {
+        width: 100%;
+        justify-content: center;
+    }
 }
 
 .chat-message.other {

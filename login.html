@@ -21,6 +21,47 @@
     
     <!-- Add listener for when everything is loaded -->
     <script>
+        // Function to save credentials to localStorage
+        function saveCredentials(email, password) {
+            try {
+                // In a production app, you should encrypt the password before storing
+                const credentials = { email, password };
+                localStorage.setItem('savedCredentials', JSON.stringify(credentials));
+                console.log('Credentials saved');
+            } catch (error) {
+                console.error('Error saving credentials:', error);
+            }
+        }
+
+        // Function to clear saved credentials
+        function clearCredentials() {
+            try {
+                localStorage.removeItem('savedCredentials');
+                console.log('Credentials cleared');
+            } catch (error) {
+                console.error('Error clearing credentials:', error);
+            }
+        }
+
+        // Function to load saved credentials
+        function loadCredentials() {
+            try {
+                const saved = localStorage.getItem('savedCredentials');
+                if (saved) {
+                    const credentials = JSON.parse(saved);
+                    if (credentials && credentials.email && credentials.password) {
+                        document.getElementById('signin-email').value = credentials.email;
+                        document.getElementById('signin-password').value = credentials.password;
+                        document.getElementById('remember-me').checked = true;
+                        console.log('Credentials loaded');
+                        return true;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading credentials:', error);
+            }
+            return false;
+        }
         window.addEventListener('load', () => {
             // Wait a bit to ensure Supabase is initialized
             setTimeout(() => {
@@ -32,8 +73,13 @@
             }, 500);
         });
         
-        // Add toggle password functionality
+        // Call initAuth only after the DOM is fully loaded
         document.addEventListener('DOMContentLoaded', () => {
+            initAuth();
+            
+            // Load saved credentials if any
+            const hasCredentials = loadCredentials();
+            
             // Initialize auth tabs
             const authTabs = document.querySelectorAll('.auth-tab');
             const authForms = document.querySelectorAll('.auth-form');
@@ -51,6 +97,17 @@
                     document.getElementById(targetTab + '-form').classList.add('active');
                 });
             });
+            
+            // Handle remember me checkbox
+            const rememberMeCheckbox = document.getElementById('remember-me');
+            if (rememberMeCheckbox) {
+                rememberMeCheckbox.addEventListener('change', function() {
+                    if (!this.checked) {
+                        // If user unchecks remember me, clear saved credentials
+                        clearCredentials();
+                    }
+                });
+            }
             
             // Form handling
             const signinForm = document.getElementById('signin-form');
@@ -117,9 +174,17 @@
                 if (window.authApi) {
                     const result = await window.authApi.signIn(email, password);
                     if (result.user) {
+                        // Save credentials if remember me is checked
                         if (rememberMe) {
+                            saveCredentials(email, password);
                             localStorage.setItem('remember_me', 'true');
+                        } else {
+                            // Clear any previously saved credentials if remember me is not checked
+                            clearCredentials();
+                            localStorage.removeItem('remember_me');
                         }
+                        
+                        // Set auth token and redirect
                         localStorage.setItem('auth_token', 'authenticated');
                         window.location.href = 'index.html';
                     }
@@ -129,6 +194,10 @@
             } catch (error) {
                 console.error('Sign in error:', error);
                 showToast('Erro ao fazer login: ' + error.message, 'error');
+                
+                // Clear saved credentials on failed login attempt
+                clearCredentials();
+                document.getElementById('remember-me').checked = false;
             }
         }
         

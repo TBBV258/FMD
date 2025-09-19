@@ -142,15 +142,64 @@ function applyTranslations(lang) {
     });
 }
 
-function loadUserData() {
-    // Load user documents
-    loadDocuments();
-    
-    // Update profile info
-    updateProfileInfo();
-    
-    // Update document count
-    updateDocumentCount();
+async function loadUserData() {
+    try {
+        // Get current user from Supabase
+        const { data: { user }, error } = await window.supabase.auth.getUser();
+        
+        if (error || !user) {
+            console.error('Error loading user data:', error);
+            isLoggedIn = false;
+            updateUIForAuthState();
+            return;
+        }
+        
+        // Get user profile data
+        const { data: profile, error: profileError } = await window.supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+            
+        if (profileError) {
+            console.error('Error loading profile:', profileError);
+        }
+        
+        currentUser = {
+            id: user.id,
+            name: profile?.full_name || user.email?.split('@')[0] || 'Usuário',
+            email: user.email,
+            avatar: profile?.avatar_url || 'https://via.placeholder.com/150',
+            points: 0
+        };
+        
+        isLoggedIn = true;
+        
+        // Update UI with user data
+        updateUIForAuthState();
+        
+        // Initialize points
+        if (window.fetchUserActivities) {
+            const activities = await window.fetchUserActivities();
+            const totalPoints = window.calculateTotalPoints(activities);
+            
+            // Update points in the UI
+            const pointsElement = document.getElementById('profile-points');
+            if (pointsElement) {
+                pointsElement.textContent = totalPoints;
+            }
+            
+            // Update the points in the stats
+            const statPoints = document.getElementById('stat-points');
+            if (statPoints) {
+                statPoints.textContent = totalPoints;
+            }
+        }
+    } catch (error) {
+        console.error('Error in loadUserData:', error);
+        isLoggedIn = false;
+        updateUIForAuthState();
+    }
 }
 
 function initializeForms() {
@@ -365,7 +414,7 @@ function loadProfile() {
     updateProfileInfo();
 }
 
-function updateProfileInfo() {
+async function updateProfileInfo() {
     const profileName = document.getElementById('profile-name');
     const profileEmail = document.getElementById('profile-email');
     const statDocuments = document.getElementById('stat-documents');
@@ -374,9 +423,43 @@ function updateProfileInfo() {
     
     if (profileName) profileName.textContent = currentUser.name || 'Demo User';
     if (profileEmail) profileEmail.textContent = currentUser.email || 'demo@example.com';
-    if (statDocuments) statDocuments.textContent = '1';
-    if (statPoints) statPoints.textContent = '250';
-    if (statHelped) statHelped.textContent = '3';
+    
+    try {
+        // Get user's documents count
+        const { data: documents, error: docsError } = await window.supabase
+            .from('documents')
+            .select('id', { count: 'exact' })
+            .eq('user_id', currentUser.id);
+            
+        if (!docsError && statDocuments) {
+            statDocuments.textContent = documents?.length || '0';
+        }
+        
+        // Get user's points from activities
+        if (window.calculateTotalPoints) {
+            const activities = await window.fetchUserActivities?.() || [];
+            const totalPoints = window.calculateTotalPoints(activities);
+            if (statPoints) statPoints.textContent = totalPoints;
+        } else if (statPoints) {
+            statPoints.textContent = '0';
+        }
+        
+        // Get helped count (documents marked as returned)
+        const { data: helpedDocs, error: helpedError } = await window.supabase
+            .from('documents')
+            .select('id', { count: 'exact' })
+            .eq('returned_by', currentUser.id);
+            
+        if (!helpedError && statHelped) {
+            statHelped.textContent = helpedDocs?.length || '0';
+        }
+    } catch (error) {
+        console.error('Error updating profile info:', error);
+        // Fallback to default values
+        if (statDocuments) statDocuments.textContent = '0';
+        if (statPoints) statPoints.textContent = '0';
+        if (statHelped) statHelped.textContent = '0';
+    }
 }
 
 function updateDocumentCount(count = 0) {
@@ -1047,6 +1130,33 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(initializeUploadModal, 100);
     setTimeout(initializeAvatarUpload, 100);
     
+    // Initialize points popup
+    const pointsDisplay = document.getElementById('points-display');
+    const pointsPopup = document.getElementById('points-popup');
+    const closePointsPopup = document.getElementById('close-points-popup');
+    
+    if (pointsDisplay && pointsPopup) {
+        pointsDisplay.addEventListener('click', () => {
+            pointsPopup.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        });
+    }
+    
+    if (closePointsPopup) {
+        closePointsPopup.addEventListener('click', () => {
+            pointsPopup.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        });
+    }
+    
+    // Close modal when clicking outside
+    window.addEventListener('click', (e) => {
+        if (e.target === pointsPopup) {
+            pointsPopup.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+    });
+    
     // Initialize profile logout button
     const profileLogoutBtn = document.getElementById('profile-logout-btn');
     if (profileLogoutBtn) {
@@ -1216,7 +1326,10 @@ async function handleAvatarUpload(file) {
                 avatarModal.style.display = 'none';
             }
             
-            showToast('Foto do perfil atualizada com sucesso!', 'success');
+            showToast('Foto de perfil atualizada com sucesso!', 'success');
+            
+            // Track profile update for points
+            await trackProfileUpdate();
             
             // Award points for updating profile
             try {
@@ -1425,25 +1538,136 @@ async function trackDocumentUpload() {
     await awardPoints('document_uploaded', 20);
 }
 
-async function trackDocumentFound() {
-    await awardPoints('document_found', 50);
+async function trackDocumentFound(documentId) {
+    try {
+        if (window.logActivity) {
+            await window.logActivity('document_found', { documentId });
+            
+            // Update points display
+            const pointsElement = document.getElementById('profile-points');
+            if (pointsElement) {
+                const currentPoints = parseInt(pointsElement.textContent) || 0;
+                pointsElement.textContent = currentPoints + 50; // 50 points for finding a document
+            }
+            
+            if (window.showToast) {
+                window.showToast('Documento encontrado! +50 pontos ganhos!', 'success');
+            }
+        }
+    } catch (error) {
+        console.error('Error tracking document found:', error);
+    }
 }
 
-async function trackDocumentLost() {
-    await awardPoints('document_lost', 10);
+async function trackDocumentLost(documentId) {
+    try {
+        if (window.logActivity) {
+            await window.logActivity('document_lost', { documentId });
+            
+            // No points for losing a document, just track the activity
+            if (window.showToast) {
+                window.showToast('Documento marcado como perdido. Por favor, verifique sua área de documentos perdidos.', 'info');
+            }
+        }
+    } catch (error) {
+        console.error('Error tracking document lost:', error);
+    }
 }
 
 async function trackProfileUpdate() {
-    await awardPoints('profile_updated', 10);
+    try {
+        if (window.logActivity) {
+            // Check if this is the first time the user is updating their profile
+            const { data: { user } } = await window.supabase.auth.getUser();
+            if (!user) return;
+            
+            // Check if we've already awarded points for profile completion
+            const profileCompletedKey = `profile_completed_${user.id}`;
+            if (!localStorage.getItem(profileCompletedKey)) {
+                // Log points for profile completion
+                await window.logActivity('profile_completed');
+                localStorage.setItem(profileCompletedKey, 'true');
+                
+                // Update the points display
+                const pointsElement = document.getElementById('profile-points');
+                if (pointsElement) {
+                    const currentPoints = parseInt(pointsElement.textContent) || 0;
+                    pointsElement.textContent = currentPoints + 50; // 50 points for profile completion
+                }
+                
+                if (window.showToast) {
+                    window.showToast('Perfil completo! +50 pontos ganhos!', 'success');
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error tracking profile update:', error);
+    }
 }
 
-async function trackHelpProvided() {
-    await awardPoints('help_provided', 30);
+async function trackHelpProvided(documentId, helpedUserId) {
+    try {
+        if (window.logActivity) {
+            await window.logActivity('help_provided', { 
+                documentId,
+                helpedUserId,
+                points: 200 // 200 points for helping return a document
+            });
+            
+            // Update points display
+            const pointsElement = document.getElementById('profile-points');
+            if (pointsElement) {
+                const currentPoints = parseInt(pointsElement.textContent) || 0;
+                pointsElement.textContent = currentPoints + 200;
+            }
+            
+            // Update helped count
+            const statHelped = document.getElementById('stat-helped');
+            if (statHelped) {
+                const currentHelped = parseInt(statHelped.textContent) || 0;
+                statHelped.textContent = currentHelped + 1;
+            }
+            
+            if (window.showToast) {
+                window.showToast('Obrigado por ajudar! +200 pontos ganhos!', 'success');
+            }
+        }
+    } catch (error) {
+        console.error('Error tracking help provided:', error);
+    }
+}
+
+// Update UI based on authentication state
+function updateUIForAuthState() {
+    const authElements = document.querySelectorAll('.auth-only');
+    const unauthElements = document.querySelectorAll('.unauth-only');
+    const userGreeting = document.getElementById('user-greeting');
+    const userAvatar = document.getElementById('user-avatar');
+    
+    if (isLoggedIn && currentUser) {
+        // User is logged in
+        authElements.forEach(el => el.style.display = '');
+        unauthElements.forEach(el => el.style.display = 'none');
+        
+        if (userGreeting) {
+            userGreeting.textContent = `Olá, ${currentUser.name}`;
+        }
+        
+        if (userAvatar) {
+            userAvatar.src = currentUser.avatar;
+            userAvatar.alt = currentUser.name;
+        }
+    } else {
+        // User is not logged in
+        authElements.forEach(el => el.style.display = 'none');
+        unauthElements.forEach(el => el.style.display = '');
+    }
 }
 
 // Make functions globally available
 window.showSection = showSection;
 window.showToast = showToast;
 window.renderProfilePage = renderProfilePage;
+window.updateUIForAuthState = updateUIForAuthState;
 window.handleLogout = handleLogout;
 window.awardPoints = awardPoints;
