@@ -142,64 +142,15 @@ function applyTranslations(lang) {
     });
 }
 
-async function loadUserData() {
-    try {
-        // Get current user from Supabase
-        const { data: { user }, error } = await window.supabase.auth.getUser();
-        
-        if (error || !user) {
-            console.error('Error loading user data:', error);
-            isLoggedIn = false;
-            updateUIForAuthState();
-            return;
-        }
-        
-        // Get user profile data
-        const { data: profile, error: profileError } = await window.supabase
-            .from('user_profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-            
-        if (profileError) {
-            console.error('Error loading profile:', profileError);
-        }
-        
-        currentUser = {
-            id: user.id,
-            name: profile?.full_name || user.email?.split('@')[0] || 'Usuário',
-            email: user.email,
-            avatar: profile?.avatar_url || 'https://via.placeholder.com/150',
-            points: 0
-        };
-        
-        isLoggedIn = true;
-        
-        // Update UI with user data
-        updateUIForAuthState();
-        
-        // Initialize points
-        if (window.fetchUserActivities) {
-            const activities = await window.fetchUserActivities();
-            const totalPoints = window.calculateTotalPoints(activities);
-            
-            // Update points in the UI
-            const pointsElement = document.getElementById('profile-points');
-            if (pointsElement) {
-                pointsElement.textContent = totalPoints;
-            }
-            
-            // Update the points in the stats
-            const statPoints = document.getElementById('stat-points');
-            if (statPoints) {
-                statPoints.textContent = totalPoints;
-            }
-        }
-    } catch (error) {
-        console.error('Error in loadUserData:', error);
-        isLoggedIn = false;
-        updateUIForAuthState();
-    }
+function loadUserData() {
+    // Load user documents
+    loadDocuments();
+    
+    // Update profile info
+    updateProfileInfo();
+    
+    // Update document count
+    updateDocumentCount();
 }
 
 function initializeForms() {
@@ -293,19 +244,46 @@ function createDocumentCard(doc) {
     
     const statusClass = doc.status === 'lost' ? 'danger' : doc.status === 'found' ? 'success' : 'primary';
     
+    const isOwnDocument = doc.user_id === (window.currentUser?.id || null);
+    
     div.innerHTML = `
         <div class="card-body">
-            <h4>${doc.title}</h4>
-            <p class="muted">Tipo: ${doc.type} • Status: ${doc.status}</p>
-            <div class="card-actions">
-                <button class="btn small ${statusClass} view-doc" data-id="${doc.id}">Ver</button>
-                <button class="btn danger small delete-doc" data-id="${doc.id}">Excluir</button>
+            <div style="display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 0.5rem;">
+                <div class="document-icon" style="background: ${statusClass === 'danger' ? 'rgba(220, 53, 69, 0.1)' : 'rgba(40, 167, 69, 0.1)'}; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="fas ${statusClass === 'danger' ? 'fa-exclamation-circle' : 'fa-check-circle'}" style="font-size: 1.2rem; color: ${statusClass === 'danger' ? 'var(--danger-color)' : 'var(--success-color)'};"></i>
+                </div>
+                <div style="flex: 1;">
+                    <h4 style="margin: 0 0 0.25rem 0; font-size: 1.1rem;">${doc.title}</h4>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                        <span class="status-badge" style="background: ${statusClass === 'danger' ? 'rgba(220, 53, 69, 0.1)' : 'rgba(40, 167, 69, 0.1)'}; color: ${statusClass === 'danger' ? 'var(--danger-color)' : 'var(--success-color)'}; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.75rem; font-weight: 500;">
+                            ${doc.status === 'lost' ? 'Perdido' : 'Encontrado'}
+                        </span>
+                        <span style="font-size: 0.8rem; color: var(--text-light);">${doc.type}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-actions" style="margin-top: 0.75rem; display: flex; gap: 0.5rem;">
+                <button class="btn small ${statusClass} view-doc" data-id="${doc.id}" style="flex: 1;">
+                    <i class="fas fa-eye"></i> Ver Detalhes
+                </button>
+                
+                ${!isOwnDocument ? `
+                <button class="btn small primary contact-reporter-btn" data-doc-id="${doc.id}" data-reporter-id="${doc.user_id}" style="flex: 1;">
+                    <i class="fas fa-comments"></i> Chat
+                </button>
+                ` : ''}
+                
+                <button class="btn small danger delete-doc" data-id="${doc.id}" style="width: auto; padding: 0.4rem 0.8rem;">
+                    <i class="fas fa-trash"></i>
+                </button>
             </div>
         </div>`;
     
     // Add event listeners
     const viewBtn = div.querySelector('.view-doc');
     const deleteBtn = div.querySelector('.delete-doc');
+    const contactBtn = div.querySelector('.contact-reporter-btn');
     
     if (viewBtn) {
         viewBtn.addEventListener('click', () => viewDocument(doc));
@@ -313,6 +291,36 @@ function createDocumentCard(doc) {
     
     if (deleteBtn) {
         deleteBtn.addEventListener('click', () => deleteDocument(doc.id));
+    }
+    
+    if (contactBtn) {
+        contactBtn.addEventListener('click', (e) => {
+            console.log('Contact button clicked');
+            const docId = e.target.dataset.docId;
+            const reporterId = e.target.dataset.reporterId;
+            
+            console.log('Document ID:', docId, 'Reporter ID:', reporterId);
+            
+            if (!docId || !reporterId) {
+                console.error('Missing document or reporter ID for chat.');
+                return;
+            }
+            
+            console.log('Checking chat module...');
+            console.log('window.chat:', window.chat);
+            console.log('window.chat.openChatModal:', window.chat?.openChatModal);
+            
+            if (window.chat && typeof window.chat.openChatModal === 'function') {
+                console.log('Opening chat modal...');
+                const docTitle = e.target.closest('.document-card').querySelector('h4').textContent;
+                console.log('Document title:', docTitle);
+                window.chat.openChatModal(docId, docTitle, reporterId);
+                console.log('Chat modal should be open now');
+            } else {
+                console.error('Chat module not available or openChatModal is not a function');
+                showToast('A funcionalidade de chat não está disponível.', 'error');
+            }
+        });
     }
     
     return div;
@@ -389,18 +397,54 @@ function createFeedCard(doc, reporterProfile) {
     // Determine which buttons to show
     let actionsHtml = '';
     if (isOwnDocument) {
-        actionsHtml = `<button class="btn small secondary view-doc" data-id="${doc.id}">Ver Detalhes</button>`;
+        actionsHtml = `
+            <button class="btn small secondary view-doc" data-id="${doc.id}">
+                <i class="fas fa-eye"></i> Ver Detalhes
+            </button>`;
+            actionsHtml = `
+            <button class="btn small primary contact-reporter-btn" data-doc-id="${doc.id}" data-reporter-id="${doc.user_id}">
+                <i class="fas fa-comment-dots"></i> Contactar
+            </button>`;
     } else {
-        actionsHtml = `<button class="btn small primary contact-reporter-btn" data-doc-id="${doc.id}" data-reporter-id="${doc.user_id}">Contactar</button>`;
+        actionsHtml = `
+            <button class="btn small primary contact-reporter-btn" data-doc-id="${doc.id}" data-reporter-id="${doc.user_id}">
+                <i class="fas fa-comment-dots"></i> Contactar
+            </button>`;
     }
 
     div.innerHTML = `
         <div class="document-card">
             <div class="card-body">
-                <h4>${doc.title}</h4>
-                <p class="muted">Status: <span class="status-${doc.status}">${statusText}</span></p>
-                <p class="muted">Local: ${location}</p>
-                <p class="muted">Reportado por: ${reporterName}</p>
+                <div style="display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 0.75rem;">
+                    <div class="document-icon" style="background: ${doc.status === 'lost' ? 'rgba(220, 53, 69, 0.1)' : 'rgba(40, 167, 69, 0.1)'}; width: 48px; height: 48px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <i class="fas ${doc.status === 'lost' ? 'fa-exclamation-circle' : 'fa-check-circle'}" style="font-size: 1.5rem; color: ${doc.status === 'lost' ? 'var(--danger-color)' : 'var(--success-color)'};"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <h4>${doc.title}</h4>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                            <span class="status-${doc.status}" style="font-weight: 500; font-size: 0.8rem; background: ${doc.status === 'lost' ? 'rgba(220, 53, 69, 0.1)' : 'rgba(40, 167, 69, 0.1)'}; color: ${doc.status === 'lost' ? 'var(--danger-color)' : 'var(--success-color)'}; padding: 0.2rem 0.5rem; border-radius: 12px;">
+                                ${doc.status === 'lost' ? 'Perdido' : 'Encontrado'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.25rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-map-marker-alt" style="color: var(--text-light); font-size: 0.9rem; width: 16px; text-align: center;"></i>
+                        <span style="font-size: 0.85rem; color: var(--text-light);">${location}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-user" style="color: var(--text-light); font-size: 0.9rem; width: 16px; text-align: center;"></i>
+                        <span style="font-size: 0.85rem; color: var(--text-light);">Reportado por: <strong>${reporterName}</strong></span>
+                    </div>
+                    ${doc.created_at ? `
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="far fa-clock" style="color: var(--text-light); font-size: 0.9rem; width: 16px; text-align: center;"></i>
+                        <span style="font-size: 0.8rem; color: var(--text-light);">${new Date(doc.created_at).toLocaleDateString('pt-PT')}</span>
+                    </div>` : ''}
+                </div>
+                
                 <div class="card-actions">
                     ${actionsHtml}
                 </div>
@@ -414,7 +458,7 @@ function loadProfile() {
     updateProfileInfo();
 }
 
-async function updateProfileInfo() {
+function updateProfileInfo() {
     const profileName = document.getElementById('profile-name');
     const profileEmail = document.getElementById('profile-email');
     const statDocuments = document.getElementById('stat-documents');
@@ -423,43 +467,9 @@ async function updateProfileInfo() {
     
     if (profileName) profileName.textContent = currentUser.name || 'Demo User';
     if (profileEmail) profileEmail.textContent = currentUser.email || 'demo@example.com';
-    
-    try {
-        // Get user's documents count
-        const { data: documents, error: docsError } = await window.supabase
-            .from('documents')
-            .select('id', { count: 'exact' })
-            .eq('user_id', currentUser.id);
-            
-        if (!docsError && statDocuments) {
-            statDocuments.textContent = documents?.length || '0';
-        }
-        
-        // Get user's points from activities
-        if (window.calculateTotalPoints) {
-            const activities = await window.fetchUserActivities?.() || [];
-            const totalPoints = window.calculateTotalPoints(activities);
-            if (statPoints) statPoints.textContent = totalPoints;
-        } else if (statPoints) {
-            statPoints.textContent = '0';
-        }
-        
-        // Get helped count (documents marked as returned)
-        const { data: helpedDocs, error: helpedError } = await window.supabase
-            .from('documents')
-            .select('id', { count: 'exact' })
-            .eq('returned_by', currentUser.id);
-            
-        if (!helpedError && statHelped) {
-            statHelped.textContent = helpedDocs?.length || '0';
-        }
-    } catch (error) {
-        console.error('Error updating profile info:', error);
-        // Fallback to default values
-        if (statDocuments) statDocuments.textContent = '0';
-        if (statPoints) statPoints.textContent = '0';
-        if (statHelped) statHelped.textContent = '0';
-    }
+    if (statDocuments) statDocuments.textContent = '1';
+    if (statPoints) statPoints.textContent = '250';
+    if (statHelped) statHelped.textContent = '3';
 }
 
 function updateDocumentCount(count = 0) {
@@ -755,481 +765,7 @@ function createProfileDocumentCard(doc) {
 
 // Document Actions
 function viewProfileDocument(doc) {
-    // Get modal elements
-    const modal = document.getElementById('document-preview-modal');
-    const modalTitle = document.getElementById('preview-modal-title');
-    const modalBody = document.getElementById('preview-modal-body');
-    
-    // Show loading state
-    modalBody.innerHTML = `
-        <div class="loading-state">
-            <i class="fas fa-spinner fa-spin"></i>
-            <p>Carregando documento...</p>
-        </div>
-    `;
-    
-    // Show the modal immediately with loading state
-    modal.style.display = 'block';
-    
-    // Format dates
-    const formatDate = (dateString) => {
-        if (!dateString) return 'Não informada';
-        try {
-            const date = new Date(dateString);
-            return isNaN(date.getTime()) ? 'Data inválida' : date.toLocaleDateString('pt-BR');
-        } catch (e) {
-            return 'Data inválida';
-        }
-    };
-
-    // Format status
-    const statusConfig = {
-        'normal': { text: 'Normal', class: 'primary' },
-        'lost': { text: 'Perdido', class: 'danger' },
-        'found': { text: 'Encontrado', class: 'success' },
-        'expired': { text: 'Expirado', class: 'warning' },
-        'reported': { text: 'Reportado', class: 'info' },
-        'active': { text: 'Ativo', class: 'success' },
-        'inactive': { text: 'Inativo', class: 'secondary' },
-        'pending': { text: 'Pendente', class: 'warning' },
-        'approved': { text: 'Aprovado', class: 'success' },
-        'rejected': { text: 'Rejeitado', class: 'danger' },
-        'verified': { text: 'Verificado', class: 'success' },
-        'unverified': { text: 'Não Verificado', class: 'warning' },
-        'blocked': { text: 'Bloqueado', class: 'danger' },
-        'archived': { text: 'Arquivado', class: 'secondary' },
-        'draft': { text: 'Rascunho', class: 'info' },
-        'published': { text: 'Publicado', class: 'success' },
-        'deleted': { text: 'Excluído', class: 'danger' },
-        'suspended': { text: 'Suspenso', class: 'warning' },
-        'banned': { text: 'Banido', class: 'danger' },
-        'under_review': { text: 'Em Análise', class: 'warning' },
-        'completed': { text: 'Concluído', class: 'success' },
-        'cancelled': { text: 'Cancelado', class: 'danger' },
-        'refunded': { text: 'Reembolsado', class: 'info' },
-        'failed': { text: 'Falhou', class: 'danger' },
-        'processing': { text: 'Processando', class: 'info' },
-        'shipped': { text: 'Enviado', class: 'success' },
-        'delivered': { text: 'Entregue', class: 'success' },
-        'returned': { text: 'Devolvido', class: 'warning' },
-        'exchanged': { text: 'Trocado', class: 'info' },
-        'on_hold': { text: 'Em Espera', class: 'warning' },
-        'out_of_stock': { text: 'Fora de Estoque', class: 'danger' },
-        'pre_order': { text: 'Pré-venda', class: 'info' },
-        'backorder': { text: 'Sob Encomenda', class: 'warning' },
-        'discontinued': { text: 'Descontinuado', class: 'secondary' },
-        'coming_soon': { text: 'Em Breve', class: 'info' },
-        'new': { text: 'Novo', class: 'success' },
-        'used': { text: 'Usado', class: 'info' },
-        'refurbished': { text: 'Recondicionado', class: 'info' },
-        'damaged': { text: 'Danificado', class: 'danger' },
-        'recalled': { text: 'Recolhido', class: 'danger' },
-        'recall_issued': { text: 'Recall Emitido', class: 'warning' },
-        'recall_completed': { text: 'Recall Concluído', class: 'info' },
-        'recall_cancelled': { text: 'Recall Cancelado', class: 'secondary' },
-        'recall_in_progress': { text: 'Recall em Andamento', class: 'warning' },
-        'recall_pending': { text: 'Recall Pendente', class: 'warning' },
-        'recall_failed': { text: 'Recall Falhou', class: 'danger' },
-        'recall_successful': { text: 'Recall Bem-sucedido', class: 'success' },
-        'recall_partial': { text: 'Recall Parcial', class: 'warning' },
-        'recall_verified': { text: 'Recall Verificado', class: 'success' },
-        'recall_unverified': { text: 'Recall Não Verificado', class: 'warning' },
-        'recall_approved': { text: 'Recall Aprovado', class: 'success' },
-        'recall_rejected': { text: 'Recall Rejeitado', class: 'danger' },
-        'recall_archived': { text: 'Recall Arquivado', class: 'secondary' },
-        'recall_deleted': { text: 'Recall Excluído', class: 'danger' },
-        'recall_blocked': { text: 'Recall Bloqueado', class: 'danger' },
-        'recall_suspended': { text: 'Recall Suspenso', class: 'warning' },
-        'recall_banned': { text: 'Recall Banido', class: 'danger' },
-        'recall_under_review': { text: 'Recall em Análise', class: 'warning' },
-        'recall_completed': { text: 'Recall Concluído', class: 'success' },
-        'recall_cancelled': { text: 'Recall Cancelado', class: 'danger' },
-        'recall_refunded': { text: 'Recall Reembolsado', class: 'info' },
-        'recall_failed': { text: 'Recall Falhou', class: 'danger' },
-        'recall_processing': { text: 'Recall em Processamento', class: 'info' },
-        'recall_shipped': { text: 'Recall Enviado', class: 'success' },
-        'recall_delivered': { text: 'Recall Entregue', class: 'success' },
-        'recall_returned': { text: 'Recall Devolvido', class: 'warning' },
-        'recall_exchanged': { text: 'Recall Trocado', class: 'info' },
-        'recall_on_hold': { text: 'Recall em Espera', class: 'warning' },
-        'recall_out_of_stock': { text: 'Recall Fora de Estoque', class: 'danger' },
-        'recall_pre_order': { text: 'Recall em Pré-venda', class: 'info' },
-        'recall_backorder': { text: 'Recall Sob Encomenda', class: 'warning' },
-        'recall_discontinued': { text: 'Recall Descontinuado', class: 'secondary' },
-        'recall_coming_soon': { text: 'Recall em Breve', class: 'info' },
-        'recall_new': { text: 'Recall Novo', class: 'success' },
-        'recall_used': { text: 'Recall Usado', class: 'info' },
-        'recall_refurbished': { text: 'Recall Recondicionado', class: 'info' },
-        'recall_damaged': { text: 'Recall Danificado', class: 'danger' }
-    };
-    
-    const status = statusConfig[doc.status?.toLowerCase()] || { text: doc.status || 'Desconhecido', class: 'secondary' };
-    
-    // Check if the document has expired
-    const isDocExpired = doc.expiry_date ? isExpired(doc.expiry_date) : false;
-    if (isDocExpired && status.text !== 'Expirado') {
-        status.text = 'Expirado';
-        status.class = 'warning';
-    }
-    
-    // Create document details HTML
-    const docHtml = `
-        <div class="document-preview-container">
-            <div class="document-preview-header">
-                <h3>${doc.title || 'Documento sem título'}</h3>
-                <span class="status-badge ${status.class}">${status.text}</span>
-            </div>
-            
-            <div class="document-preview-content">
-                <!-- Document Preview Section -->
-                <div class="document-preview-section">
-                    <h4><i class="fas fa-file-alt"></i> Visualização do Documento</h4>
-                    ${doc.file_url ? `
-                        <div class="document-preview">
-                            ${isImageFile(doc.file_type) ? `
-                                <img src="${doc.file_url}" 
-                                     alt="${doc.title || 'Documento'}" 
-                                     class="document-image"
-                                     onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'no-preview\'><i class=\'fas fa-file-alt\'></i><p>Erro ao carregar a imagem</p></div>';">
-                            ` : `
-                                <div class="document-file-preview">
-                                    <i class="fas ${getFileIcon(doc.file_type)} fa-4x"></i>
-                                    <p>${doc.file_name || 'Documento'}</p>
-                                    <small>${doc.file_type || 'Tipo de arquivo desconhecido'}</small>
-                                </div>
-                            `}
-                        </div>
-                        
-                        <div class="document-preview-actions" style="margin-top: 1rem; display: flex; gap: 0.5rem;">
-                            <a href="${doc.file_url}" 
-                               class="btn primary"
-                               download="${doc.file_name || 'documento'}"
-                               style="flex: 1; text-align: center;">
-                                <i class="fas fa-download"></i> Baixar Documento
-                            </a>
-                            <button class="btn secondary" id="print-document-btn" style="flex: 1;">
-                                <i class="fas fa-print"></i> Imprimir
-                            </button>
-                        </div>
-                    ` : `
-                        <div class="no-preview">
-                            <i class="fas fa-file-alt"></i>
-                            <p>Nenhuma visualização disponível</p>
-                            <small>Este documento não possui um arquivo anexado.</small>
-                        </div>
-                    `}
-                </div>
-                
-                <!-- Document Details Section -->
-                <div class="document-details-section">
-                    <h4><i class="fas fa-info-circle"></i> Detalhes do Documento</h4>
-                    <div class="details-grid">
-                        <div class="detail-item">
-                            <span class="detail-label">Tipo:</span>
-                            <span class="detail-value">${doc.type || 'Não especificado'}</span>
-                        </div>
-                        
-                        ${doc.document_number ? `
-                            <div class="detail-item">
-                                <span class="detail-label">Número:</span>
-                                <span class="detail-value">${doc.document_number}</span>
-                            </div>
-                        ` : ''}
-                        
-                        ${doc.issue_date ? `
-                            <div class="detail-item">
-                                <span class="detail-label">Data de Emissão:</span>
-                                <span class="detail-value">${formatDate(doc.issue_date)}</span>
-                            </div>
-                        ` : ''}
-                        
-                        ${doc.expiry_date ? `
-                            <div class="detail-item">
-                                <span class="detail-label">Data de Validade:</span>
-                                <span class="detail-value ${isDocExpired ? 'expired' : ''}">
-                                    ${formatDate(doc.expiry_date)}
-                                    ${isDocExpired ? ' (Expirado)' : ''}
-                                </span>
-                            </div>
-                        ` : ''}
-                        
-                        ${doc.issue_place ? `
-                            <div class="detail-item">
-                                <span class="detail-label">Local de Emissão:</span>
-                                <span class="detail-value">${doc.issue_place}</span>
-                            </div>
-                        ` : ''}
-                        
-                        ${doc.issuing_authority ? `
-                            <div class="detail-item">
-                                <span class="detail-label">Autoridade Emissora:</span>
-                                <span class="detail-value">${doc.issuing_authority}</span>
-                            </div>
-                        ` : ''}
-                        
-                        ${doc.country_of_issue ? `
-                            <div class="detail-item">
-                                <span class="detail-label">País de Emissão:</span>
-                                <span class="detail-value">${doc.country_of_issue}</span>
-                            </div>
-                        ` : ''}
-                        
-                        ${doc.created_at ? `
-                            <div class="detail-item">
-                                <span class="detail-label">Carregado em:</span>
-                                <span class="detail-value">${formatDate(doc.created_at)}</span>
-                            </div>
-                        ` : ''}
-                        
-                        ${doc.updated_at ? `
-                            <div class="detail-item">
-                                <span class="detail-label">Atualizado em:</span>
-                                <span class="detail-value">${formatDate(doc.updated_at)}</span>
-                            </div>
-                        ` : ''}
-                        
-                        ${doc.file_size ? `
-                            <div class="detail-item">
-                                <span class="detail-label">Tamanho do Arquivo:</span>
-                                <span class="detail-value">${formatFileSize(doc.file_size)}</span>
-                            </div>
-                        ` : ''}
-                        
-                        ${doc.file_type ? `
-                            <div class="detail-item">
-                                <span class="detail-label">Tipo de Arquivo:</span>
-                                <span class="detail-value">${doc.file_type}</span>
-                            </div>
-                        ` : ''}
-                    </div>
-                    
-                    ${doc.description ? `
-                        <div class="document-description">
-                            <h5>Observações:</h5>
-                            <p>${doc.description.replace(/\n/g, '<br>')}</p>
-                        </div>
-                    ` : ''}
-                    
-                    ${doc.tags?.length > 0 ? `
-                        <div class="document-tags" style="margin-top: 1rem;">
-                            <h5>Tags:</h5>
-                            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;">
-                                ${doc.tags.map(tag => `
-                                    <span style="background: #e9ecef; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.85em; color: #495057;">
-                                        #${tag}
-                                    </span>
-                                `).join('')}
-                            </div>
-                        </div>
-                    ` : ''}
-                    
-                    ${doc.location_lost_found ? `
-                        <div class="document-location" style="margin-top: 1.5rem;">
-                            <h5>Localização:</h5>
-                            <div id="map-preview" style="height: 200px; margin-top: 10px; background: #f5f5f5; border-radius: 8px; display: flex; align-items: center; justify-content: center; border: 1px dashed #ddd;">
-                                <div style="text-align: center; padding: 1rem;">
-                                    <i class="fas fa-map-marker-alt" style="font-size: 2rem; color: #6c757d; margin-bottom: 0.5rem;"></i>
-                                    <p style="color: #6c757d; margin: 0;">${doc.location_lost_found}</p>
-                                </div>
-                            </div>
-                        </div>
-                    ` : ''}
-                </div>
-            </div>
-            
-            <div class="document-actions">
-                ${doc.file_url ? `
-                    <a href="${doc.file_url}" 
-                       download="${doc.file_name || 'documento'}" 
-                       class="btn primary">
-                        <i class="fas fa-download"></i> Baixar
-                    </a>
-                ` : ''}
-                <button class="btn secondary" id="print-document-btn">
-                    <i class="fas fa-print"></i> Imprimir
-                </button>
-                <button class="btn" id="close-preview-btn">
-                    <i class="fas fa-times"></i> Fechar
-                </button>
-            </div>
-        </div>
-    `;
-    
-    // Set modal content
-    modalBody.innerHTML = docHtml;
-    
-    // Add event listeners
-    const closeBtn = document.getElementById('close-preview-btn');
-    const closeModalBtn = document.getElementById('close-preview-modal');
-    const printBtn = document.getElementById('print-document-btn');
-    
-    const closeModal = () => {
-        modal.style.display = 'none';
-        // Reset modal content to loading state for next time
-        modalBody.innerHTML = `
-            <div class="loading-state">
-                <i class="fas fa-spinner fa-spin"></i>
-                <p>Carregando documento...</p>
-            </div>
-        `;
-    };
-    
-    if (closeBtn) {
-        closeBtn.addEventListener('click', closeModal);
-    }
-    
-    if (closeModalBtn) {
-        closeModalBtn.addEventListener('click', closeModal);
-    }
-    
-    // Close modal when clicking outside the content
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            closeModal();
-        }
-    });
-    
-    // Close on Escape key
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && modal.style.display === 'block') {
-            closeModal();
-        }
-    });
-    
-    if (printBtn) {
-        printBtn.addEventListener('click', () => {
-            window.print();
-        });
-    }
-    
-    // Initialize map if location is available
-    if (doc.location_lat && doc.location_lng) {
-        initializeMap(doc.location_lat, doc.location_lng, doc.location_address || 'Localização do documento');
-    }
-}
-
-// Helper function to check if a file is an image
-function isImageFile(fileType) {
-    return fileType && fileType.startsWith('image/');
-}
-
-// Helper function to format file size
-function formatFileSize(bytes, decimals = 2) {
-    if (bytes === 0) return '0 Bytes';
-    
-    const k = 1024;
-    const dm = decimals < 0 ? 0 : decimals;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-    
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-}
-
-// Helper function to check if a date is expired
-function isExpired(dateString) {
-    if (!dateString) return false;
-    try {
-        const expiryDate = new Date(dateString);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        return expiryDate < today;
-    } catch (e) {
-        console.error('Error checking expiry date:', e);
-        return false;
-    }
-}
-
-// Helper function to get file icon based on file type
-function getFileIcon(fileType) {
-    if (!fileType) return 'fa-file';
-    
-    const typeMap = {
-        // Images
-        'image/': 'fa-file-image',
-        // Documents
-        'application/pdf': 'fa-file-pdf',
-        'application/msword': 'fa-file-word',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'fa-file-word',
-        'application/vnd.ms-excel': 'fa-file-excel',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'fa-file-excel',
-        'application/vnd.ms-powerpoint': 'fa-file-powerpoint',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'fa-file-powerpoint',
-        'text/plain': 'fa-file-alt',
-        'text/csv': 'fa-file-csv',
-        // Archives
-        'application/zip': 'fa-file-archive',
-        'application/x-rar-compressed': 'fa-file-archive',
-        'application/x-7z-compressed': 'fa-file-archive',
-        'application/x-tar': 'fa-file-archive',
-        'application/x-gzip': 'fa-file-archive',
-        // Code
-        'text/html': 'fa-file-code',
-        'text/css': 'fa-file-code',
-        'text/javascript': 'fa-file-code',
-        'application/json': 'fa-file-code',
-        // Audio/Video
-        'audio/': 'fa-file-audio',
-        'video/': 'fa-file-video'
-    };
-    
-    // Check for exact matches first
-    if (typeMap[fileType]) {
-        return typeMap[fileType];
-    }
-    
-    // Check for partial matches (e.g., image/, audio/, etc.)
-    for (const [key, icon] of Object.entries(typeMap)) {
-        if (key.endsWith('/') && fileType.startsWith(key)) {
-            return icon;
-        }
-    }
-    
-    // Default icon
-    return 'fa-file';
-}
-
-// Initialize map for document location
-function initializeMap(lat, lng, title) {
-    // Check if Leaflet is available
-    if (typeof L === 'undefined') {
-        console.warn('Leaflet not loaded, skipping map initialization');
-        return;
-    }
-    
-    try {
-        const mapElement = document.getElementById('map-preview');
-        if (!mapElement) return;
-        
-        // Clear any existing map
-        mapElement.innerHTML = '';
-        
-        // Create map
-        const map = L.map('map-preview').setView([lat, lng], 15);
-        
-        // Add tile layer (you may need to use your own tile provider)
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(map);
-        
-        // Add marker
-        L.marker([lat, lng])
-            .addTo(map)
-            .bindPopup(title || 'Localização do documento')
-            .openPopup();
-            
-    } catch (error) {
-        console.error('Error initializing map:', error);
-        const mapElement = document.getElementById('map-preview');
-        if (mapElement) {
-            mapElement.innerHTML = `
-                <div style="text-align: center; padding: 1rem; color: #721c24; background: #f8d7da; border-radius: 4px;">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <p>Erro ao carregar o mapa: ${error.message}</p>
-                </div>
-            `;
-        }
-    }
+    showToast(`Visualizando: ${doc.title}`, 'info');
 }
 
 function editProfileDocument(doc) {
@@ -1604,33 +1140,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(initializeUploadModal, 100);
     setTimeout(initializeAvatarUpload, 100);
     
-    // Initialize points popup
-    const pointsDisplay = document.getElementById('points-display');
-    const pointsPopup = document.getElementById('points-popup');
-    const closePointsPopup = document.getElementById('close-points-popup');
-    
-    if (pointsDisplay && pointsPopup) {
-        pointsDisplay.addEventListener('click', () => {
-            pointsPopup.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        });
-    }
-    
-    if (closePointsPopup) {
-        closePointsPopup.addEventListener('click', () => {
-            pointsPopup.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        });
-    }
-    
-    // Close modal when clicking outside
-    window.addEventListener('click', (e) => {
-        if (e.target === pointsPopup) {
-            pointsPopup.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
-    });
-    
     // Initialize profile logout button
     const profileLogoutBtn = document.getElementById('profile-logout-btn');
     if (profileLogoutBtn) {
@@ -1800,10 +1309,7 @@ async function handleAvatarUpload(file) {
                 avatarModal.style.display = 'none';
             }
             
-            showToast('Foto de perfil atualizada com sucesso!', 'success');
-            
-            // Track profile update for points
-            await trackProfileUpdate();
+            showToast('Foto do perfil atualizada com sucesso!', 'success');
             
             // Award points for updating profile
             try {
@@ -2012,136 +1518,25 @@ async function trackDocumentUpload() {
     await awardPoints('document_uploaded', 20);
 }
 
-async function trackDocumentFound(documentId) {
-    try {
-        if (window.logActivity) {
-            await window.logActivity('document_found', { documentId });
-            
-            // Update points display
-            const pointsElement = document.getElementById('profile-points');
-            if (pointsElement) {
-                const currentPoints = parseInt(pointsElement.textContent) || 0;
-                pointsElement.textContent = currentPoints + 50; // 50 points for finding a document
-            }
-            
-            if (window.showToast) {
-                window.showToast('Documento encontrado! +50 pontos ganhos!', 'success');
-            }
-        }
-    } catch (error) {
-        console.error('Error tracking document found:', error);
-    }
+async function trackDocumentFound() {
+    await awardPoints('document_found', 50);
 }
 
-async function trackDocumentLost(documentId) {
-    try {
-        if (window.logActivity) {
-            await window.logActivity('document_lost', { documentId });
-            
-            // No points for losing a document, just track the activity
-            if (window.showToast) {
-                window.showToast('Documento marcado como perdido. Por favor, verifique sua área de documentos perdidos.', 'info');
-            }
-        }
-    } catch (error) {
-        console.error('Error tracking document lost:', error);
-    }
+async function trackDocumentLost() {
+    await awardPoints('document_lost', 10);
 }
 
 async function trackProfileUpdate() {
-    try {
-        if (window.logActivity) {
-            // Check if this is the first time the user is updating their profile
-            const { data: { user } } = await window.supabase.auth.getUser();
-            if (!user) return;
-            
-            // Check if we've already awarded points for profile completion
-            const profileCompletedKey = `profile_completed_${user.id}`;
-            if (!localStorage.getItem(profileCompletedKey)) {
-                // Log points for profile completion
-                await window.logActivity('profile_completed');
-                localStorage.setItem(profileCompletedKey, 'true');
-                
-                // Update the points display
-                const pointsElement = document.getElementById('profile-points');
-                if (pointsElement) {
-                    const currentPoints = parseInt(pointsElement.textContent) || 0;
-                    pointsElement.textContent = currentPoints + 50; // 50 points for profile completion
-                }
-                
-                if (window.showToast) {
-                    window.showToast('Perfil completo! +50 pontos ganhos!', 'success');
-                }
-            }
-        }
-    } catch (error) {
-        console.error('Error tracking profile update:', error);
-    }
+    await awardPoints('profile_updated', 10);
 }
 
-async function trackHelpProvided(documentId, helpedUserId) {
-    try {
-        if (window.logActivity) {
-            await window.logActivity('help_provided', { 
-                documentId,
-                helpedUserId,
-                points: 200 // 200 points for helping return a document
-            });
-            
-            // Update points display
-            const pointsElement = document.getElementById('profile-points');
-            if (pointsElement) {
-                const currentPoints = parseInt(pointsElement.textContent) || 0;
-                pointsElement.textContent = currentPoints + 200;
-            }
-            
-            // Update helped count
-            const statHelped = document.getElementById('stat-helped');
-            if (statHelped) {
-                const currentHelped = parseInt(statHelped.textContent) || 0;
-                statHelped.textContent = currentHelped + 1;
-            }
-            
-            if (window.showToast) {
-                window.showToast('Obrigado por ajudar! +200 pontos ganhos!', 'success');
-            }
-        }
-    } catch (error) {
-        console.error('Error tracking help provided:', error);
-    }
-}
-
-// Update UI based on authentication state
-function updateUIForAuthState() {
-    const authElements = document.querySelectorAll('.auth-only');
-    const unauthElements = document.querySelectorAll('.unauth-only');
-    const userGreeting = document.getElementById('user-greeting');
-    const userAvatar = document.getElementById('user-avatar');
-    
-    if (isLoggedIn && currentUser) {
-        // User is logged in
-        authElements.forEach(el => el.style.display = '');
-        unauthElements.forEach(el => el.style.display = 'none');
-        
-        if (userGreeting) {
-            userGreeting.textContent = `Olá, ${currentUser.name}`;
-        }
-        
-        if (userAvatar) {
-            userAvatar.src = currentUser.avatar;
-            userAvatar.alt = currentUser.name;
-        }
-    } else {
-        // User is not logged in
-        authElements.forEach(el => el.style.display = 'none');
-        unauthElements.forEach(el => el.style.display = '');
-    }
+async function trackHelpProvided() {
+    await awardPoints('help_provided', 30);
 }
 
 // Make functions globally available
 window.showSection = showSection;
 window.showToast = showToast;
 window.renderProfilePage = renderProfilePage;
-window.updateUIForAuthState = updateUIForAuthState;
 window.handleLogout = handleLogout;
 window.awardPoints = awardPoints;

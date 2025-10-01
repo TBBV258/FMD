@@ -38,7 +38,7 @@
             <nav class="navbar">
                 <div class="nav-brand">
                     <img class="app-logo-small" src="logofmd.jpg" alt="FindMyDocs Logo">
-                    <span data-i18n="login.title">FindMyDocs</span>
+                    FindMyDocs
                 </div>
                 <div class="nav-links">
                     <select id="language-selector" class="language-selector" aria-label="Selecionar idioma">
@@ -54,7 +54,7 @@
                     </button>
                     <button class="nav-link" data-section="feed" aria-label="Feed">
                         <i class="fas fa-list"></i>
-                        <span data-i18n="nav.feed">Feed</span>
+                        Feed
                     </button>
                     <button class="nav-link" data-section="relatar-perda" aria-label="Relatar Perda">
                         <i class="fas fa-search"></i>
@@ -66,24 +66,26 @@
                     </button>
                     <button class="nav-link" data-section="perfil" aria-label="Perfil">
                         <i class="fas fa-user"></i>
-                        <span data-i18n="nav.profile">Perfil</span>
+                        Perfil
                     </button>
-                    <button id="theme-toggle" class="btn secondary small" aria-label="Alternar tema" data-i18n-aria-label="nav.theme_toggle">
+                    <button id="theme-toggle" class="btn secondary small" aria-label="Alternar tema">
                         <i class="fas fa-moon"></i>
                     </button>
-                    <button id="logout-btn" class="btn danger small logout-btn" aria-label="Sair">
+                    <button id="logout-btn" class="btn danger small logout-btn" aria-label="Logout">
                         <i class="fas fa-sign-out-alt"></i>
-                        <span data-i18n="nav.logout">Sair</span>
+                        Sair
                     </button>
                 </div>
             </nav>
 
             <!-- Home/Documentos Section -->
             <section id="documentos" class="content-section active">
-                
+                <div class="section-header">
+                    <h2 data-i18n="documents.title">Seus Documentos</h2>
+                    <span id="document-count" class="document-count">0 total</span>
+                </div>
                 
                 <div id="welcome-tips" class="welcome-section">
-                    <h2 data-i18n="welcome.title">Bem-vindo, Google User!</h2>
                     <div class="quick-actions">
                         <button class="btn primary" onclick="showSection('relatar-perda')">
                             <i class="fas fa-search-minus"></i> 
@@ -100,62 +102,36 @@
                         <span data-i18n="tips.mobile_upload">Para enviar fotos pelo app, permita acesso à câmera e arquivos quando solicitado.</span>
                     </div>
                     
-                    <div class="tips-container">
-                        <div class="tip-card">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <h4 data-i18n="tip.safe_location.title">Encontre em Locais Seguros</h4>
-                            <p data-i18n="tip.safe_location.description">Sempre se encontre em delegacias, edifícios governamentais ou locais públicos ao trocar documentos.</p>
-                            <button class="tip-close" data-i18n-aria-label="common.close" aria-label="Fechar">&times;</button>
-                        </div>
-                        
-                        <div class="tip-card">
-                            <i class="fas fa-user-shield"></i>
-                            <h4 data-i18n="tip.verify_ownership.title">Verificar Propriedade</h4>
-                            <p data-i18n="tip.verify_ownership.description">Peça identificação adicional para verificar a propriedade antes de devolver documentos.</p>
-                            <button class="tip-close" data-i18n-aria-label="common.close" aria-label="Fechar">&times;</button>
-                        </div>
-                        
-                        <div class="tip-card">
-                            <i class="fas fa-map-marked-alt"></i>
-                            <h4 data-i18n="tip.be_specific.title">Seja Específico</h4>
-                            <p data-i18n="tip.be_specific.description">Ao reportar documentos perdidos ou encontrados, seja o mais específico possível sobre a localização.</p>
-                            <button class="tip-close" data-i18n-aria-label="common.close" aria-label="Fechar">&times;</button>
-                        </div>
-                        
-                        <div class="tip-card">
-                            <i class="fas fa-clock"></i>
-                            <h4 data-i18n="tip.report_immediately.title">Reporte Imediatamente</h4>
-                            <p data-i18n="tip.report_immediately.description">Reporte documentos perdidos ou encontrados o mais rápido possível para aumentar as chances de recuperação.</p>
-                            <button class="tip-close" data-i18n-aria-label="common.close" aria-label="Fechar">&times;</button>
-                        </div>
-                        
-                        <div class="tip-card">
-                            <i class="fas fa-camera"></i>
-                            <h4 data-i18n="tip.photo_safety.title">Segurança de Fotos</h4>
-                            <p data-i18n="tip.photo_safety.description">Ao enviar fotos de documentos, cubra ou desfoque qualquer informação pessoal.</p>
-                            <button class="tip-close" data-i18n-aria-label="common.close" aria-label="Fechar">&times;</button>
-                        </div>
-                        
-                        <div class="tip-card">
-                            <i class="fas fa-star"></i>
-                            <h4 data-i18n="tip.earn_points.title">Ganhe Mais Pontos</h4>
-                            <p data-i18n="tip.earn_points.description">Complete seu perfil, reporte documentos encontrados e ajude outros para ganhar mais pontos.</p>
-                            <button class="tip-close" data-i18n-aria-label="common.close" aria-label="Fechar">&times;</button>
-                        </div>
+                    <h2 data-i18n="welcome.title">Bem-vindo, Google User!</h2>
+                    
+                    <div class="tip-card">
+                        <i class="fas fa-clock"></i>
+                        <h4 data-i18n="tip.report_immediately.title">Reporte Imediatamente</h4>
+                        <p data-i18n="tip.report_immediately.description">Reporte documentos perdidos ou encontrados o mais rápido possível para aumentar as chances de recuperação.</p>
+                        <button class="tip-close" aria-label="Fechar dica">&times;</button>
+                    </div>
+                    
+                    <div class="tip-card">
+                        <i class="fas fa-camera"></i>
+                        <h4 data-i18n="tip.photo_safety.title">Segurança de Fotos</h4>
+                        <p data-i18n="tip.photo_safety.description">Ao enviar fotos de documentos, cubra ou desfoque qualquer informação pessoal.</p>
+                        <button class="tip-close" aria-label="Fechar dica">&times;</button>
+                    </div>
+                    
+                    <div class="tip-card">
+                        <i class="fas fa-star"></i>
+                        <h4 data-i18n="tip.earn_points.title">Ganhe Mais Pontos</h4>
+                        <p data-i18n="tip.earn_points.description">Complete seu perfil, reporte documentos encontrados e ajude outros para ganhar mais pontos.</p>
+                        <button class="tip-close" aria-label="Fechar dica">&times;</button>
                     </div>
                     
                     <button id="add-document" class="btn primary full-width">
                         <i class="fas fa-plus"></i>
-                        <span data-i18n="welcome.add_document">Adicionar Novo Documento</span>
+                        Adicionar Novo Documento
                     </button>
                 </div>
 
                 <div id="documents-grid" class="documents-grid">
-                    <div class="no-documents" style="display: none;">
-                        <i class="fas fa-folder-open"></i>
-                        <h3 data-i18n="documents.no_documents">Nenhum documento adicionado ainda</h3>
-                        <p data-i18n="documents.add_first">Clique em "Adicionar Novo Documento" para adicionar seu primeiro documento.</p>
-                    </div>
                     <!-- Documents will be loaded here -->
                 </div>
             </section>
@@ -163,28 +139,23 @@
             <!-- Feed Section -->
             <section id="feed" class="content-section">
                 <div class="section-header">
-                    <h2 data-i18n="feed.title">Feed de Documentos</h2>
+                    <h2>Feed de Documentos</h2>
                     <div class="feed-filters">
                         <select id="feed-filter-type">
-                            <option value="" data-i18n="feed.all_types">Todos os tipos</option>
-                            <option value="ID card" data-i18n="documents.id_card">BI</option>
-                            <option value="Passport" data-i18n="documents.passport">Passaporte</option>
-                            <option value="DIRE" data-i18n="documents.dire">DIRE</option>
-                            <option value="Bank Doc" data-i18n="documents.bank_doc">Documento Bancário</option>
+                            <option value="">Todos os tipos</option>
+                            <option value="ID card">BI</option>
+                            <option value="Passport">Passaporte</option>
+                            <option value="DIRE">DIRE</option>
+                            <option value="Bank Doc">Documento Bancário</option>
                         </select>
                         <select id="feed-filter-status">
-                            <option value="" data-i18n="feed.all_status">Todos os status</option>
-                            <option value="lost" data-i18n="feed.lost">Perdidos</option>
-                            <option value="found" data-i18n="feed.found">Encontrados</option>
+                            <option value="">Todos os status</option>
+                            <option value="lost">Perdidos</option>
+                            <option value="found">Encontrados</option>
                         </select>
                     </div>
                 </div>
                 <div id="feed-content" class="feed-content">
-                    <div class="no-results" style="display: none;">
-                        <i class="fas fa-search"></i>
-                        <h3 data-i18n="feed.no_results">Nenhum resultado encontrado</h3>
-                        <button class="btn primary" onclick="loadMoreFeedItems()" data-i18n="feed.load_more">Carregar mais</button>
-                    </div>
                     <!-- Feed items will be loaded here -->
                 </div>
             </section>
@@ -192,46 +163,43 @@
             <!-- Relatar Perda Section -->
             <section id="relatar-perda" class="content-section">
                 <div class="section-header">
-                    <h2 data-i18n="report.lost">Relatar Documento Perdido</h2>
+                    <h2>Relatar Documento Perdido</h2>
                 </div>
                 <form id="lost-form" class="document-form">
                     <div class="form-group">
-                        <label for="lost-type" data-i18n="documents.document_type">Tipo de Documento</label>
+                        <label for="lost-type">Tipo de Documento</label>
                         <select id="lost-type" required>
-                            <option value="" data-i18n="documents.select_type">Selecione o tipo</option>
-                            <option value="ID card" data-i18n="documents.id_card">BI (Bilhete de Identidade)</option>
-                            <option value="Passport" data-i18n="documents.passport">Passaporte</option>
-                            <option value="DIRE" data-i18n="documents.dire">DIRE</option>
-                            <option value="Bank Doc" data-i18n="documents.bank_doc">Documento Bancário</option>
+                            <option value="">Selecione o tipo</option>
+                            <option value="ID card">BI (Bilhete de Identidade)</option>
+                            <option value="Passport">Passaporte</option>
+                            <option value="DIRE">DIRE</option>
+                            <option value="Bank Doc">Documento Bancário</option>
                         </select>
                     </div>
                     
                     <div class="form-group">
-                        <label for="lost-title" data-i18n="report.title">Nome/Título do Documento</label>
-                        <input type="text" id="lost-title" required data-i18n-placeholder="report.title_placeholder" placeholder="Ex: BI de João Silva">
+                        <label for="lost-title">Nome/Título do Documento</label>
+                        <input type="text" id="lost-title" required placeholder="Ex: BI de João Silva">
                     </div>
                     
                     <div class="form-group">
-                        <label for="lost-location" data-i18n="report.location_lost">Onde foi perdido?</label>
-                        <input type="text" id="lost-location" required data-i18n-placeholder="report.location_placeholder" placeholder="Localização onde o documento foi perdido">
+                        <label for="lost-location">Onde foi perdido?</label>
+                        <input type="text" id="lost-location" required placeholder="Localização onde o documento foi perdido">
                     </div>
                     
                     <div class="form-group">
-                        <label for="lost-description">
-                            <span data-i18n="report.description_lost">Descrição adicional</span>
-                            <span class="optional" data-i18n="common.optional">(opcional)</span>
-                        </label>
-                        <textarea id="lost-description" data-i18n-placeholder="report.description_placeholder" placeholder="Descreva detalhes que possam ajudar na identificação"></textarea>
+                        <label for="lost-description">Descrição adicional</label>
+                        <textarea id="lost-description" placeholder="Descreva detalhes que possam ajudar na identificação"></textarea>
                     </div>
                     
                     <div class="form-group">
-                        <label for="lost-contact" data-i18n="report.contact_info">Informações de contato</label>
-                        <input type="tel" id="lost-contact" required data-i18n-placeholder="report.contact_placeholder" placeholder="+258 XX XXX XXXX">
+                        <label for="lost-contact">Informações de contato</label>
+                        <input type="tel" id="lost-contact" required placeholder="+258 XX XXX XXXX">
                     </div>
                     
                     <button type="submit" class="btn primary">
                         <i class="fas fa-exclamation-triangle"></i>
-                        <span data-i18n="report.submit_lost">Reportar como Perdido</span>
+                        Reportar como Perdido
                     </button>
                 </form>
             </section>
@@ -239,46 +207,43 @@
             <!-- Relatar Encontrado Section -->
             <section id="relatar-encontrado" class="content-section">
                 <div class="section-header">
-                    <h2 data-i18n="report.found">Relatar Documento Encontrado</h2>
+                    <h2>Relatar Documento Encontrado</h2>
                 </div>
                 <form id="found-form" class="document-form">
                     <div class="form-group">
-                        <label for="found-type" data-i18n="documents.document_type">Tipo de Documento</label>
+                        <label for="found-type">Tipo de Documento</label>
                         <select id="found-type" required>
-                            <option value="" data-i18n="documents.select_type">Selecione o tipo</option>
-                            <option value="ID card" data-i18n="documents.id_card">BI (Bilhete de Identidade)</option>
-                            <option value="Passport" data-i18n="documents.passport">Passaporte</option>
-                            <option value="DIRE" data-i18n="documents.dire">DIRE</option>
-                            <option value="Bank Doc" data-i18n="documents.bank_doc">Documento Bancário</option>
+                            <option value="">Selecione o tipo</option>
+                            <option value="ID card">BI (Bilhete de Identidade)</option>
+                            <option value="Passport">Passaporte</option>
+                            <option value="DIRE">DIRE</option>
+                            <option value="Bank Doc">Documento Bancário</option>
                         </select>
                     </div>
                     
                     <div class="form-group">
-                        <label for="found-title" data-i18n="report.title">Nome/Título do Documento</label>
-                        <input type="text" id="found-title" required data-i18n-placeholder="report.found_title_placeholder" placeholder="Ex: BI encontrado">
+                        <label for="found-title">Nome/Título do Documento</label>
+                        <input type="text" id="found-title" required placeholder="Ex: BI encontrado">
                     </div>
                     
                     <div class="form-group">
-                        <label for="found-location" data-i18n="report.location_found">Onde foi encontrado?</label>
-                        <input type="text" id="found-location" required data-i18n-placeholder="report.location_placeholder" placeholder="Localização onde encontrou o documento">
+                        <label for="found-location">Onde foi encontrado?</label>
+                        <input type="text" id="found-location" required placeholder="Localização onde encontrou o documento">
                     </div>
                     
                     <div class="form-group">
-                        <label for="found-description">
-                            <span data-i18n="report.description_found">Descrição do documento</span>
-                            <span class="optional" data-i18n="common.optional">(opcional)</span>
-                        </label>
-                        <textarea id="found-description" data-i18n-placeholder="report.found_description_placeholder" placeholder="Descreva o documento encontrado (sem revelar informações sensíveis)"></textarea>
+                        <label for="found-description">Descrição do documento</label>
+                        <textarea id="found-description" placeholder="Descreva o documento encontrado (sem revelar informações sensíveis)"></textarea>
                     </div>
                     
                     <div class="form-group">
-                        <label for="found-contact" data-i18n="report.contact_info">Suas informações de contato</label>
-                        <input type="tel" id="found-contact" required data-i18n-placeholder="report.contact_placeholder" placeholder="+258 XX XXX XXXX">
+                        <label for="found-contact">Suas informações de contato</label>
+                        <input type="tel" id="found-contact" required placeholder="+258 XX XXX XXXX">
                     </div>
                     
                     <button type="submit" class="btn success">
                         <i class="fas fa-hand-holding"></i>
-                        <span data-i18n="report.submit_found">Reportar como Encontrado</span>
+                        Reportar como Encontrado
                     </button>
                 </form>
             </section>
@@ -287,7 +252,7 @@
             <section id="perfil" class="content-section">
                 <div id="profile-loading" class="loading-state" style="display: none;">
                     <i class="fas fa-spinner fa-spin"></i>
-                    <p data-i18n="profile.loading">Carregando perfil...</p>
+                    <p>Carregando perfil...</p>
                 </div>
                 
                 <!-- Profile Header -->
@@ -295,14 +260,14 @@
                     <div class="profile-user-info">
                         <div class="profile-avatar">
                             <img id="profile-avatar" src="data:image/svg+xml,%3csvg width='80' height='80' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='80' height='80' fill='%23ddd'/%3e%3ctext x='50%25' y='50%25' font-size='30' text-anchor='middle' alignment-baseline='middle'%3e👤%3c/text%3e%3c/svg%3e" alt="Avatar do usuário">
-                            <button id="avatar-upload-btn" class="avatar-upload-btn" data-i18n-title="profile.avatar_change" title="Alterar foto do perfil">
+                            <button id="avatar-upload-btn" class="avatar-upload-btn" title="Alterar foto do perfil">
                                 <i class="fas fa-camera"></i>
                             </button>
                         </div>
                         <div class="profile-details">
-                            <h2 id="profile-name" data-i18n="profile.loading">Carregando...</h2>
+                            <h2 id="profile-name">Carregando...</h2>
                             <span id="profile-country-flag" class="country-flag"></span>
-                            <p id="profile-email" data-i18n="profile.loading">Carregando...</p>
+                            <p id="profile-email">Carregando...</p>
                             <div class="profile-badges">
                                 <span id="profile-plan" class="plan-badge">free</span>
                                 <span id="profile-rank" class="rank-badge">Novato</span>
@@ -311,89 +276,69 @@
                     </div>
                     <button id="profile-logout-btn" class="btn danger small">
                         <i class="fas fa-sign-out-alt"></i>
-                        <span data-i18n="nav.logout">Sair</span>
+                        Sair
                     </button>
                 </div>
 
                 <!-- Profile Control Panel -->
-                <!-- Badge System -->
-                <div class="profile-section">
-                    <h3 data-i18n="badge.progress">Progresso</h3>
-                    <div id="badge-container" class="badge-container" data-badge-container data-initial-points="0"></div>
-                </div>
-
                 <div class="profile-control-panel">
                     <div class="profile-stats">
                         <div class="stat-item">
                             <span class="stat-number" id="profile-doc-count">0</span>
-                            <span class="stat-label" data-i18n="profile.documents">Documentos</span>
+                            <span class="stat-label">Documentos</span>
                         </div>
-                        
+                        <div class="stat-item">
+                            <span class="stat-number" id="profile-points">250</span>
+                            <span class="stat-label">Pontos</span>
+                        </div>
                         <div class="stat-item">
                             <span class="stat-number" id="profile-helped">3</span>
-                            <span class="stat-label" data-i18n="profile.helped">Ajudou</span>
+                            <span class="stat-label">Ajudou</span>
                         </div>
                     </div>
                     <button id="profile-add-document" class="btn primary">
                         <i class="fas fa-plus"></i>
-                        <span data-i18n="profile.add_document">Adicionar Documento</span>
+                        Adicionar Documento
                     </button>
                 </div>
 
                 <!-- Profile Documents List -->
                 <div class="profile-documents-section">
-                    <h3 data-i18n="documents.title">Meus Documentos</h3>
+                    <h3>Meus Documentos</h3>
                     <div id="profile-documents-grid" class="documents-grid">
-                        <div class="no-documents" style="display: none;">
-                            <i class="fas fa-folder-open"></i>
-                            <h3 data-i18n="documents.no_documents">Nenhum documento adicionado ainda</h3>
-                            <p data-i18n="documents.add_first">Clique em "Adicionar Documento" para adicionar seu primeiro documento.</p>
-                        </div>
                         <!-- Documents will be loaded here -->
                     </div>
                 </div>
 
                 <!-- Subscription Plans Section -->
                 <div class="profile-section">
-                    <h3 data-i18n="profile.subscription_plans">Planos de Subscrição</h3>
+                    <h3>Planos de Subscrição</h3>
                     <div class="plans-container">
                         <div class="plan-card">
-                            <h4 data-i18n="profile.monthly_plan">Premium Mensal</h4>
-                            <p class="price">150 MT<span data-i18n="common.month_short">/mês</span></p>
+                            <h4>Premium Mensal</h4>
+                            <p class="price">150 MT<span>/mês</span></p>
                             <ul>
-                                <li><i class="fas fa-check"></i> <span data-i18n="profile.unlimited_uploads">Uploads ilimitados</span></li>
-                                <li><i class="fas fa-check"></i> <span data-i18n="profile.priority_support">Suporte prioritário</span></li>
-                                <li><i class="fas fa-check"></i> <span data-i18n="profile.no_ads">Sem anúncios</span></li>
+                                <li><i class="fas fa-check"></i> Uploads ilimitados</li>
+                                <li><i class="fas fa-check"></i> Suporte prioritário</li>
+                                <li><i class="fas fa-check"></i> Sem anúncios</li>
                             </ul>
                             <div class="payment-options">
-                                <button class="btn mpesa small payment-btn" data-method="mpesa">
-                                    <i class="fas fa-mobile-alt"></i> 
-                                    <span data-i18n="profile.pay_with">Pagar com</span> M-Pesa
-                                </button>
-                                <button class="btn warning small payment-btn" data-method="emola">
-                                    <i class="fas fa-mobile-alt"></i> 
-                                    <span data-i18n="profile.pay_with">Pagar com</span> e-Mola
-                                </button>
+                                <button class="btn success small payment-btn" data-method="mpesa"><i class="fas fa-mobile-alt"></i> Pagar com M-Pesa</button>
+                                <button class="btn warning small payment-btn" data-method="emola"><i class="fas fa-mobile-alt"></i> Pagar com e-Mola</button>
                             </div>
                         </div>
                         <div class="plan-card recommended">
-                             <span class="recommended-badge" data-i18n="profile.recommended">Recomendado</span>
-                            <h4 data-i18n="profile.yearly_plan">Premium Anual</h4>
-                            <p class="price">1500 MT<span data-i18n="common.year_short">/ano</span></p>
+                             <span class="recommended-badge">Recomendado</span>
+                            <h4>Premium Anual</h4>
+                            <p class="price">1500 MT<span>/ano</span></p>
                             <ul>
-                                <li><i class="fas fa-check"></i> <span data-i18n="profile.all_premium">Todas as vantagens do Premium</span></li>
-                                <li><i class="fas fa-check"></i> <span data-i18n="profile.discount">Desconto de 2 meses</span></li>
-                                <li><i class="fas fa-check"></i> <span data-i18n="profile.early_access">Acesso antecipado a recursos</span></li>
+                                <li><i class="fas fa-check"></i> Todas as vantagens do Premium</li>
+                                <li><i class="fas fa-check"></i> Desconto de 2 meses</li>
+                                <li><i class="fas fa-check"></i> Acesso antecipado a recursos</li>
                             </ul>
                             <div class="payment-options">
-                                <button class="btn mpesa small payment-btn" data-method="mpesa">
-                                    <i class="fas fa-mobile-alt"></i> 
-                                    <span data-i18n="profile.pay_with">Pagar com</span> M-Pesa
-                                </button>
-                                <button class="btn warning small payment-btn" data-method="emola">
-                                    <i class="fas fa-mobile-alt"></i> 
-                                    <span data-i18n="profile.pay_with">Pagar com</span> e-Mola
-                                </button>
+                                <button class="btn success small payment-btn" data-method="mpesa"><i class="fas fa-mobile-alt"></i> Pagar com M-Pesa</button>
+                                <button class="btn warning small payment-btn" data-method="emola"><i class="fas fa-mobile-alt"></i> Pagar com e-Mola</button>
                             </div>
                         </div>
                     </div>
@@ -401,12 +346,11 @@
 
                 <!-- Data Management Section -->
                 <div class="profile-section">
-                    <h3 data-i18n="profile.manage_data">Gerir Dados</h3>
+                    <h3>Gerir Dados</h3>
                     <div class="data-management-card">
-                        <p data-i18n="profile.download_desc">Faça o download de todos os seus documentos enviados num único arquivo .zip.</p>
+                        <p>Faça o download de todos os seus documentos enviados num único arquivo .zip.</p>
                         <button id="download-all-docs" class="btn primary">
-                            <i class="fas fa-download"></i> 
-                            <span data-i18n="profile.download_all">Baixar Meus Documentos</span>
+                            <i class="fas fa-download"></i> Baixar Meus Documentos
                             <span id="download-spinner" class="loading-spinner" style="display: none; margin-left: 8px;">
                                 <i class="fas fa-spinner fa-spin"></i>
                             </span>
@@ -421,19 +365,17 @@
     <div id="upload-modal" class="modal">
         <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header">
-                <h3 data-i18n="documents.upload">Carregar Documento</h3>
-                <button class="close-btn" id="close-upload-modal" data-i18n-aria-label="common.close" aria-label="Fechar">&times;</button>
+                <h3>Carregar Documento</h3>
+                <button class="close-btn" id="close-upload-modal">&times;</button>
             </div>
             <div class="modal-body">
                 <form id="upload-form">
                     <div id="drop-zone" class="drop-zone">
                         <div class="drop-zone-message">
                             <i class="fas fa-cloud-upload-alt"></i>
-                            <p data-i18n="documents.drag_drop">Arraste e solte o seu documento aqui</p>
-                            <span class="muted" data-i18n="common.or">ou</span>
-                            <button type="button" id="browse-btn" class="btn secondary small">
-                                <span data-i18n="documents.browse">Procurar Arquivo</span>
-                            </button>
+                            <p>Arraste e solte o seu documento aqui</p>
+                            <span class="muted">ou</span>
+                            <button type="button" id="browse-btn" class="btn secondary small">Procurar Arquivo</button>
                             <input type="file" id="file-input" style="display: none;" multiple>
                         </div>
                         <div id="file-preview" class="file-preview-container"></div>
@@ -441,53 +383,40 @@
                     
                     <div id="file-info">
                         <div class="form-group">
-                            <label for="document-title" data-i18n="documents.document_title">Título do Documento</label>
+                            <label for="document-title">Título do Documento</label>
                             <input type="text" id="document-title" required 
-                                   data-i18n-placeholder="documents.document_title_placeholder"
                                    placeholder="Ex: BI de João Silva" 
                                    minlength="3" maxlength="100">
                         </div>
                         
                         <div class="form-group">
-                            <label for="document-type" data-i18n="documents.document_type">Tipo de Documento</label>
+                            <label for="document-type">Tipo de Documento</label>
                             <select id="document-type" required>
-                                <option value="ID card" data-i18n="documents.id_card">Bilhete de Identidade</option>
-                                <option value="DIRE" data-i18n="documents.dire">DIRE</option>
-                                <option value="Passport" data-i18n="documents.passport">Passaporte</option>
-                                <option value="Bank Card" data-i18n="documents.bank_card">Cartão Bancário</option>
-                                <option value="Driver License" data-i18n="documents.driver_license">Carta de Condução</option>
-                                <option value="Student ID" data-i18n="documents.student_id">Cartão de Estudante</option>
-                                <option value="Other" data-i18n="documents.other">Outro</option>
+                                <option value="ID card">Bilhete de Identidade</option>
+                                <option value="DIRE">DIRE</option>
+                                <option value="Passport">Passaporte</option>
+                                <option value="Bank Card">Cartão Bancário</option>
+                                <option value="Driver License">Carta de Condução</option>
+                                <option value="Student ID">Cartão de Estudante</option>
+                                <option value="Other">Outro</option>
                             </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="document-description">
-                                <span data-i18n="documents.description">Descrição</span>
-                                <span class="optional" data-i18n="common.optional">(opcional)</span>
-                            </label>
-                            <textarea id="document-description" 
-                                      data-i18n-placeholder="documents.description_placeholder"
-                                      placeholder="Adicione uma descrição para o documento (opcional)"></textarea>
                         </div>
                     </div>
                     
                     <div id="upload-actions" class="form-actions" style="margin-top: 20px;">
-                        <button type="button" id="cancel-upload" class="btn secondary">
-                            <i class="fas fa-times"></i>
-                            <span data-i18n="common.cancel">Cancelar</span>
-                        </button>
+                        <button type="button" id="cancel-upload" class="btn secondary">Cancelar</button>
                         <button type="submit" id="submit-upload" class="btn primary" disabled>
-                            <i class="fas fa-upload"></i>
-                            <span data-i18n="common.upload">Enviar Documento</span>
+                            <span class="btn-text">Enviar Documento</span>
+                            <span class="loading-spinner" style="display: none; margin-left: 8px;">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </span>
                         </button>
                     </div>
                     
                     <div id="retry-section" style="display: none; margin-top: 15px; text-align: center;">
-                        <p data-i18n="documents.upload_error">Alguns arquivos falharam ao enviar.</p>
+                        <p>Alguns arquivos falharam ao enviar.</p>
                         <button type="button" id="retry-upload" class="btn warning">
-                            <i class="fas fa-redo"></i> 
-                            <span data-i18n="common.retry">Tentar Novamente</span>
+                            <i class="fas fa-redo"></i> Tentar Novamente
                         </button>
                     </div>
                 </form>
@@ -496,25 +425,63 @@
     </div>
 
     <!-- Chat Modal -->
-    <div id="chat-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 data-i18n="modal.chat">Chat</h3>
-                <button class="close-btn" id="close-chat-modal" data-i18n-aria-label="modal.close" aria-label="Fechar">&times;</button>
+    <div id="chat-modal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 100%; width: 100%; height: 90vh; max-height: 800px; display: flex; flex-direction: column; padding: 0;">
+            <div class="chat-header" style="padding: 15px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                <div class="chat-title">
+                    <h3 id="chat-title" style="margin: 0; font-size: 1.2rem;">Chat</h3>
+                    <div class="chat-status" style="font-size: 0.8rem; color: var(--text-light);">
+                        <span id="typing-indicator" style="display: none;">Digitando...</span>
+                        <span id="online-status" style="display: flex; align-items: center; margin-top: 3px;">
+                            <span class="status-dot" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #ccc; margin-right: 5px;"></span>
+                            <span>Offline</span>
+                        </span>
+                    </div>
+                </div>
+                <button class="close" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-color);">&times;</button>
             </div>
-            <div id="chat-messages" class="chat-messages">
+            
+            <div id="chat-messages" class="chat-messages" style="flex: 1; overflow-y: auto; padding: 15px;">
                 <!-- Messages will be loaded here -->
+                <div class="chat-date-divider" style="text-align: center; margin: 15px 0; position: relative;">
+                    <span style="background: var(--bg-color); padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; color: var(--text-light);">Hoje</span>
+                </div>
             </div>
-            <div class="chat-input">
-                <input type="text" id="chat-input-field" data-i18n-placeholder="modal.chat_placeholder" placeholder="Digite sua mensagem...">
-                <button id="send-message" class="btn primary" data-i18n-aria-label="common.send" aria-label="Enviar">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
+            
+            <div class="chat-input-container" style="padding: 15px; border-top: 1px solid var(--border-color); background: var(--card-bg);">
+                <div id="chat-upload-preview" style="display: none; margin-bottom: 10px; position: relative;">
+                    <div style="display: flex; align-items: center; background: var(--bg-color); padding: 8px; border-radius: 8px;">
+                        <img id="chat-upload-preview-img" src="" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;">
+                        <div style="margin-left: 10px; flex: 1;">
+                            <div style="font-size: 0.9rem; font-weight: 500; margin-bottom: 3px;">image.jpg</div>
+                            <div style="font-size: 0.8rem; color: var(--text-light);">1.2 MB</div>
+                        </div>
+                        <button id="cancel-upload" style="background: none; border: none; color: var(--text-light); cursor: pointer; font-size: 1.2rem; margin-left: 10px;">&times;</button>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button id="chat-upload-btn" class="btn secondary" style="padding: 8px 10px; border-radius: 50%; width: 40px; height: 40px;">
+                        <i class="fas fa-paperclip"></i>
+                        <input type="file" id="chat-file-input" accept="image/*" style="display: none;">
+                    </button>
+                    <div style="flex: 1; position: relative;">
+                        <input type="text" id="chat-input-field" placeholder="Digite sua mensagem..." style="width: 100%; padding: 12px 15px; border: 1px solid var(--border-color); border-radius: 25px; background: var(--bg-color); color: var(--text-color);">
+                        <button id="send-location" class="btn secondary" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--primary-color); cursor: pointer; font-size: 1.2rem; padding: 5px;">
+                            <i class="fas fa-location-arrow"></i>
+                        </button>
+                    </div>
+                    <button id="send-message" class="btn primary" style="padding: 8px 10px; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
 
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    
     <!-- Load Supabase library first -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     
@@ -529,9 +496,6 @@
 
     <!-- Initialize Scripts -->
     <script src="script.js"></script>
-    <script src="js/points.js"></script>
-    <script src="js/badgeSystem.js"></script>
-    <script src="js/points-popup.js"></script>
     <script src="ui.js"></script>
     <script src="views.js"></script>
     <script src="chat.js"></script>
@@ -544,33 +508,13 @@
 
     <!-- JSZip Library for downloading documents -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    
-    <!-- Initialize Points System (after Supabase is fully loaded) -->
-    <script>
-        // Wait for Supabase to be fully initialized
-        document.addEventListener('supabaseReady', function() {
-            console.log('Supabase is ready, loading points system...');
-            
-            // Create and append the points script
-            const script = document.createElement('script');
-            script.src = 'js/points.js';
-            script.onload = function() {
-                console.log('Points system loaded successfully');
-            };
-            script.onerror = function() {
-                console.error('Failed to load points system');
-            };
-            document.body.appendChild(script);
-        });
-    </script>
-
 
     <!-- Payment Modal -->
     <div id="payment-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="payment-modal-title" data-i18n="modal.payment">Processar Pagamento</h3>
-                <button class="close-btn" id="close-payment-modal" data-i18n-aria-label="modal.close" aria-label="Fechar">&times;</button>
+                <h3 id="payment-modal-title">Processar Pagamento</h3>
+                <button class="close-btn" id="close-payment-modal">&times;</button>
             </div>
             <div class="modal-body" id="payment-modal-body">
                 <!-- Payment steps will be loaded here -->
@@ -580,56 +524,16 @@
 
     <!-- Document Preview Modal -->
     <div id="document-preview-modal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content large">
             <div class="modal-header">
-                <h3 id="preview-modal-title" data-i18n="modal.document_preview">Visualizar Documento</h3>
-                <button class="close-btn" id="close-preview-modal" data-i18n-aria-label="modal.close" aria-label="Fechar">&times;</button>
+                <h3 id="preview-modal-title">Visualizar Documento</h3>
+                <button class="close-btn" id="close-preview-modal">&times;</button>
             </div>
             <div class="modal-body" id="preview-modal-body">
+                <!-- Document content will be loaded here -->
                 <div class="loading-state">
                     <i class="fas fa-spinner fa-spin"></i>
-                    <p data-i18n="modal.loading_document">Carregando documento...</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Points Popup Modal -->
-    <div id="points-popup" class="modal">
-        <div class="modal-content" style="max-width: 600px;">
-            <div class="modal-header">
-                <h3 data-i18n="points_popup.title">Seus Pontos e Conquistas</h3>
-                <button class="close-btn" id="close-points-popup" data-i18n-aria-label="modal.close" aria-label="Fechar">&times;</button>
-            </div>
-            <div class="modal-body" style="padding: 0;">
-                <!-- Badge Display Section -->
-                <div style="background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%); padding: 1.5rem; border-bottom: 1px solid #e0e0e0;">
-                    <div id="badge-container"></div>
-                </div>
-                
-                <div style="padding: 1.5rem;">
-                    <div class="points-history" style="margin-top: 1rem;">
-                        <h4 style="margin-bottom: 1rem; color: #444; font-size: 1.1rem;" data-i18n="points_popup.recent_activity">Atividades Recentes</h4>
-                        <div class="activities-list" id="activities-list" style="max-height: 300px; overflow-y: auto; background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                            <!-- Activities will be populated by JavaScript -->
-                            <div class="no-activities" id="no-activities" style="text-align: center; padding: 30px 20px;">
-                                <i class="fas fa-inbox" style="font-size: 48px; color: #ccc; margin-bottom: 10px; opacity: 0.7;"></i>
-                                <p style="color: #888; margin: 0;" data-i18n="points_popup.no_activities">Nenhuma atividade recente</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="rank-info" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #eee; font-size: 0.9rem; color: #666;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                            <span data-i18n="points_popup.points_guide">Como ganhar pontos:</span>
-                            <a href="#" id="view-full-guide" style="color: #4a90e2; text-decoration: none;" data-i18n="points_popup.view_guide">Ver guia completo</a>
-                        </div>
-                        <ul style="margin: 0; padding-left: 1.2rem; color: #555;">
-                            <li><span style="color: #4CAF50;">+100</span> <span data-i18n="points_popup.guide.upload">por carregar um documento</span></li>
-                            <li><span style="color: #4CAF50;">+200</span> <span data-i18n="points_popup.guide.help">por ajudar a encontrar um documento</span></li>
-                            <li><span style="color: #4CAF50;">+50</span> <span data-i18n="points_popup.guide.profile">por completar seu perfil</span></li>
-                        </ul>
-                    </div>
+                    <p>Carregando documento...</p>
                 </div>
             </div>
         </div>
