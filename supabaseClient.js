@@ -14,6 +14,8 @@
     // Check if Supabase library is loaded
     if (typeof supabase === 'undefined' || typeof supabase.createClient !== 'function') {
         console.error('Supabase library not loaded. Make sure to include the Supabase JavaScript library before this file.');
+        // Initialize fallback APIs even if Supabase is not available
+        initializeFallbackAPIs();
         return;
     }
     
@@ -27,6 +29,9 @@
         
         // Initialize APIs
         initializeAPIs();
+        
+        // Dispatch a custom event to signal that Supabase is ready
+        window.dispatchEvent(new CustomEvent('supabaseReady'));
         
     } catch (error) {
         console.error('Error initializing Supabase client:', error);
@@ -146,12 +151,17 @@
         window.profilesApi = {
             async getProfilesByIds(userIds) {
                 try {
+                    console.log('getProfilesByIds called with user IDs:', userIds);
                     const { data: profiles, error } = await window.supabase
                         .from('user_profiles')
-                        .select('id, full_name, avatar_url')
+                        .select('id, full_name, avatar_url, phone_number')
                         .in('id', userIds);
-                    if (error) throw error;
-                    return profiles;
+                    if (error) {
+                        console.error('Supabase error in getProfilesByIds:', error);
+                        throw error;
+                    }
+                    console.log('getProfilesByIds returned profiles:', profiles);
+                    return profiles || [];
                 } catch (error) {
                     console.error('Get profiles by IDs error:', error);
                     return [];
@@ -223,6 +233,7 @@
         window.chatsApi = {
             async send(data) {
                 try {
+                    console.log('Sending message with data:', data);
                     const { data: message, error } = await window.supabase
                         .from('chats')
                         .insert([{
@@ -233,11 +244,20 @@
                         }])
                         .select()
                         .single();
-                    if (error) throw error;
+                    if (error) {
+                        console.error('Supabase error details:', {
+                            message: error.message,
+                            details: error.details,
+                            hint: error.hint,
+                            code: error.code
+                        });
+                        throw error;
+                    }
+                    console.log('Message sent successfully:', message);
                     return message;
                 } catch (error) {
                     console.error('Send message error:', error);
-                    return null;
+                    throw error; // Re-throw the error instead of returning null
                 }
             },
             
@@ -253,6 +273,66 @@
                     return messages;
                 } catch (error) {
                     console.error('Get conversation error:', error);
+                    return [];
+                }
+            },
+
+            async markAsRead(documentId, userId, otherUserId) {
+                try {
+                    const { data, error } = await window.supabase
+                        .rpc('mark_messages_as_read', {
+                            p_document_id: documentId,
+                            p_user_id: userId,
+                            p_other_user_id: otherUserId
+                        });
+                    if (error) throw error;
+                    return data;
+                } catch (error) {
+                    console.error('Mark as read error:', error);
+                    return 0;
+                }
+            },
+
+            async markAsDelivered(documentId, userId) {
+                try {
+                    const { data, error } = await window.supabase
+                        .rpc('mark_messages_as_delivered', {
+                            p_document_id: documentId,
+                            p_user_id: userId
+                        });
+                    if (error) throw error;
+                    return data;
+                } catch (error) {
+                    console.error('Mark as delivered error:', error);
+                    return 0;
+                }
+            },
+
+            async getUnreadCount(userId) {
+                try {
+                    const { data, error } = await window.supabase
+                        .rpc('get_unread_message_count', {
+                            p_user_id: userId
+                        });
+                    if (error) throw error;
+                    return data || 0;
+                } catch (error) {
+                    console.error('Get unread count error:', error);
+                    return 0;
+                }
+            },
+
+            async getChatRooms(userId) {
+                try {
+                    const { data: rooms, error } = await window.supabase
+                        .from('active_chat_rooms')
+                        .select('*')
+                        .or(`participant_1_id.eq.${userId},participant_2_id.eq.${userId}`)
+                        .order('updated_at', { ascending: false });
+                    if (error) throw error;
+                    return rooms || [];
+                } catch (error) {
+                    console.error('Get chat rooms error:', error);
                     return [];
                 }
             }
@@ -369,19 +449,70 @@
         };
         
         window.subscribeToChats = (documentId, callback) => {
-            return window.supabase
-                .channel('chats')
+            const channel = window.supabase
+                .channel(`chats-${documentId}`, {
+                    config: {
+                        broadcast: { self: false },
+                        presence: { key: documentId }
+                    }
+                })
                 .on(
                     'postgres_changes',
                     {
-                        event: '*',
+                        event: 'INSERT',
                         schema: 'public',
                         table: 'chats',
                         filter: `document_id=eq.${documentId}`
                     },
-                    callback
+                    (payload) => {
+                        console.log('New message received via real-time:', payload);
+                        console.log('Message details:', {
+                            id: payload.new?.id,
+                            sender_id: payload.new?.sender_id,
+                            receiver_id: payload.new?.receiver_id,
+                            message: payload.new?.message,
+                            document_id: payload.new?.document_id
+                        });
+                        callback(payload);
+                    }
                 )
-                .subscribe();
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'UPDATE',
+                        schema: 'public',
+                        table: 'chats',
+                        filter: `document_id=eq.${documentId}`
+                    },
+                    (payload) => {
+                        console.log('Message updated:', payload);
+                        callback(payload);
+                    }
+                )
+                .subscribe((status) => {
+                    console.log('Chat subscription status:', status);
+                    if (status === 'SUBSCRIBED') {
+                        // Update online status
+                        const statusElement = document.getElementById('online-status');
+                        if (statusElement) {
+                            const dot = statusElement.querySelector('.status-dot');
+                            const text = statusElement.querySelector('span:last-child');
+                            if (dot) dot.style.backgroundColor = '#4CAF50';
+                            if (text) text.textContent = 'Online';
+                        }
+                    } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                        // Update offline status
+                        const statusElement = document.getElementById('online-status');
+                        if (statusElement) {
+                            const dot = statusElement.querySelector('.status-dot');
+                            const text = statusElement.querySelector('span:last-child');
+                            if (dot) dot.style.backgroundColor = '#ccc';
+                            if (text) text.textContent = 'Offline';
+                        }
+                    }
+                });
+            
+            return channel;
         };
         
         console.log('All APIs initialized successfully');
@@ -390,6 +521,9 @@
     // Fallback functions for when Supabase is not available
     function initializeFallbackAPIs() {
         console.log('Initializing fallback APIs...');
+        
+        // Mark as initialized even in fallback mode
+        window.supabaseClientInitialized = true;
         
         window.documentsApi = {
             async create(data) { return createFallbackDocument(data); },
@@ -421,6 +555,9 @@
         
         window.subscribeToDocuments = () => ({ unsubscribe: () => {} });
         window.subscribeToChats = () => ({ unsubscribe: () => {} });
+        
+        // Dispatch a custom event to signal that fallback APIs are ready
+        window.dispatchEvent(new CustomEvent('supabaseReady'));
     }
     
     function createFallbackDocument(data) {

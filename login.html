@@ -24,12 +24,16 @@
         window.addEventListener('load', () => {
             // Wait a bit to ensure Supabase is initialized
             setTimeout(() => {
-                if (window.supabase && window.authApi) {
+                if (window.supabase && window.supabaseClientInitialized && window.authApi) {
                     console.log('All dependencies loaded successfully');
                 } else {
-                    console.error('Dependencies failed to load properly');
+                    console.error('Dependencies failed to load properly', {
+                        supabase: !!window.supabase,
+                        supabaseClientInitialized: !!window.supabaseClientInitialized,
+                        authApi: !!window.authApi
+                    });
                 }
-            }, 500);
+            }, 1000); // Increased timeout to give more time for initialization
         });
         
         // Add toggle password functionality
@@ -111,17 +115,17 @@
             
             const email = document.getElementById('signin-email').value;
             const password = document.getElementById('signin-password').value;
+            const rememberMe = document.getElementById('remember-me').checked;
             
             try {
                 if (window.authApi) {
                     const result = await window.authApi.signIn(email, password);
                     if (result.user) {
-                        showToast('Login realizado com sucesso!', 'success');
-                        
-                        // Small delay before redirect to show success message
-                        setTimeout(() => {
-                            window.location.href = 'index.html';
-                        }, 1000);
+                        if (rememberMe) {
+                            localStorage.setItem('remember_me', 'true');
+                        }
+                        localStorage.setItem('auth_token', 'authenticated');
+                        window.location.href = 'index.html';
                     }
                 } else {
                     showToast('Erro: Sistema de autenticação não disponível', 'error');
@@ -236,7 +240,11 @@
                 </div>
 
                 <div class="form-options">
-                    <a href="#" class="forgot-password" onclick="handleForgotPassword(event)">Forgot password?</a>
+                    <label class="remember-me">
+                        <input type="checkbox" id="remember-me">
+                        <span>Remember me</span>
+                    </label>
+                    <a href="#" class="forgot-password">Forgot password?</a>
                 </div>
 
                 <button type="submit" class="btn btn-gradient">Sign In</button>
