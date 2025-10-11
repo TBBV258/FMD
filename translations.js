@@ -7,6 +7,7 @@ window.translations = {
         'nav.lost': 'Perdidos',
         'nav.found': 'Encontrados',
         'nav.profile': 'Perfil',
+        'nav.notifications': 'Notificações',
         'nav.report_lost': 'Relatar Perda',
         'nav.report_found': 'Relatar Encontrado',
         'nav.reset': 'Reset',
@@ -57,7 +58,11 @@ window.translations = {
         'documents.cancel_lost': 'Cancelar Status de Perdido',
         'documents.contact': 'Contato',
         'documents.this_is_mine': 'Este é meu',
-        'documents.verified_finder': 'Localizador verificado'
+        'documents.verified_finder': 'Localizador verificado',
+        
+        // Notifications
+        'notifications.title': 'Notificações',
+        'notifications.mark_all_read': 'Marcar todas como lidas'
     },
     en: {
         // Navigation
@@ -116,7 +121,11 @@ window.translations = {
         'documents.cancel_lost': 'Cancel Lost Status',
         'documents.contact': 'Contact',
         'documents.this_is_mine': 'This is mine',
-        'documents.verified_finder': 'Verified finder'
+        'documents.verified_finder': 'Verified finder',
+        
+        // Notifications
+        'notifications.title': 'Notifications',
+        'notifications.mark_all_read': 'Mark all as read'
     },
     fr: {
         'nav.home': 'Accueil',

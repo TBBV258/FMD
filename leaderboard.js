@@ -142,7 +142,7 @@ class Leaderboard {
                     try {
                         // Get user's position in the leaderboard
                         const { data: positionData, error: positionError } = await this.supabase.rpc(
-                            'get_rank_position',
+                            'get_user_rank_position',
                             { user_id: currentUserId }
                         );
                         

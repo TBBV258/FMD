@@ -227,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.supabase) {
         pointsService = new PointsService(window.supabase);
         window.pointsService = pointsService;
-        
+
         // Initialize points display if user is logged in
         (async () => {
             try {
@@ -245,4 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-export { PointsService, pointsService };
+// Export for ES modules if needed
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { PointsService, pointsService };
+}

@@ -404,24 +404,22 @@ async function loadFeed() {
     }
 }
 
-// --- Chat Initiation from Document Cards ---
+// --- Chat Initiation from Feed ---
 document.body.addEventListener('click', (e) => {
-    if (e.target.matches('.btn.chat') || e.target.closest('.btn.chat')) {
-        const button = e.target.closest('.btn.chat');
-        const docId = button.dataset.id;
+    if (e.target.matches('.contact-reporter-btn')) {
+        const docId = e.target.dataset.docId;
+        const reporterId = e.target.dataset.reporterId;
 
-        if (!docId) {
-            console.error('Missing document ID for chat.');
+        if (!docId || !reporterId) {
+            console.error('Missing document or reporter ID for chat.');
             return;
         }
 
-        if (window.chat) {
-            // Get the document title from the card
-            const card = button.closest('.document-card');
-            const docTitle = card.querySelector('h4').textContent;
-            const reporterId = button.dataset.reporterId || currentUser?.id;
-
-            window.chat.openChat(reporterId, docId);
+        if (window.chat && typeof window.chat.openChatModal === 'function') {
+            // We need the document title to display in the chat header.
+            // We can fetch the document again or get it from the card.
+            const docTitle = e.target.closest('.document-card').querySelector('h4').textContent;
+            window.chat.openChatModal(docId, docTitle, reporterId);
         } else {
             console.error('Chat module not available.');
             showToast('A funcionalidade de chat não está disponível.', 'error');

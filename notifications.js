@@ -552,54 +552,62 @@ class NotificationsManager {
         if (markAllReadBtn) {
             markAllReadBtn.addEventListener('click', () => this.markAllAsRead());
         }
-        
+
         // Request notification permission when clicking the notifications tab
         const notificationsTab = document.querySelector('[data-section="notifications"]');
         if (notificationsTab) {
             notificationsTab.addEventListener('click', () => this.requestNotificationPermission());
         }
-        
+
         // Listen for new chat messages from Supabase
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-            const chatSubscription = supabase
-                .channel('chats')
-                .on('postgres_changes', {
-                    event: 'INSERT',
-                    schema: 'public',
-                    table: 'chats',
-                    filter: `receiver_id=eq.${user.id}`
-                }, async (payload) => {
-                    // Get sender's profile
-                    const { data: sender, error } = await supabase
-                        .from('user_profiles')
-                        .select('full_name')
-                        .eq('id', payload.new.sender_id)
-                        .single();
-                        
-                    const senderName = sender?.full_name || 'Alguém';
-                    
-                    this.addNotification({
-                        type: 'chat',
-                        title: `Nova mensagem de ${senderName}`,
-                        message: payload.new.message.length > 50 
-                            ? payload.new.message.substring(0, 47) + '...' 
-                            : payload.new.message,
-                        data: { 
-                            chat_id: payload.new.id,
-                            document_id: payload.new.document_id,
-                            sender_id: payload.new.sender_id
-                        },
-                        action: {
-                            text: 'Responder',
-                            url: `#chat?document_id=${payload.new.document_id}&user_id=${payload.new.sender_id}`
-                        }
-                    });
-                })
-                .subscribe();
-                
-            // Store subscription for cleanup
-            this.chatSubscription = chatSubscription;
+        if (typeof supabase !== 'undefined') {
+            (async () => {
+                try {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (user) {
+                        const chatSubscription = supabase
+                            .channel('chats')
+                            .on('postgres_changes', {
+                                event: 'INSERT',
+                                schema: 'public',
+                                table: 'chats',
+                                filter: `receiver_id=eq.${user.id}`
+                            }, async (payload) => {
+                                // Get sender's profile
+                                const { data: sender, error } = await supabase
+                                    .from('user_profiles')
+                                    .select('full_name')
+                                    .eq('id', payload.new.sender_id)
+                                    .single();
+
+                                const senderName = sender?.full_name || 'Alguém';
+
+                                this.addNotification({
+                                    type: 'chat',
+                                    title: `Nova mensagem de ${senderName}`,
+                                    message: payload.new.message.length > 50
+                                        ? payload.new.message.substring(0, 47) + '...'
+                                        : payload.new.message,
+                                    data: {
+                                        chat_id: payload.new.id,
+                                        document_id: payload.new.document_id,
+                                        sender_id: payload.new.sender_id
+                                    },
+                                    action: {
+                                        text: 'Responder',
+                                        url: `#chat?document_id=${payload.new.document_id}&user_id=${payload.new.sender_id}`
+                                    }
+                                });
+                            })
+                            .subscribe();
+
+                        // Store subscription for cleanup
+                        this.chatSubscription = chatSubscription;
+                    }
+                } catch (error) {
+                    console.error('Error setting up chat notifications:', error);
+                }
+            })();
         }
     }
 }
