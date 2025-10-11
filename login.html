@@ -111,17 +111,17 @@
             
             const email = document.getElementById('signin-email').value;
             const password = document.getElementById('signin-password').value;
-            const rememberMe = document.getElementById('remember-me').checked;
             
             try {
                 if (window.authApi) {
                     const result = await window.authApi.signIn(email, password);
                     if (result.user) {
-                        if (rememberMe) {
-                            localStorage.setItem('remember_me', 'true');
-                        }
-                        localStorage.setItem('auth_token', 'authenticated');
-                        window.location.href = 'index.html';
+                        showToast('Login realizado com sucesso!', 'success');
+                        
+                        // Small delay before redirect to show success message
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 1000);
                     }
                 } else {
                     showToast('Erro: Sistema de autenticação não disponível', 'error');
@@ -236,11 +236,7 @@
                 </div>
 
                 <div class="form-options">
-                    <label class="remember-me">
-                        <input type="checkbox" id="remember-me">
-                        <span>Remember me</span>
-                    </label>
-                    <a href="#" class="forgot-password">Forgot password?</a>
+                    <a href="#" class="forgot-password" onclick="handleForgotPassword(event)">Forgot password?</a>
                 </div>
 
                 <button type="submit" class="btn btn-gradient">Sign In</button>
