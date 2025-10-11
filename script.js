@@ -38,9 +38,14 @@ function waitForTranslations(timeout = 3000) {
 async function initializeApp() {
     try {
         await waitForTranslations();
+        
+        // Initialize ranking modal
+        if (typeof initializeRankingModal === 'function') {
+            initializeRankingModal();
+        }
     } catch (error) {
-        console.error(error);
-        // We can still try to run the app, but translations will be broken.
+        console.error('Error initializing app:', error);
+        // We can still try to run the app, but some features might be broken.
     }
 
     // Check for authenticated user
@@ -142,15 +147,52 @@ function applyTranslations(lang) {
     });
 }
 
-function loadUserData() {
-    // Load user documents
-    loadDocuments();
-    
-    // Update profile info
-    updateProfileInfo();
-    
-    // Update document count
-    updateDocumentCount();
+async function loadUserData() {
+    try {
+        // Load user documents
+        loadDocuments();
+        
+        // Update profile info
+        updateProfileInfo();
+        
+        // Update document count
+        updateDocumentCount();
+        
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        
+        // Fetch user profile to get the full name
+        const { data: profile, error } = await supabase
+            .from('user_profiles')
+            .select('full_name')
+            .eq('id', user.id)
+            .single();
+            
+        // Update welcome message with user's name
+        const welcomeElement = document.querySelector('[data-i18n="welcome.title"]');
+        if (welcomeElement) {
+            const userName = profile?.full_name || user.email?.split('@')[0] || 'Usuário';
+            welcomeElement.textContent = `Bem-vindo, ${userName}!`;
+        }
+        
+    } catch (error) {
+        console.error('Error loading user data:', error);
+        
+        // Fallback to show at least the email if available
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const welcomeElement = document.querySelector('[data-i18n="welcome.title"]');
+                if (welcomeElement) {
+                    const userName = user.email?.split('@')[0] || 'Usuário';
+                    welcomeElement.textContent = `Bem-vindo, ${userName}!`;
+                }
+            }
+        } catch (e) {
+            console.error('Error in fallback user name display:', e);
+        }
+    }
 }
 
 function initializeForms() {
@@ -250,7 +292,7 @@ function createDocumentCard(doc) {
         <div class="card-body">
             <div style="display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 0.5rem;">
                 <div class="document-icon" style="background: ${statusClass === 'danger' ? 'rgba(220, 53, 69, 0.1)' : 'rgba(40, 167, 69, 0.1)'}; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                    <i class="fas ${statusClass === 'danger' ? 'fa-exclamation-circle' : 'fa-check-circle'}" style="font-size: 1.2rem; color: ${statusClass === 'danger' ? 'var(--danger-color)' : 'var(--success-color)'};"></i>
+                    <i class="fas ${statusClass === 'danger' ? 'fa-exclamation-triangle' : 'fa-check-circle'}" style="font-size: 1.2rem; color: ${statusClass === 'danger' ? 'var(--danger-color)' : 'var(--success-color)'};"></i>
                 </div>
                 <div style="flex: 1;">
                     <h4 style="margin: 0 0 0.25rem 0; font-size: 1.1rem;">${doc.title}</h4>
@@ -362,22 +404,24 @@ async function loadFeed() {
     }
 }
 
-// --- Chat Initiation from Feed ---
+// --- Chat Initiation from Document Cards ---
 document.body.addEventListener('click', (e) => {
-    if (e.target.matches('.contact-reporter-btn')) {
-        const docId = e.target.dataset.docId;
-        const reporterId = e.target.dataset.reporterId;
+    if (e.target.matches('.btn.chat') || e.target.closest('.btn.chat')) {
+        const button = e.target.closest('.btn.chat');
+        const docId = button.dataset.id;
 
-        if (!docId || !reporterId) {
-            console.error('Missing document or reporter ID for chat.');
+        if (!docId) {
+            console.error('Missing document ID for chat.');
             return;
         }
 
-        if (window.chat && typeof window.chat.openChatModal === 'function') {
-            // We need the document title to display in the chat header.
-            // We can fetch the document again or get it from the card.
-            const docTitle = e.target.closest('.document-card').querySelector('h4').textContent;
-            window.chat.openChatModal(docId, docTitle, reporterId);
+        if (window.chat) {
+            // Get the document title from the card
+            const card = button.closest('.document-card');
+            const docTitle = card.querySelector('h4').textContent;
+            const reporterId = button.dataset.reporterId || currentUser?.id;
+
+            window.chat.openChat(reporterId, docId);
         } else {
             console.error('Chat module not available.');
             showToast('A funcionalidade de chat não está disponível.', 'error');
@@ -458,18 +502,68 @@ function loadProfile() {
     updateProfileInfo();
 }
 
-function updateProfileInfo() {
+async function updateProfileInfo() {
     const profileName = document.getElementById('profile-name');
     const profileEmail = document.getElementById('profile-email');
     const statDocuments = document.getElementById('stat-documents');
     const statPoints = document.getElementById('stat-points');
     const statHelped = document.getElementById('stat-helped');
     
-    if (profileName) profileName.textContent = currentUser.name || 'Demo User';
-    if (profileEmail) profileEmail.textContent = currentUser.email || 'demo@example.com';
-    if (statDocuments) statDocuments.textContent = '1';
-    if (statPoints) statPoints.textContent = '250';
-    if (statHelped) statHelped.textContent = '3';
+    try {
+        // Get current user
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+        if (!user) return;
+        
+        // Set user info
+        if (profileName) profileName.textContent = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuário';
+        if (profileEmail) profileEmail.textContent = user.email || '';
+        
+        // Fetch user's documents count
+        const { count: docCount, error: docError } = await supabase
+            .from('documents')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user.id);
+            
+        if (!docError && statDocuments) {
+            statDocuments.textContent = docCount || '0';
+        }
+        
+        // Fetch user's points (assuming you have a user_profiles table with points)
+        const { data: profile, error: profileError } = await supabase
+            .from('user_profiles')
+            .select('points')
+            .eq('id', user.id)
+            .single();
+            
+        if (!profileError && statPoints) {
+            statPoints.textContent = profile?.points || '0';
+        }
+        
+        // Fetch count of people helped (documents found by this user)
+        const { count: helpedCount, error: helpedError } = await supabase
+            .from('documents')
+            .select('*', { count: 'exact', head: true })
+            .eq('found_by', user.id)
+            .not('found_by', 'is', null);
+            
+        if (!helpedError && statHelped) {
+            statHelped.textContent = helpedCount || '0';
+        }
+        
+        // Log any errors that occurred
+        if (docError) console.error('Error fetching document count:', docError);
+        if (profileError) console.error('Error fetching user points:', profileError);
+        if (helpedError) console.error('Error fetching helped count:', helpedError);
+        
+    } catch (error) {
+        console.error('Error in updateProfileInfo:', error);
+        // Fallback to default values if there's an error
+        if (profileName) profileName.textContent = 'Usuário';
+        if (statDocuments) statDocuments.textContent = '0';
+        if (statPoints) statPoints.textContent = '0';
+        if (statHelped) statHelped.textContent = '0';
+    }
 }
 
 function updateDocumentCount(count = 0) {
@@ -832,6 +926,143 @@ async function handleLogout() {
         localStorage.removeItem('auth_token');
         localStorage.removeItem('remember_me');
         window.location.href = 'login.html';
+    }
+}
+
+// Ranking Modal Functions
+function initializeRankingModal() {
+    const rankingModal = document.getElementById('ranking-modal');
+    const closeRankingModal = document.getElementById('close-ranking-modal');
+    const closeRankingBtn = document.getElementById('close-ranking-btn');
+    const viewRankingBtn = document.getElementById('view-ranking-btn');
+    const rankBadge = document.getElementById('profile-rank');
+
+    // Open modal when clicking the ranking button or badge
+    if (viewRankingBtn) {
+        viewRankingBtn.addEventListener('click', openRankingModal);
+    }
+    
+    if (rankBadge) {
+        rankBadge.addEventListener('click', openRankingModal);
+    }
+
+    // Close modal when clicking the close button
+    if (closeRankingModal) {
+        closeRankingModal.addEventListener('click', closeRankingModalFunc);
+    }
+    
+    if (closeRankingBtn) {
+        closeRankingBtn.addEventListener('click', closeRankingModalFunc);
+    }
+
+    // Close modal when clicking outside the modal content
+    window.addEventListener('click', (event) => {
+        if (event.target === rankingModal) {
+            closeRankingModalFunc();
+        }
+    });
+
+    // Load ranking data when modal is opened
+    rankingModal.addEventListener('show', loadRankingData);
+}
+
+function openRankingModal() {
+    const rankingModal = document.getElementById('ranking-modal');
+    if (rankingModal) {
+        rankingModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        rankingModal.dispatchEvent(new Event('show'));
+    }
+}
+
+function closeRankingModalFunc() {
+    const rankingModal = document.getElementById('ranking-modal');
+    if (rankingModal) {
+        rankingModal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+}
+
+async function loadRankingData() {
+    try {
+        // Get current user points
+        const pointsElement = document.getElementById('profile-points');
+        const currentPoints = pointsElement ? parseInt(pointsElement.textContent) || 0 : 0;
+
+        // Define ranking levels
+        const ranks = [
+            { name: 'Novato', minPoints: 0, color: '#6c757d' },
+            { name: 'Iniciante', minPoints: 100, color: '#17a2b8' },
+            { name: 'Intermediário', minPoints: 500, color: '#28a745' },
+            { name: 'Avançado', minPoints: 1500, color: '#007bff' },
+            { name: 'Especialista', minPoints: 3000, color: '#6f42c1' },
+            { name: 'Mestre', minPoints: 5000, color: '#fd7e14' },
+            { name: 'Lendário', minPoints: 10000, color: '#dc3545' },
+        ];
+
+        // Find current and next rank
+        let currentRank, nextRank;
+        for (let i = 0; i < ranks.length; i++) {
+            if (i === ranks.length - 1 || (currentPoints >= ranks[i].minPoints && 
+                (i === ranks.length - 1 || currentPoints < ranks[i + 1].minPoints))) {
+                currentRank = ranks[i];
+                nextRank = i < ranks.length - 1 ? ranks[i + 1] : null;
+                break;
+            }
+        }
+
+        // Update UI with current rank
+        const currentRankBadge = document.getElementById('current-rank-badge');
+        if (currentRankBadge) {
+            currentRankBadge.textContent = currentRank.name;
+            currentRankBadge.style.backgroundColor = `${currentRank.color}20`;
+            currentRankBadge.style.color = currentRank.color;
+            currentRankBadge.style.border = `1px solid ${currentRank.color}`;
+        }
+
+        // Update progress bar and next rank info
+        const progressBar = document.getElementById('ranking-progress');
+        const currentPointsEl = document.getElementById('current-points');
+        const nextRankPointsEl = document.getElementById('next-rank-points');
+        const nextRankNameEl = document.getElementById('next-rank-name');
+
+        if (nextRank) {
+            const progress = ((currentPoints - currentRank.minPoints) / (nextRank.minPoints - currentRank.minPoints)) * 100;
+            if (progressBar) progressBar.style.width = `${Math.min(100, Math.max(0, progress))}%`;
+            if (currentPointsEl) currentPointsEl.textContent = currentPoints;
+            if (nextRankPointsEl) nextRankPointsEl.textContent = nextRank.minPoints;
+            if (nextRankNameEl) nextRankNameEl.textContent = nextRank.name;
+        } else {
+            if (progressBar) progressBar.style.width = '100%';
+            if (currentPointsEl) currentPointsEl.textContent = currentPoints;
+            if (nextRankPointsEl) nextRankPointsEl.textContent = '';
+            if (nextRankNameEl) nextRankNameEl.textContent = 'Máximo alcançado!';
+        }
+
+        // Populate rank list
+        const rankList = document.getElementById('rank-list');
+        if (rankList) {
+            rankList.innerHTML = ranks.map(rank => {
+                const isCurrent = rank.name === currentRank.name;
+                const isUnlocked = rank.minPoints <= currentPoints;
+                
+                return `
+                    <li class="rank-item ${isCurrent ? 'current' : ''} ${isUnlocked ? 'unlocked' : 'locked'}">
+                        <div class="rank-icon">
+                            ${isUnlocked ? '<i class="fas fa-unlock"></i>' : '<i class="fas fa-lock"></i>'}
+                        </div>
+                        <div class="rank-info">
+                            <span class="rank-name">${rank.name}</span>
+                            <span class="rank-points">${rank.minPoints} pontos</span>
+                        </div>
+                        ${isCurrent ? '<span class="current-badge">Atual</span>' : ''}
+                    </li>
+                `;
+            }).join('');
+        }
+    } catch (error) {
+        console.error('Error loading ranking data:', error);
+        showToast('Erro ao carregar informações de ranking', 'error');
     }
 }
 

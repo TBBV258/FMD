@@ -6,6 +6,7 @@
     <title>FindMyDocs - Gestão de Documentos Perdidos</title>
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="leaderboard.css">
     <link rel="stylesheet" href="css/document-uploader.css">
     <link rel="stylesheet" href="css/profile.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -56,12 +57,21 @@
                         <i class="fas fa-list"></i>
                         Feed
                     </button>
+                    <button class="nav-link" data-section="leaderboard" aria-label="Classificação">
+                        <i class="fas fa-trophy"></i>
+                        Classificação
+                    </button>
+                    <button class="nav-link" data-section="notifications" aria-label="Notificações">
+                        <i class="fas fa-bell"></i>
+                        <span data-i18n="nav.notifications">Notificações</span>
+                        <span id="notification-badge" class="notification-badge" style="display: none;">0</span>
+                    </button>
                     <button class="nav-link" data-section="relatar-perda" aria-label="Relatar Perda">
                         <i class="fas fa-search"></i>
                         <span data-i18n="nav.report_lost">Relatar Perda</span>
                     </button>
                     <button class="nav-link" data-section="relatar-encontrado" aria-label="Relatar Encontrado">
-                        <i class="fas fa-bell"></i>
+                        <i class="fas fa-map-marker-alt"></i>
                         <span data-i18n="nav.report_found">Relatar Encontrado</span>
                     </button>
                     <button class="nav-link" data-section="perfil" aria-label="Perfil">
@@ -157,6 +167,30 @@
                 </div>
                 <div id="feed-content" class="feed-content">
                     <!-- Feed items will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Leaderboard Section -->
+            <section id="leaderboard" class="content-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-trophy"></i> Classificação</h2>
+                    <p>Veja os usuários com mais pontos na plataforma</p>
+                </div>
+                <div id="leaderboard-container" class="leaderboard-container">
+                    <!-- Leaderboard will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Notifications Section -->
+            <section id="notifications" class="content-section">
+                <div class="section-header">
+                    <h2 data-i18n="notifications.title">Notificações</h2>
+                    <button id="mark-all-read" class="btn secondary small" data-i18n="notifications.mark_all_read">Marcar todas como lidas</button>
+                </div>
+                <div class="notifications-container">
+                    <div id="notifications-list" class="notifications-list">
+                        <!-- Notifications will be loaded here -->
+                    </div>
                 </div>
             </section>
 
@@ -270,7 +304,12 @@
                             <p id="profile-email">Carregando...</p>
                             <div class="profile-badges">
                                 <span id="profile-plan" class="plan-badge">free</span>
-                                <span id="profile-rank" class="rank-badge">Novato</span>
+                                <div class="rank-container">
+                                    <span id="profile-rank" class="rank-badge clickable">Novato</span>
+                                    <button id="view-ranking-btn" class="btn small outline" title="Ver ranking">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -287,9 +326,20 @@
                             <span class="stat-number" id="profile-doc-count">0</span>
                             <span class="stat-label">Documentos</span>
                         </div>
-                        <div class="stat-item">
+                        <div class="stat-item clickable" id="points-container">
                             <span class="stat-number" id="profile-points">250</span>
                             <span class="stat-label">Pontos</span>
+                            <div class="progress-container" id="points-progress" style="display: none;">
+                                <div class="progress-bar">
+                                    <div class="progress" id="points-progress-bar" style="width: 25%;"></div>
+                                </div>
+                                <div class="progress-text">
+                                    <span id="points-current">250</span> / <span id="points-next">1000</span> pontos
+                                </div>
+                                <div class="next-rank">
+                                    Próximo nível: <span id="next-rank-name">Intermediário</span>
+                                </div>
+                            </div>
                         </div>
                         <div class="stat-item">
                             <span class="stat-number" id="profile-helped">3</span>
@@ -382,24 +432,71 @@
                     </div>
                     
                     <div id="file-info">
-                        <div class="form-group">
-                            <label for="document-title">Título do Documento</label>
-                            <input type="text" id="document-title" required 
-                                   placeholder="Ex: BI de João Silva" 
-                                   minlength="3" maxlength="100">
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 2;">
+                                <label for="document-title">Título do Documento *</label>
+                                <input type="text" id="document-title" required 
+                                       placeholder="Ex: BI de João Silva" 
+                                       minlength="3" maxlength="100">
+                            </div>
+                            
+                            <div class="form-group" style="flex: 1;">
+                                <label for="document-type">Tipo de Documento *</label>
+                                <select id="document-type" required>
+                                    <option value="ID card">Bilhete de Identidade</option>
+                                    <option value="DIRE">DIRE</option>
+                                    <option value="Passport">Passaporte</option>
+                                    <option value="Bank Doc">Documento Bancário</option>
+                                </select>
+                            </div>
                         </div>
-                        
+
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 1;">
+                                <label for="document-number">Número do Documento</label>
+                                <input type="text" id="document-number" 
+                                       placeholder="Número do documento">
+                            </div>
+                            
+                            <div class="form-group" style="flex: 1;">
+                                <label for="issue-date">Data de Emissão</label>
+                                <input type="date" id="issue-date">
+                            </div>
+                            
+                            <div class="form-group" style="flex: 1;">
+                                <label for="expiry-date">Data de Validade</label>
+                                <input type="date" id="expiry-date">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 1;">
+                                <label for="issue-place">Local de Emissão</label>
+                                <input type="text" id="issue-place" 
+                                       placeholder="Cidade/País de emissão">
+                            </div>
+                            
+                            <div class="form-group" style="flex: 1;">
+                                <label for="issuing-authority">Entidade Emissora</label>
+                                <input type="text" id="issuing-authority" 
+                                       placeholder="Ex: Conservatória">
+                            </div>
+                        </div>
+
                         <div class="form-group">
-                            <label for="document-type">Tipo de Documento</label>
-                            <select id="document-type" required>
-                                <option value="ID card">Bilhete de Identidade</option>
-                                <option value="DIRE">DIRE</option>
-                                <option value="Passport">Passaporte</option>
-                                <option value="Bank Card">Cartão Bancário</option>
-                                <option value="Driver License">Carta de Condução</option>
-                                <option value="Student ID">Cartão de Estudante</option>
-                                <option value="Other">Outro</option>
-                            </select>
+                            <label for="document-description">Descrição (opcional)</label>
+                            <textarea id="document-description" 
+                                    rows="3" 
+                                    placeholder="Informações adicionais sobre o documento"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="is-public">
+                                <span class="checkmark"></span>
+                                Tornar este documento público
+                            </label>
+                            <p class="form-hint">Documentos públicos podem ser vistos por outros usuários</p>
                         </div>
                     </div>
                     
@@ -494,13 +591,67 @@
     <!-- Translations (must be before main script) -->
     <script src="translations.js"></script>
 
+    <!-- Ranking Details Modal -->
+    <div id="ranking-modal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-trophy"></i> Seu Ranking</h3>
+                <button class="close-btn" id="close-ranking-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="ranking-summary">
+                    <div class="current-rank">
+                        <h4>Seu Nível Atual</h4>
+                        <div class="rank-display">
+                            <span id="current-rank-badge" class="rank-badge large">Novato</span>
+                            <div class="rank-progress">
+                                <div class="progress-container">
+                                    <div class="progress-bar">
+                                        <div id="ranking-progress" class="progress" style="width: 25%;"></div>
+                                    </div>
+                                    <div class="progress-text">
+                                        <span id="current-points">0</span> / <span id="next-rank-points">1000</span> pontos
+                                    </div>
+                                </div>
+                                <div class="next-rank">
+                                    Próximo nível: <span id="next-rank-name">Intermediário</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="ranking-levels">
+                    <h4>Próximos Níveis</h4>
+                    <ul id="rank-list" class="rank-list">
+                        <!-- Will be populated by JavaScript -->
+                    </ul>
+                </div>
+                
+                <div class="ranking-tips">
+                    <h4><i class="fas fa-lightbulb"></i> Dicas para Subir de Nível</h4>
+                    <ul class="tips-list">
+                        <li><i class="fas fa-check-circle"></i> Envie documentos para ganhar pontos</li>
+                        <li><i class="fas fa-check-circle"></i> Complete seu perfil</li>
+                        <li><i class="fas fa-check-circle"></i> Participe da comunidade</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="close-ranking-btn" class="btn primary">Fechar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Initialize Scripts -->
+    <script src="notifications.js"></script>
+    <script src="points-service.js"></script>
+    <script type="module" src="leaderboard.js"></script>
     <script src="script.js"></script>
     <script src="ui.js"></script>
     <script src="views.js"></script>
     <script src="chat.js"></script>
     <script src="map.js"></script>
-    <script src="documents.js"></script>
     
     <!-- Enhanced Document Uploader -->
     <script src="enhancedDocumentUploader.js"></script>
@@ -536,7 +687,23 @@
                     <p>Carregando documento...</p>
                 </div>
             </div>
+    <!-- Chat Container -->
+    <div id="chat-container" class="chat-container">
+        <div class="chat-header">
+            <div class="chat-title">Chat</div>
+            <button id="chat-close" class="chat-close">&times;</button>
+        </div>
+        <div id="chat-messages" class="chat-messages"></div>
+        <div class="chat-input-container">
+            <textarea id="chat-message-input" class="chat-message-input" placeholder="Digite sua mensagem..." rows="1"></textarea>
+            <button id="chat-send-button" class="chat-send-button">
+                <i class="fas fa-paper-plane"></i>
+            </button>
         </div>
     </div>
-</body>
-</html>
+
+    <!-- Chat Toggle Button -->
+    <button id="chat-toggle" class="chat-toggle">
+        <i class="fas fa-comment-dots"></i>
+        <span class="unread-count" id="unread-count">0</span>
+    </button>

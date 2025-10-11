@@ -11,6 +11,9 @@
                     <small class="muted">${doc.type} • ${doc.status}</small>
                     <div class="actions">
                         <button class="btn small view" data-id="${doc.id}">View</button>
+                        <button class="btn primary small chat" data-id="${doc.id}" title="Iniciar conversa sobre este documento">
+                            <i class="fas fa-comment"></i>
+                        </button>
                         <button class="btn danger small delete" data-id="${doc.id}">Delete</button>
                     </div>
                 </div>`;
