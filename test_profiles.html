@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Profiles API - FindMyDocs</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-button {
+            background: #007BFF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Profiles API - FindMyDocs</h1>
+    
+    <div class="test-section">
+        <h2>Current User Info</h2>
+        <div id="user-info" class="test-result info">Loading...</div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Specific User IDs</h2>
+        <button class="test-button" onclick="testSpecificUsers()">Test Known User IDs</button>
+        <button class="test-button" onclick="testMissingUser()">Test Missing User (8f33)</button>
+        <button class="test-button" onclick="testRLSIssue()">Test RLS Issue</button>
+        <div id="specific-result" class="test-result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test All Profiles</h2>
+        <button class="test-button" onclick="testAllProfiles()">Get All User Profiles</button>
+        <div id="all-profiles-result" class="test-result" style="display: none;"></div>
+    </div>
+
+    <!-- Load Supabase library -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="supabaseClient.js"></script>
+
+    <script>
+        let currentUser = null;
+        
+        // Known user IDs from your data
+        const knownUserIds = [
+            '30f60b15-13c0-4f4f-a257-a99b113a7d17', // Kevin Paulo
+            '31ed8916-9b9a-4ac4-b5ac-850dd4ac23a7', // Ússula Francisco Uqueio
+            '8b283b89-d6ed-4183-90ab-568915c41db9', // walaka moz
+            'c75c867e-aa1f-4653-8e12-efbedb788f33'  // Kevin Walaka
+        ];
+
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `test-result ${type}`;
+            element.textContent = message;
+        }
+
+        async function loadUserInfo() {
+            try {
+                const { data: { user }, error } = await window.supabase.auth.getUser();
+                if (error) throw error;
+                
+                if (user) {
+                    currentUser = user;
+                    showResult('user-info', `Logged in as: ${user.email} (ID: ${user.id})`, 'success');
+                } else {
+                    showResult('user-info', 'No authenticated user found', 'error');
+                }
+            } catch (error) {
+                showResult('user-info', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSpecificUsers() {
+            try {
+                if (!window.profilesApi) {
+                    throw new Error('Profiles API not available');
+                }
+
+                showResult('specific-result', 'Testing known user IDs...', 'info');
+                
+                const profiles = await window.profilesApi.getProfilesByIds(knownUserIds);
+                
+                let result = `Retrieved ${profiles.length} profiles:\n\n`;
+                profiles.forEach(profile => {
+                    result += `ID: ${profile.id}\n`;
+                    result += `Full Name: ${profile.full_name || 'NULL'}\n`;
+                    result += `Phone: ${profile.phone_number || 'NULL'}\n`;
+                    result += `Avatar: ${profile.avatar_url || 'NULL'}\n`;
+                    result += `---\n`;
+                });
+                
+                showResult('specific-result', result, profiles.length > 0 ? 'success' : 'error');
+                
+            } catch (error) {
+                console.error('Test specific users error:', error);
+                showResult('specific-result', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAllProfiles() {
+            try {
+                if (!window.supabase) {
+                    throw new Error('Supabase not available');
+                }
+
+                showResult('all-profiles-result', 'Fetching all user profiles...', 'info');
+                
+                const { data: profiles, error } = await window.supabase
+                    .from('user_profiles')
+                    .select('id, full_name, phone_number, avatar_url')
+                    .limit(10);
+                
+                if (error) {
+                    throw error;
+                }
+                
+                let result = `Retrieved ${profiles.length} profiles:\n\n`;
+                profiles.forEach(profile => {
+                    result += `ID: ${profile.id}\n`;
+                    result += `Full Name: ${profile.full_name || 'NULL'}\n`;
+                    result += `Phone: ${profile.phone_number || 'NULL'}\n`;
+                    result += `Avatar: ${profile.avatar_url || 'NULL'}\n`;
+                    result += `---\n`;
+                });
+                
+                showResult('all-profiles-result', result, 'success');
+                
+            } catch (error) {
+                console.error('Test all profiles error:', error);
+                showResult('all-profiles-result', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Test the specific user that's showing as "User 8f33"
+        async function testMissingUser() {
+            const missingUserId = 'c75c867e-aa1f-4653-8e12-efbedb788f33';
+            console.log(`\n=== Testing missing user ID: ${missingUserId} ===`);
+            
+            try {
+                const { data: profile, error } = await window.supabase
+                    .from('user_profiles')
+                    .select('*')
+                    .eq('id', missingUserId)
+                    .single();
+                
+                if (error) {
+                    console.error('Error fetching missing user:', error);
+                    if (error.code === 'PGRST116') {
+                        console.log('❌ User profile does not exist in user_profiles table');
+                        console.log('This explains why it shows as "User 8f33"');
+                        showResult('specific-result', `❌ User ${missingUserId} does not exist in user_profiles table!\n\nThis is why it shows as "User 8f33" in the chat.\n\nSolution: Create a profile for this user.`, 'error');
+                    }
+                } else {
+                    console.log('✅ User profile found:', profile);
+                    showResult('specific-result', `✅ User profile found:\n\nID: ${profile.id}\nName: ${profile.full_name || 'NULL'}\nPhone: ${profile.phone_number || 'NULL'}`, 'success');
+                }
+            } catch (error) {
+                console.error('Error in testMissingUser:', error);
+                showResult('specific-result', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Test RLS by trying to get all profiles vs specific ones
+        async function testRLSIssue() {
+            console.log(`\n=== Testing RLS Issue ===`);
+            
+            try {
+                // Test 1: Try to get all profiles (should work if RLS allows)
+                const { data: allProfiles, error: allError } = await window.supabase
+                    .from('user_profiles')
+                    .select('id, full_name, phone_number')
+                    .limit(5);
+                
+                console.log('All profiles query result:', { allProfiles, allError });
+                
+                // Test 2: Try to get specific user IDs that are failing
+                const testUserIds = ['c75c867e-aa1f-4653-8e12-efbedb788f33', '30f60b15-13c0-4f4f-a257-a99b113a7d17'];
+                const { data: specificProfiles, error: specificError } = await window.supabase
+                    .from('user_profiles')
+                    .select('id, full_name, phone_number')
+                    .in('id', testUserIds);
+                
+                console.log('Specific profiles query result:', { specificProfiles, specificError });
+                
+                // Test 3: Try the exact same query as getProfilesByIds
+                const { data: apiProfiles, error: apiError } = await window.supabase
+                    .from('user_profiles')
+                    .select('id, full_name, avatar_url, phone_number')
+                    .in('id', testUserIds);
+                
+                console.log('API-style query result:', { apiProfiles, apiError });
+                
+                let result = `RLS Test Results:\n\n`;
+                result += `All profiles (limit 5): ${allProfiles ? allProfiles.length : 0} found\n`;
+                result += `Specific profiles: ${specificProfiles ? specificProfiles.length : 0} found\n`;
+                result += `API-style query: ${apiProfiles ? apiProfiles.length : 0} found\n\n`;
+                
+                if (allError) result += `All profiles error: ${allError.message}\n`;
+                if (specificError) result += `Specific profiles error: ${specificError.message}\n`;
+                if (apiError) result += `API query error: ${apiError.message}\n`;
+                
+                showResult('specific-result', result, 'info');
+                
+            } catch (error) {
+                console.error('Error in testRLSIssue:', error);
+                showResult('specific-result', `RLS Test Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Load user info on page load
+        window.addEventListener('load', () => {
+            setTimeout(loadUserInfo, 1000);
+        });
+    </script>
+</body>
+</html>

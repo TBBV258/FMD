@@ -38,9 +38,14 @@ function waitForTranslations(timeout = 3000) {
 async function initializeApp() {
     try {
         await waitForTranslations();
+        
+        // Initialize ranking modal
+        if (typeof initializeRankingModal === 'function') {
+            initializeRankingModal();
+        }
     } catch (error) {
-        console.error(error);
-        // We can still try to run the app, but translations will be broken.
+        console.error('Error initializing app:', error);
+        // We can still try to run the app, but some features might be broken.
     }
 
     // Check for authenticated user
@@ -142,15 +147,52 @@ function applyTranslations(lang) {
     });
 }
 
-function loadUserData() {
-    // Load user documents
-    loadDocuments();
-    
-    // Update profile info
-    updateProfileInfo();
-    
-    // Update document count
-    updateDocumentCount();
+async function loadUserData() {
+    try {
+        // Load user documents
+        loadDocuments();
+        
+        // Update profile info
+        updateProfileInfo();
+        
+        // Update document count
+        updateDocumentCount();
+        
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        
+        // Fetch user profile to get the full name
+        const { data: profile, error } = await supabase
+            .from('user_profiles')
+            .select('full_name')
+            .eq('id', user.id)
+            .single();
+            
+        // Update welcome message with user's name
+        const welcomeElement = document.querySelector('[data-i18n="welcome.title"]');
+        if (welcomeElement) {
+            const userName = profile?.full_name || user.email?.split('@')[0] || 'Usuário';
+            welcomeElement.textContent = `Bem-vindo, ${userName}!`;
+        }
+        
+    } catch (error) {
+        console.error('Error loading user data:', error);
+        
+        // Fallback to show at least the email if available
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const welcomeElement = document.querySelector('[data-i18n="welcome.title"]');
+                if (welcomeElement) {
+                    const userName = user.email?.split('@')[0] || 'Usuário';
+                    welcomeElement.textContent = `Bem-vindo, ${userName}!`;
+                }
+            }
+        } catch (e) {
+            console.error('Error in fallback user name display:', e);
+        }
+    }
 }
 
 function initializeForms() {
@@ -244,19 +286,46 @@ function createDocumentCard(doc) {
     
     const statusClass = doc.status === 'lost' ? 'danger' : doc.status === 'found' ? 'success' : 'primary';
     
+    const isOwnDocument = doc.user_id === (window.currentUser?.id || null);
+    
     div.innerHTML = `
         <div class="card-body">
-            <h4>${doc.title}</h4>
-            <p class="muted">Tipo: ${doc.type} • Status: ${doc.status}</p>
-            <div class="card-actions">
-                <button class="btn small ${statusClass} view-doc" data-id="${doc.id}">Ver</button>
-                <button class="btn danger small delete-doc" data-id="${doc.id}">Excluir</button>
+            <div style="display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 0.5rem;">
+                <div class="document-icon" style="background: ${statusClass === 'danger' ? 'rgba(220, 53, 69, 0.1)' : 'rgba(40, 167, 69, 0.1)'}; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="fas ${statusClass === 'danger' ? 'fa-exclamation-triangle' : 'fa-check-circle'}" style="font-size: 1.2rem; color: ${statusClass === 'danger' ? 'var(--danger-color)' : 'var(--success-color)'};"></i>
+                </div>
+                <div style="flex: 1;">
+                    <h4 style="margin: 0 0 0.25rem 0; font-size: 1.1rem;">${doc.title}</h4>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                        <span class="status-badge" style="background: ${statusClass === 'danger' ? 'rgba(220, 53, 69, 0.1)' : 'rgba(40, 167, 69, 0.1)'}; color: ${statusClass === 'danger' ? 'var(--danger-color)' : 'var(--success-color)'}; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.75rem; font-weight: 500;">
+                            ${doc.status === 'lost' ? 'Perdido' : 'Encontrado'}
+                        </span>
+                        <span style="font-size: 0.8rem; color: var(--text-light);">${doc.type}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-actions" style="margin-top: 0.75rem; display: flex; gap: 0.5rem;">
+                <button class="btn small ${statusClass} view-doc" data-id="${doc.id}" style="flex: 1;">
+                    <i class="fas fa-eye"></i> Ver Detalhes
+                </button>
+                
+                ${!isOwnDocument ? `
+                <button class="btn small primary contact-reporter-btn" data-doc-id="${doc.id}" data-reporter-id="${doc.user_id}" style="flex: 1;">
+                    <i class="fas fa-comments"></i> Chat
+                </button>
+                ` : ''}
+                
+                <button class="btn small danger delete-doc" data-id="${doc.id}" style="width: auto; padding: 0.4rem 0.8rem;">
+                    <i class="fas fa-trash"></i>
+                </button>
             </div>
         </div>`;
     
     // Add event listeners
     const viewBtn = div.querySelector('.view-doc');
     const deleteBtn = div.querySelector('.delete-doc');
+    const contactBtn = div.querySelector('.contact-reporter-btn');
     
     if (viewBtn) {
         viewBtn.addEventListener('click', () => viewDocument(doc));
@@ -264,6 +333,36 @@ function createDocumentCard(doc) {
     
     if (deleteBtn) {
         deleteBtn.addEventListener('click', () => deleteDocument(doc.id));
+    }
+    
+    if (contactBtn) {
+        contactBtn.addEventListener('click', (e) => {
+            console.log('Contact button clicked');
+            const docId = e.target.dataset.docId;
+            const reporterId = e.target.dataset.reporterId;
+            
+            console.log('Document ID:', docId, 'Reporter ID:', reporterId);
+            
+            if (!docId || !reporterId) {
+                console.error('Missing document or reporter ID for chat.');
+                return;
+            }
+            
+            console.log('Checking chat module...');
+            console.log('window.chat:', window.chat);
+            console.log('window.chat.openChatModal:', window.chat?.openChatModal);
+            
+            if (window.chat && typeof window.chat.openChatModal === 'function') {
+                console.log('Opening chat modal...');
+                const docTitle = e.target.closest('.document-card').querySelector('h4').textContent;
+                console.log('Document title:', docTitle);
+                window.chat.openChatModal(docId, docTitle, reporterId);
+                console.log('Chat modal should be open now');
+            } else {
+                console.error('Chat module not available or openChatModal is not a function');
+                showToast('A funcionalidade de chat não está disponível.', 'error');
+            }
+        });
     }
     
     return div;
@@ -340,18 +439,54 @@ function createFeedCard(doc, reporterProfile) {
     // Determine which buttons to show
     let actionsHtml = '';
     if (isOwnDocument) {
-        actionsHtml = `<button class="btn small secondary view-doc" data-id="${doc.id}">Ver Detalhes</button>`;
+        actionsHtml = `
+            <button class="btn small secondary view-doc" data-id="${doc.id}">
+                <i class="fas fa-eye"></i> Ver Detalhes
+            </button>`;
+            actionsHtml = `
+            <button class="btn small primary contact-reporter-btn" data-doc-id="${doc.id}" data-reporter-id="${doc.user_id}">
+                <i class="fas fa-comment-dots"></i> Contactar
+            </button>`;
     } else {
-        actionsHtml = `<button class="btn small primary contact-reporter-btn" data-doc-id="${doc.id}" data-reporter-id="${doc.user_id}">Contactar</button>`;
+        actionsHtml = `
+            <button class="btn small primary contact-reporter-btn" data-doc-id="${doc.id}" data-reporter-id="${doc.user_id}">
+                <i class="fas fa-comment-dots"></i> Contactar
+            </button>`;
     }
 
     div.innerHTML = `
         <div class="document-card">
             <div class="card-body">
-                <h4>${doc.title}</h4>
-                <p class="muted">Status: <span class="status-${doc.status}">${statusText}</span></p>
-                <p class="muted">Local: ${location}</p>
-                <p class="muted">Reportado por: ${reporterName}</p>
+                <div style="display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 0.75rem;">
+                    <div class="document-icon" style="background: ${doc.status === 'lost' ? 'rgba(220, 53, 69, 0.1)' : 'rgba(40, 167, 69, 0.1)'}; width: 48px; height: 48px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <i class="fas ${doc.status === 'lost' ? 'fa-exclamation-circle' : 'fa-check-circle'}" style="font-size: 1.5rem; color: ${doc.status === 'lost' ? 'var(--danger-color)' : 'var(--success-color)'};"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <h4>${doc.title}</h4>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                            <span class="status-${doc.status}" style="font-weight: 500; font-size: 0.8rem; background: ${doc.status === 'lost' ? 'rgba(220, 53, 69, 0.1)' : 'rgba(40, 167, 69, 0.1)'}; color: ${doc.status === 'lost' ? 'var(--danger-color)' : 'var(--success-color)'}; padding: 0.2rem 0.5rem; border-radius: 12px;">
+                                ${doc.status === 'lost' ? 'Perdido' : 'Encontrado'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.25rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-map-marker-alt" style="color: var(--text-light); font-size: 0.9rem; width: 16px; text-align: center;"></i>
+                        <span style="font-size: 0.85rem; color: var(--text-light);">${location}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-user" style="color: var(--text-light); font-size: 0.9rem; width: 16px; text-align: center;"></i>
+                        <span style="font-size: 0.85rem; color: var(--text-light);">Reportado por: <strong>${reporterName}</strong></span>
+                    </div>
+                    ${doc.created_at ? `
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="far fa-clock" style="color: var(--text-light); font-size: 0.9rem; width: 16px; text-align: center;"></i>
+                        <span style="font-size: 0.8rem; color: var(--text-light);">${new Date(doc.created_at).toLocaleDateString('pt-PT')}</span>
+                    </div>` : ''}
+                </div>
+                
                 <div class="card-actions">
                     ${actionsHtml}
                 </div>
@@ -365,18 +500,68 @@ function loadProfile() {
     updateProfileInfo();
 }
 
-function updateProfileInfo() {
+async function updateProfileInfo() {
     const profileName = document.getElementById('profile-name');
     const profileEmail = document.getElementById('profile-email');
     const statDocuments = document.getElementById('stat-documents');
     const statPoints = document.getElementById('stat-points');
     const statHelped = document.getElementById('stat-helped');
     
-    if (profileName) profileName.textContent = currentUser.name || 'Demo User';
-    if (profileEmail) profileEmail.textContent = currentUser.email || 'demo@example.com';
-    if (statDocuments) statDocuments.textContent = '1';
-    if (statPoints) statPoints.textContent = '250';
-    if (statHelped) statHelped.textContent = '3';
+    try {
+        // Get current user
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+        if (!user) return;
+        
+        // Set user info
+        if (profileName) profileName.textContent = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuário';
+        if (profileEmail) profileEmail.textContent = user.email || '';
+        
+        // Fetch user's documents count
+        const { count: docCount, error: docError } = await supabase
+            .from('documents')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user.id);
+            
+        if (!docError && statDocuments) {
+            statDocuments.textContent = docCount || '0';
+        }
+        
+        // Fetch user's points (assuming you have a user_profiles table with points)
+        const { data: profile, error: profileError } = await supabase
+            .from('user_profiles')
+            .select('points')
+            .eq('id', user.id)
+            .single();
+            
+        if (!profileError && statPoints) {
+            statPoints.textContent = profile?.points || '0';
+        }
+        
+        // Fetch count of people helped (documents found by this user)
+        const { count: helpedCount, error: helpedError } = await supabase
+            .from('documents')
+            .select('*', { count: 'exact', head: true })
+            .eq('found_by', user.id)
+            .not('found_by', 'is', null);
+            
+        if (!helpedError && statHelped) {
+            statHelped.textContent = helpedCount || '0';
+        }
+        
+        // Log any errors that occurred
+        if (docError) console.error('Error fetching document count:', docError);
+        if (profileError) console.error('Error fetching user points:', profileError);
+        if (helpedError) console.error('Error fetching helped count:', helpedError);
+        
+    } catch (error) {
+        console.error('Error in updateProfileInfo:', error);
+        // Fallback to default values if there's an error
+        if (profileName) profileName.textContent = 'Usuário';
+        if (statDocuments) statDocuments.textContent = '0';
+        if (statPoints) statPoints.textContent = '0';
+        if (statHelped) statHelped.textContent = '0';
+    }
 }
 
 function updateDocumentCount(count = 0) {
@@ -730,11 +915,152 @@ async function handleLogout() {
         if (window.authApi) {
             await window.authApi.signOut();
         }
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('remember_me');
         window.location.href = 'login.html';
     } catch (error) {
         console.error('Logout error:', error);
         // Force logout even if API fails
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('remember_me');
         window.location.href = 'login.html';
+    }
+}
+
+// Ranking Modal Functions
+function initializeRankingModal() {
+    const rankingModal = document.getElementById('ranking-modal');
+    const closeRankingModal = document.getElementById('close-ranking-modal');
+    const closeRankingBtn = document.getElementById('close-ranking-btn');
+    const viewRankingBtn = document.getElementById('view-ranking-btn');
+    const rankBadge = document.getElementById('profile-rank');
+
+    // Open modal when clicking the ranking button or badge
+    if (viewRankingBtn) {
+        viewRankingBtn.addEventListener('click', openRankingModal);
+    }
+    
+    if (rankBadge) {
+        rankBadge.addEventListener('click', openRankingModal);
+    }
+
+    // Close modal when clicking the close button
+    if (closeRankingModal) {
+        closeRankingModal.addEventListener('click', closeRankingModalFunc);
+    }
+    
+    if (closeRankingBtn) {
+        closeRankingBtn.addEventListener('click', closeRankingModalFunc);
+    }
+
+    // Close modal when clicking outside the modal content
+    window.addEventListener('click', (event) => {
+        if (event.target === rankingModal) {
+            closeRankingModalFunc();
+        }
+    });
+
+    // Load ranking data when modal is opened
+    rankingModal.addEventListener('show', loadRankingData);
+}
+
+function openRankingModal() {
+    const rankingModal = document.getElementById('ranking-modal');
+    if (rankingModal) {
+        rankingModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        rankingModal.dispatchEvent(new Event('show'));
+    }
+}
+
+function closeRankingModalFunc() {
+    const rankingModal = document.getElementById('ranking-modal');
+    if (rankingModal) {
+        rankingModal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+}
+
+async function loadRankingData() {
+    try {
+        // Get current user points
+        const pointsElement = document.getElementById('profile-points');
+        const currentPoints = pointsElement ? parseInt(pointsElement.textContent) || 0 : 0;
+
+        // Define ranking levels
+        const ranks = [
+            { name: 'Novato', minPoints: 0, color: '#6c757d' },
+            { name: 'Iniciante', minPoints: 100, color: '#17a2b8' },
+            { name: 'Intermediário', minPoints: 500, color: '#28a745' },
+            { name: 'Avançado', minPoints: 1500, color: '#007bff' },
+            { name: 'Especialista', minPoints: 3000, color: '#6f42c1' },
+            { name: 'Mestre', minPoints: 5000, color: '#fd7e14' },
+            { name: 'Lendário', minPoints: 10000, color: '#dc3545' },
+        ];
+
+        // Find current and next rank
+        let currentRank, nextRank;
+        for (let i = 0; i < ranks.length; i++) {
+            if (i === ranks.length - 1 || (currentPoints >= ranks[i].minPoints && 
+                (i === ranks.length - 1 || currentPoints < ranks[i + 1].minPoints))) {
+                currentRank = ranks[i];
+                nextRank = i < ranks.length - 1 ? ranks[i + 1] : null;
+                break;
+            }
+        }
+
+        // Update UI with current rank
+        const currentRankBadge = document.getElementById('current-rank-badge');
+        if (currentRankBadge) {
+            currentRankBadge.textContent = currentRank.name;
+            currentRankBadge.style.backgroundColor = `${currentRank.color}20`;
+            currentRankBadge.style.color = currentRank.color;
+            currentRankBadge.style.border = `1px solid ${currentRank.color}`;
+        }
+
+        // Update progress bar and next rank info
+        const progressBar = document.getElementById('ranking-progress');
+        const currentPointsEl = document.getElementById('current-points');
+        const nextRankPointsEl = document.getElementById('next-rank-points');
+        const nextRankNameEl = document.getElementById('next-rank-name');
+
+        if (nextRank) {
+            const progress = ((currentPoints - currentRank.minPoints) / (nextRank.minPoints - currentRank.minPoints)) * 100;
+            if (progressBar) progressBar.style.width = `${Math.min(100, Math.max(0, progress))}%`;
+            if (currentPointsEl) currentPointsEl.textContent = currentPoints;
+            if (nextRankPointsEl) nextRankPointsEl.textContent = nextRank.minPoints;
+            if (nextRankNameEl) nextRankNameEl.textContent = nextRank.name;
+        } else {
+            if (progressBar) progressBar.style.width = '100%';
+            if (currentPointsEl) currentPointsEl.textContent = currentPoints;
+            if (nextRankPointsEl) nextRankPointsEl.textContent = '';
+            if (nextRankNameEl) nextRankNameEl.textContent = 'Máximo alcançado!';
+        }
+
+        // Populate rank list
+        const rankList = document.getElementById('rank-list');
+        if (rankList) {
+            rankList.innerHTML = ranks.map(rank => {
+                const isCurrent = rank.name === currentRank.name;
+                const isUnlocked = rank.minPoints <= currentPoints;
+                
+                return `
+                    <li class="rank-item ${isCurrent ? 'current' : ''} ${isUnlocked ? 'unlocked' : 'locked'}">
+                        <div class="rank-icon">
+                            ${isUnlocked ? '<i class="fas fa-unlock"></i>' : '<i class="fas fa-lock"></i>'}
+                        </div>
+                        <div class="rank-info">
+                            <span class="rank-name">${rank.name}</span>
+                            <span class="rank-points">${rank.minPoints} pontos</span>
+                        </div>
+                        ${isCurrent ? '<span class="current-badge">Atual</span>' : ''}
+                    </li>
+                `;
+            }).join('');
+        }
+    } catch (error) {
+        console.error('Error loading ranking data:', error);
+        showToast('Erro ao carregar informações de ranking', 'error');
     }
 }
 
