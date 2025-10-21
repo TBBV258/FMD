@@ -3,9 +3,151 @@
     const messagesEl = () => document.getElementById('chat-messages');
     const inputEl = () => document.getElementById('chat-input-field');
     const sendBtn = () => document.getElementById('send-message');
+    const chatsContainer = document.getElementById('chats-container');
 
     let userLocation = null;
     let watchId = null;
+    
+    // Initialize chat history tab
+    function initChatHistoryTab() {
+        // Tab switching
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Update active tab button
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                // Show corresponding tab content
+                const tabId = button.getAttribute('data-tab');
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.getElementById(tabId).classList.add('active');
+                
+                // Load chat history if chats tab is active
+                if (tabId === 'chats-tab') {
+                    loadChatHistoryList();
+                }
+            });
+        });
+        
+        // Initial load if chats tab is active
+        if (document.querySelector('.tab-btn[data-tab="chats-tab"]')?.classList.contains('active')) {
+            loadChatHistoryList();
+        }
+    }
+    
+    // Load chat history list for the notifications tab
+    async function loadChatHistoryList() {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+            
+            // Show loading state
+            const container = document.getElementById('chats-container');
+            container.innerHTML = `
+                <div class="loading-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Carregando conversas...</p>
+                </div>`;
+            
+            // Get all unique chat threads where the current user is either sender or receiver
+            const { data: chatThreads, error } = await supabase
+                .from('messages')
+                .select('document_id, document:documents(title, document_type), receiver_id, sender_id, content, created_at, profiles!messages_sender_id_fkey(display_name, avatar_url)')
+                .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+                .order('created_at', { ascending: false });
+                
+            if (error) throw error;
+            
+            // Group messages by document_id to create chat threads
+            const threads = {};
+            chatThreads.forEach(msg => {
+                const otherUserId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
+                const threadId = msg.document_id || `user_${otherUserId}`;
+                
+                if (!threads[threadId]) {
+                    threads[threadId] = {
+                        documentId: msg.document_id,
+                        documentTitle: msg.document?.title || 'Chat Privado',
+                        documentType: msg.document?.document_type || 'private',
+                        otherUserId: otherUserId,
+                        otherUserName: msg.profiles?.display_name || 'Utilizador',
+                        otherUserAvatar: msg.profiles?.avatar_url || null,
+                        lastMessage: msg.content,
+                        lastMessageTime: msg.created_at,
+                        unreadCount: 0 // You can implement unread count logic if needed
+                    };
+                }
+            });
+            
+            // Display chat threads
+            if (Object.keys(threads).length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-comments"></i>
+                        <p data-i18n="notifications.no_chats">Nenhuma conversa recente</p>
+                    </div>`;
+                return;
+            }
+            
+            const threadsHtml = Object.values(threads)
+                .sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime))
+                .map(thread => `
+                    <div class="chat-item" 
+                         data-document-id="${thread.documentId || ''}" 
+                         data-receiver-id="${thread.otherUserId}">
+                        <img src="${thread.otherUserAvatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(thread.otherUserName) + '&background=random'}" 
+                             alt="${thread.otherUserName}" 
+                             class="chat-avatar"
+                             onerror="this.src='https://ui-avatars.com/api/?name='+encodeURIComponent('${thread.otherUserName}')+''">
+                        <div class="chat-info">
+                            <div class="chat-header">
+                                <h4 class="chat-name">${thread.otherUserName}</h4>
+                                <span class="chat-time">${formatTimeAgo(thread.lastMessageTime)}</span>
+                            </div>
+                            <p class="chat-preview">${thread.documentTitle}</p>
+                        </div>
+                        ${thread.unreadCount > 0 ? `<span class="chat-unread">${thread.unreadCount}</span>` : ''}
+                    </div>`)
+                .join('');
+                
+            container.innerHTML = threadsHtml;
+            
+            // Add click handlers to open chat
+            container.querySelectorAll('.chat-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const documentId = item.getAttribute('data-document-id');
+                    const receiverId = item.getAttribute('data-receiver-id');
+                    const title = item.querySelector('.chat-name').textContent;
+                    openChatModal(documentId, title, receiverId);
+                });
+            });
+            
+        } catch (error) {
+            console.error('Error loading chat history:', error);
+            const container = document.getElementById('chats-container');
+            container.innerHTML = `
+                <div class="empty-state error">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <p>Erro ao carregar conversas. Tente novamente mais tarde.</p>
+                </div>`;
+        }
+    }
+    
+    // Format time as "X minutes/hours/days ago"
+    function formatTimeAgo(timestamp) {
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diffInSeconds = Math.floor((now - date) / 1000);
+        
+        if (diffInSeconds < 60) return 'Agora mesmo';
+        if (diffInSeconds < 3600) return `Há ${Math.floor(diffInSeconds / 60)} min`;
+        if (diffInSeconds < 86400) return `Há ${Math.floor(diffInSeconds / 3600)} h`;
+        if (diffInSeconds < 604800) return `Há ${Math.floor(diffInSeconds / 86400)} d`;
+        return date.toLocaleDateString();
+    }
 
     // Location utilities
     function initializeLocation() {
@@ -84,22 +226,32 @@
                 </div>
             `;
         } else {
-            // Regular message styling
-            div.className = `chat-message ${isOwn ? 'own' : 'other'}`;
+            // Regular message with profile picture
             const time = new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const location = msg.location ? ` • ${formatDistance(getDistanceFromUser(msg.location.lat, msg.location.lng))}` : '';
-            
-            // Get sender name
             const senderName = isOwn ? 'You' : (msg.sender_name || 'Unknown User');
+            const avatarUrl = msg.sender_avatar || `data:image/svg+xml,%3csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='40' height='40' fill='%23ddd'/%3e%3ctext x='50%25' y='50%25' font-size='20' text-anchor='middle' alignment-baseline='middle'%3e${senderName.charAt(0).toUpperCase()}%3c/text%3e%3c/svg%3e`;
             
+            div.className = `chat-message ${isOwn ? 'self' : ''}`;
             div.innerHTML = `
-                <div class="message-header">
-                    <span class="sender-name">${senderName}</span>
-                    <span class="message-time">${time}</span>
-                    <span class="message-location">${location}</span>
+                <div class="message-avatar">
+                    <img src="${avatarUrl}" alt="${senderName}'s avatar">
                 </div>
-                <div class="message-content">${msg.message}</div>
+                <div class="message-content">
+                    <div class="message-bubble">${msg.message}</div>
+                    <div class="message-info">
+                        <span class="message-time">${time}</span>
+                        ${location ? `<span class="message-location">${location}</span>` : ''}
+                    </div>
+                </div>
             `;
+            
+            // Update chat header with user info when receiving first message
+            if (!isOwn && document.querySelector('#chat-user-avatar img')) {
+                document.querySelector('#chat-user-avatar img').src = avatarUrl;
+                document.querySelector('#chat-user-avatar img').alt = `${senderName}'s avatar`;
+                document.querySelector('#chat-modal-title').textContent = senderName;
+            }
         }
         
         // Add data attributes for message tracking
@@ -504,6 +656,31 @@
                 
                 console.log('Initializing chat with document ID:', documentId, 'and receiver ID:', receiverId);
                 this.init(documentId);
+
+                // Wire header quick actions after modal is open
+                const openMapsBtn = document.getElementById('chat-open-maps');
+                const shareLocationBtn = document.getElementById('chat-share-location');
+                if (openMapsBtn) {
+                    openMapsBtn.onclick = () => {
+                        const loc = this.getUserLocation();
+                        if (loc && window.mapHelper) {
+                            window.mapHelper.open(loc.lat, loc.lng);
+                        } else {
+                            window.showToast?.('Localização indisponível', 'warning');
+                        }
+                    };
+                }
+                if (shareLocationBtn) {
+                    shareLocationBtn.onclick = () => {
+                        const loc = this.getUserLocation();
+                        if (!loc) {
+                            window.showToast?.('Localização indisponível', 'warning');
+                            return;
+                        }
+                        const link = `https://www.google.com/maps?q=${loc.lat},${loc.lng}`;
+                        this.send(`Minha localização: ${link}`);
+                    };
+                }
                 
                 // Mark messages as read when opening chat
                 if (window.chatsApi && user && receiverId) {
@@ -525,64 +702,80 @@
             }
             console.log('Chat initialization complete');
         },
-
-        closeChatModal() {
-            const modal = document.getElementById('chat-modal');
-            modal.style.display = 'none';
-            this.unsubscribe();
-        },
-
         appendMessage,
+        loadChatHistoryList,
         
-        unsubscribe() {
-            if (subscription && subscription.unsubscribe) {
-                subscription.unsubscribe();
+        unsubscribe: function() {
+            if (subscription) {
+                supabase.removeSubscription(subscription);
+                subscription = null;
             }
-            subscription = null;
-            
-            if (watchId) {
+            if (watchId !== null) {
                 navigator.geolocation.clearWatch(watchId);
                 watchId = null;
             }
         },
-
+        
         // Location utilities
-        getUserLocation() {
+        getUserLocation: function() {
             return userLocation;
         },
-
+        
         formatDistance,
-        getDistanceFromUser
+        getDistanceFromUser,
+        
+        // Initialize chat history tab
+        initChatHistoryTab,
+        loadChatHistoryList
     };
-
-    // Initialize chat modal controls
+    
+    // Initialize chat history tab when DOM is loaded
     document.addEventListener('DOMContentLoaded', () => {
-        console.log('DOM fully loaded, setting up chat modal...');
-        const modal = document.getElementById('chat-modal');
-        if (!modal) {
-            console.error('Chat modal element not found!');
-            return;
+        if (window.chat) {
+            window.chat.initChatHistoryTab();
         }
-        
-        const closeBtn = modal.querySelector('.close');
-        
-        if (closeBtn) {
-            closeBtn.addEventListener('click', () => {
-                console.log('Close button clicked');
-                window.chat.closeChatModal();
-            });
-        } else {
-            console.warn('Close button not found in chat modal');
-        }
-        
-        // Close modal when clicking outside
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                console.log('Clicked outside modal, closing...');
+    });
+    
+    // Make chat functions available globally
+    window.chat = window.chat || {};
+    window.chat.initChatHistoryTab = initChatHistoryTab;
+    window.chat.loadChatHistoryList = loadChatHistoryList;
+    
+    return window.chat;
+})();
+
+// Initialize chat modal controls
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM fully loaded, setting up chat modal...');
+    const modal = document.getElementById('chat-modal');
+    if (!modal) {
+        console.error('Chat modal element not found!');
+        return;
+    }
+    
+    const closeBtn = modal.querySelector('.close');
+    
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            console.log('Close button clicked');
+            if (window.chat && window.chat.closeChatModal) {
                 window.chat.closeChatModal();
             }
         });
-        
-        console.log('Chat module setup complete');
+    }
+    
+    // Initialize chat history tab if on notifications page
+    if (window.location.hash === '#notificacoes' && window.chat && window.chat.initChatHistoryTab) {
+        window.chat.initChatHistoryTab();
+    }
+    
+    // Close modal when clicking outside
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal && window.chat && window.chat.closeChatModal) {
+            console.log('Clicked outside modal, closing...');
+            window.chat.closeChatModal();
+        }
     });
+    
+    console.log('Chat module setup complete');
 })();

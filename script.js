@@ -17,7 +17,249 @@ const languageSelector = document.getElementById('language-selector');
 // Initialize application
 document.addEventListener('DOMContentLoaded', () => {
     initializeApp();
+    initializeEnhancedFeatures();
 });
+
+// Initialize enhanced features
+function initializeEnhancedFeatures() {
+    // Initialize tutorial system
+    if (window.tutorialManager) {
+        setupTutorialTriggers();
+    }
+    
+    // Initialize search functionality
+    if (window.searchManager) {
+        setupSearchFunctionality();
+    }
+    
+    // Initialize mobile features
+    if (window.mobileManager) {
+        setupMobileFeatures();
+    }
+    
+    // Setup error handling
+    if (window.ErrorHandler) {
+        setupGlobalErrorHandling();
+    }
+    
+    // Setup loading states
+    if (window.loadingManager) {
+        setupLoadingStates();
+    }
+}
+
+// Setup tutorial triggers
+function setupTutorialTriggers() {
+    const startTutorialBtn = document.getElementById('start-tutorial');
+    if (startTutorialBtn) {
+        startTutorialBtn.addEventListener('click', () => {
+            window.tutorialManager.startTutorial('main');
+        });
+    }
+    
+    // Auto-start tutorial for new users
+    const isNewUser = !localStorage.getItem('findmydocs_tutorial_completed');
+    if (isNewUser && window.tutorialManager) {
+        setTimeout(() => {
+            window.tutorialManager.startTutorial('main');
+        }, 2000);
+    }
+}
+
+// Setup search functionality
+function setupSearchFunctionality() {
+    const searchInput = document.getElementById('search-input');
+    const suggestionsContainer = document.getElementById('search-suggestions');
+    
+    if (searchInput && suggestionsContainer) {
+        // Debounced search
+        const debouncedSearch = window.performanceManager.debounce(async (query) => {
+            if (query.length >= 2) {
+                const suggestions = window.searchManager.getSearchSuggestions(query);
+                showSearchSuggestions(suggestions);
+            } else {
+                hideSearchSuggestions();
+            }
+        }, 300, 'search-suggestions');
+        
+        searchInput.addEventListener('input', (e) => {
+            debouncedSearch(e.target.value);
+        });
+        
+        // Handle search submission
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                performSearch(e.target.value);
+                hideSearchSuggestions();
+            }
+        });
+        
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!searchInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
+                hideSearchSuggestions();
+            }
+        });
+    }
+    
+    // Setup filter changes
+    const filterElements = document.querySelectorAll('#feed-filter-type, #feed-filter-status, #feed-filter-location, #feed-filter-distance');
+    filterElements.forEach(element => {
+        element.addEventListener('change', () => {
+            performSearch();
+        });
+    });
+}
+
+// Show search suggestions
+function showSearchSuggestions(suggestions) {
+    const suggestionsContainer = document.getElementById('search-suggestions');
+    if (!suggestionsContainer || suggestions.length === 0) return;
+    
+    suggestionsContainer.innerHTML = suggestions.map(suggestion => 
+        `<div class="search-suggestion" data-suggestion="${suggestion}">${suggestion}</div>`
+    ).join('');
+    
+    suggestionsContainer.style.display = 'block';
+    
+    // Add click handlers
+    suggestionsContainer.querySelectorAll('.search-suggestion').forEach(suggestion => {
+        suggestion.addEventListener('click', () => {
+            const searchInput = document.getElementById('search-input');
+            searchInput.value = suggestion.dataset.suggestion;
+            performSearch(suggestion.dataset.suggestion);
+            hideSearchSuggestions();
+        });
+    });
+}
+
+// Hide search suggestions
+function hideSearchSuggestions() {
+    const suggestionsContainer = document.getElementById('search-suggestions');
+    if (suggestionsContainer) {
+        suggestionsContainer.style.display = 'none';
+    }
+}
+
+// Perform search
+async function performSearch(query = null) {
+    const searchInput = document.getElementById('search-input');
+    const searchQuery = query || searchInput?.value || '';
+    
+    const filters = {
+        type: document.getElementById('feed-filter-type')?.value || '',
+        status: document.getElementById('feed-filter-status')?.value || '',
+        location: document.getElementById('feed-filter-location')?.value || '',
+        distance: document.getElementById('feed-filter-distance')?.value || ''
+    };
+    
+    // Show loading state
+    if (window.loadingManager) {
+        window.loadingManager.showLoading('feed-content', 'skeleton', { template: 'feed' });
+    }
+    
+    try {
+        const results = await window.searchManager.search(searchQuery, filters);
+        displaySearchResults(results);
+    } catch (error) {
+        if (window.ErrorHandler) {
+            window.ErrorHandler.handle(error, 'search_execution');
+        }
+    }
+}
+
+// Display search results
+function displaySearchResults(results) {
+    const feedContent = document.getElementById('feed-content');
+    if (!feedContent) return;
+    
+    if (results.results.length === 0) {
+        feedContent.innerHTML = '<p class="text-center muted">Nenhum documento encontrado com os critérios de pesquisa.</p>';
+        return;
+    }
+    
+    feedContent.innerHTML = '';
+    results.results.forEach(doc => {
+        const card = createFeedCard(doc);
+        feedContent.appendChild(card);
+    });
+}
+
+// Setup mobile features
+function setupMobileFeatures() {
+    // Add mobile-specific event listeners
+    if (window.mobileManager && window.mobileManager.isMobile) {
+        // Setup swipe navigation
+        setupSwipeNavigation();
+        
+        // Setup mobile-specific UI adjustments
+        setupMobileUI();
+    }
+}
+
+// Setup swipe navigation
+function setupSwipeNavigation() {
+    // This is handled by the MobileManager class
+    console.log('Swipe navigation enabled for mobile devices');
+}
+
+// Setup mobile UI
+function setupMobileUI() {
+    // Add mobile-specific classes and behaviors
+    document.body.classList.add('mobile-enhanced');
+}
+
+// Setup global error handling
+function setupGlobalErrorHandling() {
+    // Wrap existing functions with error handling
+    const originalLoadDocuments = window.loadDocuments;
+    if (originalLoadDocuments) {
+        window.loadDocuments = async function() {
+            try {
+                await originalLoadDocuments();
+            } catch (error) {
+                window.ErrorHandler.handle(error, 'load_documents');
+            }
+        };
+    }
+    
+    const originalLoadFeed = window.loadFeed;
+    if (originalLoadFeed) {
+        window.loadFeed = async function() {
+            try {
+                await originalLoadFeed();
+            } catch (error) {
+                window.ErrorHandler.handle(error, 'load_feed');
+            }
+        };
+    }
+}
+
+// Setup loading states
+function setupLoadingStates() {
+    // Add loading states to existing functions
+    const originalShowSection = window.showSection;
+    if (originalShowSection) {
+        window.showSection = function(sectionId) {
+            // Show loading for section-specific content
+            if (window.loadingManager) {
+                const contentElement = document.getElementById(sectionId);
+                if (contentElement) {
+                    window.loadingManager.showLoading(sectionId, 'skeleton');
+                }
+            }
+            
+            originalShowSection(sectionId);
+            
+            // Hide loading after a short delay
+            setTimeout(() => {
+                if (window.loadingManager) {
+                    window.loadingManager.hideLoading(sectionId);
+                }
+            }, 500);
+        };
+    }
+}
 
 function waitForTranslations(timeout = 3000) {
     return new Promise((resolve, reject) => {
@@ -38,14 +280,9 @@ function waitForTranslations(timeout = 3000) {
 async function initializeApp() {
     try {
         await waitForTranslations();
-        
-        // Initialize ranking modal
-        if (typeof initializeRankingModal === 'function') {
-            initializeRankingModal();
-        }
     } catch (error) {
-        console.error('Error initializing app:', error);
-        // We can still try to run the app, but some features might be broken.
+        console.error(error);
+        // We can still try to run the app, but translations will be broken.
     }
 
     // Check for authenticated user
@@ -54,6 +291,7 @@ async function initializeApp() {
             const user = await window.authApi.getCurrentUser();
             if (user) {
                 currentUser = user;
+                window.currentUser = user; // Make globally available
                 isLoggedIn = true;
             } else {
                 // No authenticated user found
@@ -126,7 +364,11 @@ function setupLanguage() {
         languageSelector.value = savedLanguage;
     }
     currentLanguage = savedLanguage;
+    // Set <html lang> for a11y and SEO
+    try { document.documentElement.setAttribute('lang', currentLanguage); } catch (e) {}
     applyTranslations(savedLanguage);
+    // Start translation observer for dynamically injected content
+    setupTranslationObserver();
 }
 
 function applyTranslations(lang) {
@@ -135,63 +377,98 @@ function applyTranslations(lang) {
         return;
     }
 
+    const dict = window.translations[lang];
     const elements = document.querySelectorAll('[data-i18n]');
     elements.forEach(el => {
-        const key = el.dataset.i18n;
-        const translation = window.translations[lang][key];
-        if (translation) {
-            el.textContent = translation;
-        } else {
-            console.warn(`Translation key '${key}' not found for language '${lang}'.`);
-        }
+        const expr = el.dataset.i18n;
+        if (!expr) return;
+        // Support syntax: "key" or "[attr]key" or multiple mappings split by ';'
+        const parts = expr.split(';').map(s => s.trim()).filter(Boolean);
+        if (parts.length === 0) return;
+        parts.forEach(p => {
+            const match = p.match(/^\[(.+?)\](.+)$/);
+            if (match) {
+                const attr = match[1];
+                const key = match[2];
+                const val = dict[key];
+                if (val) el.setAttribute(attr, val);
+                else console.warn(`Translation key '${key}' not found for '${lang}'.`);
+            } else {
+                const key = p;
+                const val = dict[key];
+                if (val !== undefined) el.textContent = val;
+                else console.warn(`Translation key '${key}' not found for '${lang}'.`);
+            }
+        });
     });
 }
 
-async function loadUserData() {
+// Observe DOM changes to auto-translate newly added nodes with data-i18n
+let translationObserver = null;
+let translationObserverTimer = null;
+function setupTranslationObserver() {
+    if (translationObserver) return;
     try {
-        // Load user documents
-        loadDocuments();
+        translationObserver = new MutationObserver(() => {
+            // Debounce to avoid excessive calls during large DOM updates
+            if (translationObserverTimer) clearTimeout(translationObserverTimer);
+            translationObserverTimer = setTimeout(() => {
+                applyTranslations(currentLanguage);
+            }, 50);
+        });
+        translationObserver.observe(document.body, { childList: true, subtree: true });
+    } catch (e) {
+        console.warn('Translation observer not initialized:', e);
+    }
+}
+
+function loadUserData() {
+    if (!currentUser) return;
+    
+    // Update welcome message with user's name
+    const welcomeTitles = document.querySelectorAll('.welcome-title, .welcome-tips h2, .welcome-message');
+    if (welcomeTitles.length > 0) {
+        // Get user's display name from their profile or email
+        const userDisplayName = currentUser.user_metadata?.full_name || 
+                              currentUser.identities?.[0]?.identity_data?.name ||
+                              currentUser.email?.split('@')[0] || 
+                              'Usuário';
         
-        // Update profile info
-        updateProfileInfo();
+        // Update all welcome messages on the page
+        welcomeTitles.forEach(title => {
+            title.textContent = `Bem-vindo, ${userDisplayName}!`;
+        });
         
-        // Update document count
-        updateDocumentCount();
-        
-        // Get current user
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-        
-        // Fetch user profile to get the full name
-        const { data: profile, error } = await supabase
-            .from('user_profiles')
-            .select('full_name')
-            .eq('id', user.id)
-            .single();
-            
-        // Update welcome message with user's name
-        const welcomeElement = document.querySelector('[data-i18n="welcome.title"]');
-        if (welcomeElement) {
-            const userName = profile?.full_name || user.email?.split('@')[0] || 'Usuário';
-            welcomeElement.textContent = `Bem-vindo, ${userName}!`;
-        }
-        
-    } catch (error) {
-        console.error('Error loading user data:', error);
-        
-        // Fallback to show at least the email if available
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                const welcomeElement = document.querySelector('[data-i18n="welcome.title"]');
-                if (welcomeElement) {
-                    const userName = user.email?.split('@')[0] || 'Usuário';
-                    welcomeElement.textContent = `Bem-vindo, ${userName}!`;
-                }
-            }
-        } catch (e) {
-            console.error('Error in fallback user name display:', e);
-        }
+        // Also update any elements that might be using the username directly
+        const usernameDisplays = document.querySelectorAll('[data-username]');
+        usernameDisplays.forEach(el => {
+            el.textContent = userDisplayName;
+        });
+    }
+    
+    // Load user documents
+    loadDocuments();
+    
+    // Load user profile
+    loadProfile();
+}
+
+// Add this function to update the welcome message when the user's profile is loaded
+function updateWelcomeMessage() {
+    if (!currentUser) return;
+    
+    const userName = currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'Usuário';
+    
+    // Update welcome title in the profile section
+    const welcomeTitle = document.querySelector('.welcome-title');
+    if (welcomeTitle) {
+        welcomeTitle.textContent = `Bem-vindo, ${userName}!`;
+    }
+    
+    // Update welcome message in the tips section
+    const welcomeTipsTitle = document.querySelector('.welcome-tips h2');
+    if (welcomeTipsTitle) {
+        welcomeTipsTitle.textContent = `Bem-vindo, ${userName}!`;
     }
 }
 
@@ -214,6 +491,17 @@ function initializeForms() {
         addDocumentBtn.addEventListener('click', () => {
             showAddDocumentModal();
         });
+    }
+
+    // Autofocus chat input when chat modal opens
+    const chatModal = document.getElementById('chat-modal');
+    if (chatModal) {
+        const observer = new MutationObserver(() => {
+            if (getComputedStyle(chatModal).display !== 'none') {
+                setTimeout(() => document.getElementById('chat-input-field')?.focus(), 50);
+            }
+        });
+        observer.observe(chatModal, { attributes: true, attributeFilter: ['style', 'class'] });
     }
 }
 
@@ -239,6 +527,9 @@ function showSection(sectionId) {
     
     // Load section-specific data
     loadSectionData(sectionId);
+
+    // Re-apply translations after section switch (new content may appear)
+    applyTranslations(currentLanguage);
 }
 
 function loadSectionData(sectionId) {
@@ -277,6 +568,8 @@ async function loadDocuments() {
         console.error('Error loading documents:', error);
         grid.innerHTML = '<p class="text-center error">Erro ao carregar documentos</p>';
     }
+    // Ensure any newly injected elements get translated
+    applyTranslations(currentLanguage);
 }
 
 function createDocumentCard(doc) {
@@ -286,46 +579,19 @@ function createDocumentCard(doc) {
     
     const statusClass = doc.status === 'lost' ? 'danger' : doc.status === 'found' ? 'success' : 'primary';
     
-    const isOwnDocument = doc.user_id === (window.currentUser?.id || null);
-    
     div.innerHTML = `
         <div class="card-body">
-            <div style="display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 0.5rem;">
-                <div class="document-icon" style="background: ${statusClass === 'danger' ? 'rgba(220, 53, 69, 0.1)' : 'rgba(40, 167, 69, 0.1)'}; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                    <i class="fas ${statusClass === 'danger' ? 'fa-exclamation-triangle' : 'fa-check-circle'}" style="font-size: 1.2rem; color: ${statusClass === 'danger' ? 'var(--danger-color)' : 'var(--success-color)'};"></i>
-                </div>
-                <div style="flex: 1;">
-                    <h4 style="margin: 0 0 0.25rem 0; font-size: 1.1rem;">${doc.title}</h4>
-                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-                        <span class="status-badge" style="background: ${statusClass === 'danger' ? 'rgba(220, 53, 69, 0.1)' : 'rgba(40, 167, 69, 0.1)'}; color: ${statusClass === 'danger' ? 'var(--danger-color)' : 'var(--success-color)'}; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.75rem; font-weight: 500;">
-                            ${doc.status === 'lost' ? 'Perdido' : 'Encontrado'}
-                        </span>
-                        <span style="font-size: 0.8rem; color: var(--text-light);">${doc.type}</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="card-actions" style="margin-top: 0.75rem; display: flex; gap: 0.5rem;">
-                <button class="btn small ${statusClass} view-doc" data-id="${doc.id}" style="flex: 1;">
-                    <i class="fas fa-eye"></i> Ver Detalhes
-                </button>
-                
-                ${!isOwnDocument ? `
-                <button class="btn small primary contact-reporter-btn" data-doc-id="${doc.id}" data-reporter-id="${doc.user_id}" style="flex: 1;">
-                    <i class="fas fa-comments"></i> Chat
-                </button>
-                ` : ''}
-                
-                <button class="btn small danger delete-doc" data-id="${doc.id}" style="width: auto; padding: 0.4rem 0.8rem;">
-                    <i class="fas fa-trash"></i>
-                </button>
+            <h4>${doc.title}</h4>
+            <p class="muted">Tipo: ${doc.type} • <span data-i18n="documents.status_label">Status</span>: <span class="status-${doc.status}" data-i18n="status.${doc.status}">${doc.status}</span></p>
+            <div class="card-actions">
+                <button class="btn small ${statusClass} view-doc" data-id="${doc.id}" data-i18n="actions.view">Ver</button>
+                <button class="btn danger small delete-doc" data-id="${doc.id}" data-i18n="actions.delete">Excluir</button>
             </div>
         </div>`;
     
     // Add event listeners
     const viewBtn = div.querySelector('.view-doc');
     const deleteBtn = div.querySelector('.delete-doc');
-    const contactBtn = div.querySelector('.contact-reporter-btn');
     
     if (viewBtn) {
         viewBtn.addEventListener('click', () => viewDocument(doc));
@@ -333,36 +599,6 @@ function createDocumentCard(doc) {
     
     if (deleteBtn) {
         deleteBtn.addEventListener('click', () => deleteDocument(doc.id));
-    }
-    
-    if (contactBtn) {
-        contactBtn.addEventListener('click', (e) => {
-            console.log('Contact button clicked');
-            const docId = e.target.dataset.docId;
-            const reporterId = e.target.dataset.reporterId;
-            
-            console.log('Document ID:', docId, 'Reporter ID:', reporterId);
-            
-            if (!docId || !reporterId) {
-                console.error('Missing document or reporter ID for chat.');
-                return;
-            }
-            
-            console.log('Checking chat module...');
-            console.log('window.chat:', window.chat);
-            console.log('window.chat.openChatModal:', window.chat?.openChatModal);
-            
-            if (window.chat && typeof window.chat.openChatModal === 'function') {
-                console.log('Opening chat modal...');
-                const docTitle = e.target.closest('.document-card').querySelector('h4').textContent;
-                console.log('Document title:', docTitle);
-                window.chat.openChatModal(docId, docTitle, reporterId);
-                console.log('Chat modal should be open now');
-            } else {
-                console.error('Chat module not available or openChatModal is not a function');
-                showToast('A funcionalidade de chat não está disponível.', 'error');
-            }
-        });
     }
     
     return div;
@@ -384,15 +620,23 @@ async function loadFeed() {
             return;
         }
 
-        // Get all unique user IDs from the documents
-        const userIds = [...new Set(documents.map(doc => doc.user_id))];
+        // Apply filters
+        const filteredDocuments = applyFeedFilters(documents);
+
+        if (filteredDocuments.length === 0) {
+            feedContent.innerHTML = '<p class="text-center muted">Nenhum documento encontrado com os filtros aplicados.</p>';
+            return;
+        }
+
+        // Get all unique user IDs from the filtered documents
+        const userIds = [...new Set(filteredDocuments.map(doc => doc.user_id))];
         
         // Fetch the profiles for these users
         const profiles = await window.profilesApi.getProfilesByIds(userIds);
         const profilesMap = new Map(profiles.map(p => [p.id, p]));
 
         feedContent.innerHTML = ''; // Clear loading state
-        documents.forEach(doc => {
+        filteredDocuments.forEach(doc => {
             const reporterProfile = profilesMap.get(doc.user_id);
             const card = createFeedCard(doc, reporterProfile);
             feedContent.appendChild(card);
@@ -401,6 +645,64 @@ async function loadFeed() {
     } catch (error) {
         console.error('Error loading feed:', error);
         feedContent.innerHTML = '<p class="text-center error">Não foi possível carregar o feed. Tente novamente mais tarde.</p>';
+    }
+    // Translate dynamic feed cards
+    applyTranslations(currentLanguage);
+}
+
+function applyFeedFilters(documents) {
+    const typeFilter = document.getElementById('feed-filter-type')?.value || '';
+    const statusFilter = document.getElementById('feed-filter-status')?.value || '';
+
+    return documents.filter(doc => {
+        const typeMatch = !typeFilter || doc.type === typeFilter;
+        const statusMatch = !statusFilter || doc.status === statusFilter;
+        return typeMatch && statusMatch;
+    });
+}
+
+/**
+ * Gets the number of people the user has helped by returning documents
+ */
+async function getHelpedCount(userId) {
+    try {
+        if (!window.documentsApi) return 0;
+        
+        // Get all documents found by this user
+        const foundDocs = await window.documentsApi.getByFinder(userId);
+        if (!foundDocs || foundDocs.length === 0) return 0;
+        
+        // Count how many have been returned to their owners
+        let helpedCount = 0;
+        for (const doc of foundDocs) {
+            if (doc.status === 'returned' || doc.returned_to_owner) {
+                helpedCount++;
+            }
+        }
+        
+        return helpedCount;
+    } catch (error) {
+        console.error('Error getting helped count:', error);
+        return 0;
+    }
+}
+
+/**
+ * Calculates the total points for a user
+ */
+async function calculateUserPoints(userId) {
+    try {
+        if (!window.pointsApi) return 0;
+        
+        // Get all points transactions for the user
+        const transactions = await window.pointsApi.getUserTransactions(userId);
+        if (!transactions || transactions.length === 0) return 0;
+        
+        // Sum up all points (positive and negative)
+        return transactions.reduce((total, txn) => total + txn.points, 0);
+    } catch (error) {
+        console.error('Error calculating user points:', error);
+        return 0;
     }
 }
 
@@ -433,60 +735,23 @@ function createFeedCard(doc, reporterProfile) {
 
     const isOwnDocument = doc.user_id === currentUser?.id;
     const reporterName = reporterProfile?.full_name || 'Utilizador Anónimo';
-    const statusText = doc.status === 'lost' ? 'perdido' : 'encontrado';
-    const location = doc.location?.address || 'local não especificado';
+    const location = doc.location?.address || '';
 
     // Determine which buttons to show
     let actionsHtml = '';
     if (isOwnDocument) {
-        actionsHtml = `
-            <button class="btn small secondary view-doc" data-id="${doc.id}">
-                <i class="fas fa-eye"></i> Ver Detalhes
-            </button>`;
-            actionsHtml = `
-            <button class="btn small primary contact-reporter-btn" data-doc-id="${doc.id}" data-reporter-id="${doc.user_id}">
-                <i class="fas fa-comment-dots"></i> Contactar
-            </button>`;
+        actionsHtml = `<button class="btn small secondary view-doc" data-id="${doc.id}" data-i18n="actions.details">Ver Detalhes</button>`;
     } else {
-        actionsHtml = `
-            <button class="btn small primary contact-reporter-btn" data-doc-id="${doc.id}" data-reporter-id="${doc.user_id}">
-                <i class="fas fa-comment-dots"></i> Contactar
-            </button>`;
+        actionsHtml = `<button class="btn small primary contact-reporter-btn" data-doc-id="${doc.id}" data-reporter-id="${doc.user_id}" data-i18n="actions.contact">Contactar</button>`;
     }
 
     div.innerHTML = `
         <div class="document-card">
             <div class="card-body">
-                <div style="display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 0.75rem;">
-                    <div class="document-icon" style="background: ${doc.status === 'lost' ? 'rgba(220, 53, 69, 0.1)' : 'rgba(40, 167, 69, 0.1)'}; width: 48px; height: 48px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                        <i class="fas ${doc.status === 'lost' ? 'fa-exclamation-circle' : 'fa-check-circle'}" style="font-size: 1.5rem; color: ${doc.status === 'lost' ? 'var(--danger-color)' : 'var(--success-color)'};"></i>
-                    </div>
-                    <div style="flex: 1;">
-                        <h4>${doc.title}</h4>
-                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-                            <span class="status-${doc.status}" style="font-weight: 500; font-size: 0.8rem; background: ${doc.status === 'lost' ? 'rgba(220, 53, 69, 0.1)' : 'rgba(40, 167, 69, 0.1)'}; color: ${doc.status === 'lost' ? 'var(--danger-color)' : 'var(--success-color)'}; padding: 0.2rem 0.5rem; border-radius: 12px;">
-                                ${doc.status === 'lost' ? 'Perdido' : 'Encontrado'}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.25rem;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <i class="fas fa-map-marker-alt" style="color: var(--text-light); font-size: 0.9rem; width: 16px; text-align: center;"></i>
-                        <span style="font-size: 0.85rem; color: var(--text-light);">${location}</span>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <i class="fas fa-user" style="color: var(--text-light); font-size: 0.9rem; width: 16px; text-align: center;"></i>
-                        <span style="font-size: 0.85rem; color: var(--text-light);">Reportado por: <strong>${reporterName}</strong></span>
-                    </div>
-                    ${doc.created_at ? `
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <i class="far fa-clock" style="color: var(--text-light); font-size: 0.9rem; width: 16px; text-align: center;"></i>
-                        <span style="font-size: 0.8rem; color: var(--text-light);">${new Date(doc.created_at).toLocaleDateString('pt-PT')}</span>
-                    </div>` : ''}
-                </div>
-                
+                <h4>${doc.title}</h4>
+                <p class="muted"><span data-i18n="feed.status">Status</span>: <span class="status-${doc.status}" data-i18n="status.${doc.status}">${doc.status}</span></p>
+                <p class="muted"><span data-i18n="feed.location">Local</span>: ${location || '<span class="muted" data-i18n="feed.location">Local</span>'}</p>
+                <p class="muted"><span data-i18n="feed.reported_by">Reportado por</span>: ${reporterName}</p>
                 <div class="card-actions">
                     ${actionsHtml}
                 </div>
@@ -500,68 +765,18 @@ function loadProfile() {
     updateProfileInfo();
 }
 
-async function updateProfileInfo() {
+function updateProfileInfo() {
     const profileName = document.getElementById('profile-name');
     const profileEmail = document.getElementById('profile-email');
     const statDocuments = document.getElementById('stat-documents');
     const statPoints = document.getElementById('stat-points');
     const statHelped = document.getElementById('stat-helped');
     
-    try {
-        // Get current user
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError) throw userError;
-        if (!user) return;
-        
-        // Set user info
-        if (profileName) profileName.textContent = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuário';
-        if (profileEmail) profileEmail.textContent = user.email || '';
-        
-        // Fetch user's documents count
-        const { count: docCount, error: docError } = await supabase
-            .from('documents')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', user.id);
-            
-        if (!docError && statDocuments) {
-            statDocuments.textContent = docCount || '0';
-        }
-        
-        // Fetch user's points (assuming you have a user_profiles table with points)
-        const { data: profile, error: profileError } = await supabase
-            .from('user_profiles')
-            .select('points')
-            .eq('id', user.id)
-            .single();
-            
-        if (!profileError && statPoints) {
-            statPoints.textContent = profile?.points || '0';
-        }
-        
-        // Fetch count of people helped (documents found by this user)
-        const { count: helpedCount, error: helpedError } = await supabase
-            .from('documents')
-            .select('*', { count: 'exact', head: true })
-            .eq('found_by', user.id)
-            .not('found_by', 'is', null);
-            
-        if (!helpedError && statHelped) {
-            statHelped.textContent = helpedCount || '0';
-        }
-        
-        // Log any errors that occurred
-        if (docError) console.error('Error fetching document count:', docError);
-        if (profileError) console.error('Error fetching user points:', profileError);
-        if (helpedError) console.error('Error fetching helped count:', helpedError);
-        
-    } catch (error) {
-        console.error('Error in updateProfileInfo:', error);
-        // Fallback to default values if there's an error
-        if (profileName) profileName.textContent = 'Usuário';
-        if (statDocuments) statDocuments.textContent = '0';
-        if (statPoints) statPoints.textContent = '0';
-        if (statHelped) statHelped.textContent = '0';
-    }
+    if (profileName) profileName.textContent = currentUser.name || 'Demo User';
+    if (profileEmail) profileEmail.textContent = currentUser.email || 'demo@example.com';
+    if (statDocuments) statDocuments.textContent = '1';
+    if (statPoints) statPoints.textContent = '250';
+    if (statHelped) statHelped.textContent = '3';
 }
 
 function updateDocumentCount(count = 0) {
@@ -574,13 +789,31 @@ function updateDocumentCount(count = 0) {
 async function handleLostForm(e) {
     e.preventDefault();
     
-    const formData = new FormData(e.target);
+    const address = document.getElementById('lost-location').value.trim();
+    const lat = parseFloat(document.getElementById('lost-lat')?.value || '');
+    const lng = parseFloat(document.getElementById('lost-lng')?.value || '');
+    const phone = document.getElementById('lost-contact')?.value || '';
+
+    // Basic validation
+    if (!address) {
+        showToast('Indique o local onde perdeu o documento', 'warning');
+        return;
+    }
+    if (phone && !/^[- +()0-9]{7,}$/.test(phone)) {
+        showToast('Número de contacto inválido', 'warning');
+        return;
+    }
+
+    const location = Number.isFinite(lat) && Number.isFinite(lng)
+        ? { address, lat, lng }
+        : { address };
+
     const data = {
         userId: currentUser.id,
         title: document.getElementById('lost-title').value,
         type: document.getElementById('lost-type').value,
         status: 'lost',
-        location: { address: document.getElementById('lost-location').value },
+        location,
         fileUrl: ''
     };
     
@@ -603,12 +836,30 @@ async function handleLostForm(e) {
 async function handleFoundForm(e) {
     e.preventDefault();
     
+    const address = document.getElementById('found-location').value.trim();
+    const lat = parseFloat(document.getElementById('found-lat')?.value || '');
+    const lng = parseFloat(document.getElementById('found-lng')?.value || '');
+    const phone = document.getElementById('found-contact')?.value || '';
+
+    if (!address) {
+        showToast('Indique o local onde encontrou o documento', 'warning');
+        return;
+    }
+    if (phone && !/^[- +()0-9]{7,}$/.test(phone)) {
+        showToast('Número de contacto inválido', 'warning');
+        return;
+    }
+
+    const location = Number.isFinite(lat) && Number.isFinite(lng)
+        ? { address, lat, lng }
+        : { address };
+
     const data = {
         userId: currentUser.id,
         title: document.getElementById('found-title').value,
         type: document.getElementById('found-type').value,
         status: 'found',
-        location: { address: document.getElementById('found-location').value },
+        location,
         fileUrl: ''
     };
     
@@ -671,6 +922,7 @@ function changeLanguage(lang) {
     if (languageSelector) {
         languageSelector.value = currentLanguage;
     }
+    try { document.documentElement.setAttribute('lang', currentLanguage); } catch (e) {}
     applyTranslations(lang); // Apply the new language
 }
 
@@ -730,6 +982,7 @@ async function renderProfilePage() {
             if (sessionUser) {
                 user = sessionUser;
                 currentUser = user;
+                window.currentUser = user; // Make globally available
             }
         }
         
@@ -768,10 +1021,22 @@ async function renderProfilePage() {
         // Load user documents
         await loadProfileDocuments(user.id);
         
-        // Update document count
+        // Update document count and helped counter
         const documents = await window.documentsApi.getByUser(user.id);
         const docCount = documents?.length || 0;
         if (profileDocCount) profileDocCount.textContent = docCount.toString();
+        
+        // Update helped counter with real data
+        const helpedCount = await getHelpedCount(user.id);
+        const profileHelped = document.getElementById('profile-helped');
+        if (profileHelped) profileHelped.textContent = helpedCount.toString();
+        
+        // Update points
+        const profilePoints = document.getElementById('profile-points');
+        if (profilePoints) {
+            const points = await calculateUserPoints(user.id);
+            profilePoints.textContent = points.toString();
+        }
         
         // Update points display
         const userPoints = userProfile?.points || 0;
@@ -808,6 +1073,7 @@ async function loadProfileDocuments(userId) {
         console.error('Error loading profile documents:', error);
         grid.innerHTML = '<p class="text-center error">Erro ao carregar documentos</p>';
     }
+    applyTranslations(currentLanguage);
 }
 
 function createProfileDocumentCard(doc) {
@@ -816,24 +1082,24 @@ function createProfileDocumentCard(doc) {
     div.dataset.id = doc.id;
     
     const statusClass = doc.status === 'lost' ? 'danger' : doc.status === 'found' ? 'success' : 'primary';
-    const statusText = doc.status === 'lost' ? 'Perdido' : doc.status === 'found' ? 'Encontrado' : 'Normal';
+    const statusText = doc.status;
     
     div.innerHTML = `
         <div class="card-body">
             <h4>${doc.title}</h4>
-            <p class="muted">Tipo: ${doc.type} • Status: ${statusText}</p>
+            <p class="muted">Tipo: ${doc.type} • <span data-i18n="documents.status_label">Status</span>: <span data-i18n="status.${statusText}">${statusText}</span></p>
             <div class="card-actions">
-                <button class="btn small ${statusClass} view-profile-doc" data-id="${doc.id}">Ver</button>
-                <button class="btn small secondary edit-profile-doc" data-id="${doc.id}">Editar</button>
+                <button class="btn small ${statusClass} view-profile-doc" data-id="${doc.id}" data-i18n="actions.view">Ver</button>
+                <button class="btn small secondary edit-profile-doc" data-id="${doc.id}" data-i18n="actions.edit">Editar</button>
                 ${doc.status === 'normal' ? 
-                    `<button class="btn small warning mark-lost-doc" data-id="${doc.id}">Marcar Perdido</button>` :
+                    `<button class="btn small warning mark-lost-doc" data-id="${doc.id}" data-i18n="actions.mark_lost">Marcar Perdido</button>` :
                     doc.status === 'lost' ? 
-                    `<button class="btn small success cancel-lost-doc" data-id="${doc.id}">Cancelar Perdido</button>` : ''
+                    `<button class="btn small success cancel-lost-doc" data-id="${doc.id}" data-i18n="actions.cancel_lost">Cancelar Perdido</button>` : ''
                 }
                 <button class="btn small info chat-doc-btn" data-id="${doc.id}" data-title="${doc.title}">
-                    <i class="fas fa-comments"></i> Chat
+                    <i class="fas fa-comments"></i> <span data-i18n="actions.chat">Chat</span>
                 </button>
-                <button class="btn danger small delete-profile-doc" data-id="${doc.id}">Excluir</button>
+                <button class="btn danger small delete-profile-doc" data-id="${doc.id}" data-i18n="actions.delete">Excluir</button>
             </div>
         </div>`;
     
@@ -915,152 +1181,11 @@ async function handleLogout() {
         if (window.authApi) {
             await window.authApi.signOut();
         }
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('remember_me');
         window.location.href = 'login.html';
     } catch (error) {
         console.error('Logout error:', error);
         // Force logout even if API fails
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('remember_me');
         window.location.href = 'login.html';
-    }
-}
-
-// Ranking Modal Functions
-function initializeRankingModal() {
-    const rankingModal = document.getElementById('ranking-modal');
-    const closeRankingModal = document.getElementById('close-ranking-modal');
-    const closeRankingBtn = document.getElementById('close-ranking-btn');
-    const viewRankingBtn = document.getElementById('view-ranking-btn');
-    const rankBadge = document.getElementById('profile-rank');
-
-    // Open modal when clicking the ranking button or badge
-    if (viewRankingBtn) {
-        viewRankingBtn.addEventListener('click', openRankingModal);
-    }
-    
-    if (rankBadge) {
-        rankBadge.addEventListener('click', openRankingModal);
-    }
-
-    // Close modal when clicking the close button
-    if (closeRankingModal) {
-        closeRankingModal.addEventListener('click', closeRankingModalFunc);
-    }
-    
-    if (closeRankingBtn) {
-        closeRankingBtn.addEventListener('click', closeRankingModalFunc);
-    }
-
-    // Close modal when clicking outside the modal content
-    window.addEventListener('click', (event) => {
-        if (event.target === rankingModal) {
-            closeRankingModalFunc();
-        }
-    });
-
-    // Load ranking data when modal is opened
-    rankingModal.addEventListener('show', loadRankingData);
-}
-
-function openRankingModal() {
-    const rankingModal = document.getElementById('ranking-modal');
-    if (rankingModal) {
-        rankingModal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-        rankingModal.dispatchEvent(new Event('show'));
-    }
-}
-
-function closeRankingModalFunc() {
-    const rankingModal = document.getElementById('ranking-modal');
-    if (rankingModal) {
-        rankingModal.style.display = 'none';
-        document.body.style.overflow = '';
-    }
-}
-
-async function loadRankingData() {
-    try {
-        // Get current user points
-        const pointsElement = document.getElementById('profile-points');
-        const currentPoints = pointsElement ? parseInt(pointsElement.textContent) || 0 : 0;
-
-        // Define ranking levels
-        const ranks = [
-            { name: 'Novato', minPoints: 0, color: '#6c757d' },
-            { name: 'Iniciante', minPoints: 100, color: '#17a2b8' },
-            { name: 'Intermediário', minPoints: 500, color: '#28a745' },
-            { name: 'Avançado', minPoints: 1500, color: '#007bff' },
-            { name: 'Especialista', minPoints: 3000, color: '#6f42c1' },
-            { name: 'Mestre', minPoints: 5000, color: '#fd7e14' },
-            { name: 'Lendário', minPoints: 10000, color: '#dc3545' },
-        ];
-
-        // Find current and next rank
-        let currentRank, nextRank;
-        for (let i = 0; i < ranks.length; i++) {
-            if (i === ranks.length - 1 || (currentPoints >= ranks[i].minPoints && 
-                (i === ranks.length - 1 || currentPoints < ranks[i + 1].minPoints))) {
-                currentRank = ranks[i];
-                nextRank = i < ranks.length - 1 ? ranks[i + 1] : null;
-                break;
-            }
-        }
-
-        // Update UI with current rank
-        const currentRankBadge = document.getElementById('current-rank-badge');
-        if (currentRankBadge) {
-            currentRankBadge.textContent = currentRank.name;
-            currentRankBadge.style.backgroundColor = `${currentRank.color}20`;
-            currentRankBadge.style.color = currentRank.color;
-            currentRankBadge.style.border = `1px solid ${currentRank.color}`;
-        }
-
-        // Update progress bar and next rank info
-        const progressBar = document.getElementById('ranking-progress');
-        const currentPointsEl = document.getElementById('current-points');
-        const nextRankPointsEl = document.getElementById('next-rank-points');
-        const nextRankNameEl = document.getElementById('next-rank-name');
-
-        if (nextRank) {
-            const progress = ((currentPoints - currentRank.minPoints) / (nextRank.minPoints - currentRank.minPoints)) * 100;
-            if (progressBar) progressBar.style.width = `${Math.min(100, Math.max(0, progress))}%`;
-            if (currentPointsEl) currentPointsEl.textContent = currentPoints;
-            if (nextRankPointsEl) nextRankPointsEl.textContent = nextRank.minPoints;
-            if (nextRankNameEl) nextRankNameEl.textContent = nextRank.name;
-        } else {
-            if (progressBar) progressBar.style.width = '100%';
-            if (currentPointsEl) currentPointsEl.textContent = currentPoints;
-            if (nextRankPointsEl) nextRankPointsEl.textContent = '';
-            if (nextRankNameEl) nextRankNameEl.textContent = 'Máximo alcançado!';
-        }
-
-        // Populate rank list
-        const rankList = document.getElementById('rank-list');
-        if (rankList) {
-            rankList.innerHTML = ranks.map(rank => {
-                const isCurrent = rank.name === currentRank.name;
-                const isUnlocked = rank.minPoints <= currentPoints;
-                
-                return `
-                    <li class="rank-item ${isCurrent ? 'current' : ''} ${isUnlocked ? 'unlocked' : 'locked'}">
-                        <div class="rank-icon">
-                            ${isUnlocked ? '<i class="fas fa-unlock"></i>' : '<i class="fas fa-lock"></i>'}
-                        </div>
-                        <div class="rank-info">
-                            <span class="rank-name">${rank.name}</span>
-                            <span class="rank-points">${rank.minPoints} pontos</span>
-                        </div>
-                        ${isCurrent ? '<span class="current-badge">Atual</span>' : ''}
-                    </li>
-                `;
-            }).join('');
-        }
-    } catch (error) {
-        console.error('Error loading ranking data:', error);
-        showToast('Erro ao carregar informações de ranking', 'error');
     }
 }
 
@@ -1072,11 +1197,13 @@ function initializeUploadModal() {
     const uploadModal = document.getElementById('upload-modal');
     const profileAddBtn = document.getElementById('profile-add-document');
     const addDocumentBtn = document.getElementById('add-document');
-    const uploadModalClose = document.getElementById('upload-modal-close');
-    const uploadCancel = document.getElementById('upload-cancel');
+    const uploadModalClose = document.getElementById('close-upload-modal');
+    const uploadCancel = document.getElementById('cancel-upload');
     const uploadForm = document.getElementById('upload-form');
-    const fileInput = document.getElementById('upload-file');
-    const dropzone = document.getElementById('file-upload-dropzone');
+    const fileInput = document.getElementById('file-input');
+    const dropzone = document.getElementById('drop-zone');
+    const filePreview = document.getElementById('file-preview');
+    const browseBtn = document.getElementById('browse-btn');
     
     // Open modal events
     if (profileAddBtn) {
@@ -1096,13 +1223,36 @@ function initializeUploadModal() {
     
     // File input and dropzone
     if (dropzone && fileInput) {
+        const onFileChange = (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            // Lightweight preview: show file name and size
+            if (filePreview) {
+                const sizeKB = Math.round(file.size / 1024);
+                filePreview.innerHTML = `<div class="file-item uploading"><div class="file-icon"><i class="fas fa-file"></i></div><div class="file-info"><div class="file-name">${file.name}</div><p class="file-meta"><span class="file-size">${sizeKB} KB</span></p></div></div>`;
+            }
+        };
+
+        if (browseBtn) browseBtn.addEventListener('click', () => fileInput.click());
         dropzone.addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', handleFileSelect);
-        
+        fileInput.addEventListener('change', onFileChange);
+
         // Drag and drop
-        dropzone.addEventListener('dragover', handleDragOver);
-        dropzone.addEventListener('drop', handleFileDrop);
-        dropzone.addEventListener('dragleave', handleDragLeave);
+        dropzone.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            dropzone.classList.add('drag-over');
+        });
+        dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+        dropzone.addEventListener('drop', (event) => {
+            event.preventDefault();
+            dropzone.classList.remove('drag-over');
+            const files = event.dataTransfer.files;
+            if (files && files.length > 0) {
+                fileInput.files = files;
+                const changeEvent = new Event('change', { bubbles: true });
+                fileInput.dispatchEvent(changeEvent);
+            }
+        });
     }
     
     // Form submission
@@ -1138,11 +1288,11 @@ function closeUploadModal() {
 
 function resetUploadForm() {
     const form = document.getElementById('upload-form');
-    const previewContainer = document.getElementById('image-preview-container');
+    const previewContainer = document.getElementById('file-preview');
     const uploadSubmit = document.getElementById('upload-submit');
     
     if (form) form.reset();
-    if (previewContainer) previewContainer.style.display = 'none';
+    if (previewContainer) previewContainer.innerHTML = '';
     if (uploadSubmit) uploadSubmit.disabled = true;
     
     selectedFile = null;
@@ -1262,8 +1412,8 @@ async function handleUploadSubmit(event) {
         return;
     }
     
-    const docType = document.getElementById('upload-doc-type').value;
-    const docTitle = document.getElementById('upload-doc-title').value;
+    const docType = document.getElementById('document-type').value;
+    const docTitle = document.getElementById('document-title')?.value || '';
     const loadingDiv = document.getElementById('upload-loading');
     const uploadSubmit = document.getElementById('upload-submit');
     
@@ -1368,12 +1518,30 @@ async function handleUploadSubmit(event) {
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(initializeUploadModal, 100);
     setTimeout(initializeAvatarUpload, 100);
+    // Ensure tutorial manager exists and wire start button
+    try {
+        if (window.tutorialManager) {
+            const tutorialBtn = document.getElementById('start-tutorial');
+            if (tutorialBtn) {
+                tutorialBtn.addEventListener('click', () => window.tutorialManager.startTutorial('main', true));
+            }
+        }
+    } catch (e) { console.warn('Tutorial init failed', e); }
     
     // Initialize profile logout button
     const profileLogoutBtn = document.getElementById('profile-logout-btn');
     if (profileLogoutBtn) {
         profileLogoutBtn.addEventListener('click', handleLogout);
     }
+
+    // Initialize ranking modal
+    initializeRankingModal();
+    
+    // Initialize feed filters
+    initializeFeedFilters();
+
+    // Global: enable ESC to close any open modal and trap focus inside
+    setupGlobalModalAccessibility();
 });
 
 // Avatar Upload Functions
@@ -1763,9 +1931,288 @@ async function trackHelpProvided() {
     await awardPoints('help_provided', 30);
 }
 
+// Ranking Modal Functions
+function initializeRankingModal() {
+    const viewRankingBtn = document.getElementById('view-ranking-progress');
+    const rankingModal = document.getElementById('ranking-modal');
+    const closeRankingModal = document.getElementById('close-ranking-modal');
+
+    if (viewRankingBtn) {
+        viewRankingBtn.addEventListener('click', () => {
+            openRankingModal();
+        });
+    }
+
+    if (closeRankingModal) {
+        closeRankingModal.addEventListener('click', () => {
+            rankingModal.style.display = 'none';
+        });
+    }
+
+    // Close modal when clicking outside
+    if (rankingModal) {
+        rankingModal.addEventListener('click', (e) => {
+            if (e.target === rankingModal) {
+                rankingModal.style.display = 'none';
+            }
+        });
+    }
+}
+
+async function openRankingModal() {
+    const rankingModal = document.getElementById('ranking-modal');
+    const modalBody = document.getElementById('ranking-modal-body');
+    
+    if (!rankingModal || !modalBody) return;
+    
+    rankingModal.style.display = 'block';
+    
+    try {
+        // Show loading state
+        modalBody.innerHTML = `
+            <div class="loading-state">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Carregando progresso de ranking...</p>
+            </div>
+        `;
+        
+        // Get current user's ranking data
+        const user = window.currentUser;
+        if (!user) {
+            throw new Error('Usuário não autenticado');
+        }
+        
+        // Get user profile with points
+        const userProfile = await window.profilesApi.get(user.id);
+        if (!userProfile) {
+            throw new Error('Perfil do usuário não encontrado');
+        }
+        
+        const currentPoints = userProfile.points || 0;
+        
+        // Define ranking levels
+        const rankingLevels = [
+            { name: 'Novato', minPoints: 0, maxPoints: 49, color: '#6c757d' },
+            { name: 'Iniciante', minPoints: 50, maxPoints: 99, color: '#28a745' },
+            { name: 'Intermediário', minPoints: 100, maxPoints: 199, color: '#007bff' },
+            { name: 'Avançado', minPoints: 200, maxPoints: 499, color: '#fd7e14' },
+            { name: 'Expert', minPoints: 500, maxPoints: 999, color: '#e83e8c' },
+            { name: 'Lenda', minPoints: 1000, maxPoints: Infinity, color: '#FFD700' }
+        ];
+        
+        // Find current rank
+        const currentRank = rankingLevels.find(rank => 
+            currentPoints >= rank.minPoints && currentPoints <= rank.maxPoints
+        ) || rankingLevels[0];
+        
+        // Find next rank
+        const currentIndex = rankingLevels.indexOf(currentRank);
+        const nextRank = currentIndex < rankingLevels.length - 1 ? rankingLevels[currentIndex + 1] : null;
+        
+        // Calculate progress to next rank
+        let progressPercentage = 100;
+        let pointsToNext = 0;
+        
+        if (nextRank) {
+            const pointsInCurrentRank = currentPoints - currentRank.minPoints;
+            const totalPointsNeeded = nextRank.minPoints - currentRank.minPoints;
+            progressPercentage = Math.min(100, (pointsInCurrentRank / totalPointsNeeded) * 100);
+            pointsToNext = nextRank.minPoints - currentPoints;
+        }
+        
+        // Generate ranking modal content
+        modalBody.innerHTML = `
+            <div class="ranking-progress-container">
+                <div class="current-rank-display">
+                    <div class="rank-badge-large" style="background: ${currentRank.color};">
+                        <i class="fas fa-trophy"></i>
+                        ${currentRank.name}
+                    </div>
+                    <div class="current-points">
+                        <span class="points-number">${currentPoints}</span>
+                        <span class="points-label">pontos</span>
+                    </div>
+                </div>
+                
+                ${nextRank ? `
+                    <div class="progress-to-next">
+                        <h4>Progresso para ${nextRank.name}</h4>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${progressPercentage}%; background: ${nextRank.color};"></div>
+                            </div>
+                            <div class="progress-text">
+                                <span>${Math.round(progressPercentage)}%</span>
+                                <span>${pointsToNext} pontos restantes</span>
+                            </div>
+                        </div>
+                    </div>
+                ` : `
+                    <div class="max-rank-achieved">
+                        <h4><i class="fas fa-crown"></i> Nível Máximo Alcançado!</h4>
+                        <p>Parabéns! Você alcançou o nível mais alto do ranking.</p>
+                    </div>
+                `}
+                
+                <div class="ranking-levels-list">
+                    <h4>Todos os Níveis</h4>
+                    <div class="levels-grid">
+                        ${rankingLevels.map((level, index) => `
+                            <div class="level-item ${level === currentRank ? 'current' : ''} ${currentPoints >= level.minPoints ? 'unlocked' : 'locked'}">
+                                <div class="level-icon" style="background: ${level.color};">
+                                    <i class="fas fa-${index === rankingLevels.length - 1 ? 'crown' : 'trophy'}"></i>
+                                </div>
+                                <div class="level-info">
+                                    <div class="level-name">${level.name}</div>
+                                    <div class="level-points">${level.minPoints}+ pontos</div>
+                                </div>
+                                ${level === currentRank ? '<div class="current-badge">Atual</div>' : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                
+                <div class="ranking-tips">
+                    <h4><i class="fas fa-lightbulb"></i> Como Ganhar Mais Pontos</h4>
+                    <ul>
+                        <li><i class="fas fa-plus"></i> Adicionar documentos: +10 pontos</li>
+                        <li><i class="fas fa-search"></i> Encontrar documento perdido: +25 pontos</li>
+                        <li><i class="fas fa-handshake"></i> Ajudar outros usuários: +15 pontos</li>
+                        <li><i class="fas fa-check-circle"></i> Verificar documentos: +5 pontos</li>
+                    </ul>
+                </div>
+            </div>
+        `;
+        
+    } catch (error) {
+        console.error('Error loading ranking data:', error);
+        modalBody.innerHTML = `
+            <div class="error-state">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>Erro ao carregar dados de ranking</p>
+                <p class="error-detail">${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+// Accessibility helpers for modals: ESC to close, focus trap, restore focus
+function setupGlobalModalAccessibility() {
+    const modalSelectors = ['upload-modal', 'chat-modal', 'ranking-modal', 'payment-modal', 'document-preview-modal'];
+
+    // Keep track of last focused element before opening a modal
+    let lastFocusedBeforeOpen = null;
+
+    function getFocusable(container) {
+        if (!container) return [];
+        const selectors = [
+            'a[href]', 'button:not([disabled])', 'textarea:not([disabled])', 'input:not([disabled])',
+            'select:not([disabled])', '[tabindex]:not([tabindex="-1"])'
+        ];
+        return Array.from(container.querySelectorAll(selectors.join(',')))
+            .filter(el => el.offsetParent !== null || el === document.activeElement);
+    }
+
+    function isOpen(el) {
+        return el && getComputedStyle(el).display !== 'none';
+    }
+
+    // Observe clicks that open modals to store last focus
+    document.body.addEventListener('click', (e) => {
+        const target = e.target;
+        if (!(target instanceof HTMLElement)) return;
+        // If a click is about to open any known modal, remember focus
+        if (target.closest('#profile-add-document, #add-document, .contact-reporter-btn, #view-ranking-progress, .payment-btn, .view-doc, .view-profile-doc')) {
+            lastFocusedBeforeOpen = document.activeElement;
+        }
+    }, true);
+
+    // Keydown: ESC close and focus trap
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape' && e.key !== 'Tab') return;
+
+        const openModal = modalSelectors
+            .map(id => document.getElementById(id))
+            .find(m => isOpen(m));
+        if (!openModal) return;
+
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            // Try to click a close button if available
+            const closeBtn = openModal.querySelector('.close-btn, .close');
+            if (closeBtn) {
+                (closeBtn instanceof HTMLElement) && closeBtn.click();
+            } else {
+                openModal.style.display = 'none';
+            }
+            // Restore focus
+            if (lastFocusedBeforeOpen && lastFocusedBeforeOpen.focus) {
+                setTimeout(() => lastFocusedBeforeOpen.focus(), 0);
+            }
+            return;
+        }
+
+        if (e.key === 'Tab') {
+            const content = openModal.querySelector('.modal-content');
+            const focusables = getFocusable(content);
+            if (focusables.length === 0) return;
+
+            const first = focusables[0];
+            const last = focusables[focusables.length - 1];
+            const active = document.activeElement;
+
+            if (e.shiftKey) {
+                if (active === first || !content.contains(active)) {
+                    e.preventDefault();
+                    last.focus();
+                }
+            } else {
+                if (active === last || !content.contains(active)) {
+                    e.preventDefault();
+                    first.focus();
+                }
+            }
+        }
+    });
+
+    // When opening each modal, move focus to its content for screen readers
+    modalSelectors.forEach(id => {
+        const modal = document.getElementById(id);
+        if (!modal) return;
+        const observer = new MutationObserver(() => {
+            if (isOpen(modal)) {
+                const content = modal.querySelector('.modal-content');
+                if (content instanceof HTMLElement) {
+                    content.focus();
+                }
+            }
+        });
+        observer.observe(modal, { attributes: true, attributeFilter: ['style', 'class'] });
+    });
+}
+
+// Feed Filters Functions
+function initializeFeedFilters() {
+    const typeFilter = document.getElementById('feed-filter-type');
+    const statusFilter = document.getElementById('feed-filter-status');
+
+    if (typeFilter) {
+        typeFilter.addEventListener('change', () => {
+            loadFeed();
+        });
+    }
+
+    if (statusFilter) {
+        statusFilter.addEventListener('change', () => {
+            loadFeed();
+        });
+    }
+}
+
 // Make functions globally available
 window.showSection = showSection;
 window.showToast = showToast;
 window.renderProfilePage = renderProfilePage;
 window.handleLogout = handleLogout;
 window.awardPoints = awardPoints;
+window.openRankingModal = openRankingModal;

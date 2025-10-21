@@ -50,19 +50,188 @@ class DocumentMatcher {
         }
     }
 
-    // Find documents that match the criteria
+    // Calculate similarity score between two strings (0-1)
+    calculateSimilarity(str1, str2) {
+        if (!str1 || !str2) return 0;
+        
+        // Convert to uppercase and remove non-alphanumeric characters
+        const cleanStr1 = String(str1).toUpperCase().replace(/[^A-Z0-9]/g, '');
+        const cleanStr2 = String(str2).toUpperCase().replace(/[^A-Z0-9]/g, '');
+        
+        // If either string is empty after cleaning, return 0
+        if (!cleanStr1 || !cleanStr2) return 0;
+        
+        // If strings are equal, return 1
+        if (cleanStr1 === cleanStr2) return 1;
+        
+        // Calculate Levenshtein distance
+        const track = Array(cleanStr2.length + 1).fill(null).map(() => 
+            Array(cleanStr1.length + 1).fill(null)
+        );
+        
+        for (let i = 0; i <= cleanStr1.length; i++) track[0][i] = i;
+        for (let j = 0; j <= cleanStr2.length; j++) track[j][0] = j;
+        
+        for (let j = 1; j <= cleanStr2.length; j++) {
+            for (let i = 1; i <= cleanStr1.length; i++) {
+                const indicator = cleanStr1[i - 1] === cleanStr2[j - 1] ? 0 : 1;
+                track[j][i] = Math.min(
+                    track[j][i - 1] + 1, // deletion
+                    track[j - 1][i] + 1, // insertion
+                    track[j - 1][i - 1] + indicator // substitution
+                );
+            }
+        }
+        
+        const distance = track[cleanStr2.length][cleanStr1.length];
+        return 1 - (distance / Math.max(cleanStr1.length, cleanStr2.length));
+    }
+    
+    // Calculate distance between two coordinates in kilometers
+    calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371; // Earth's radius in km
+        const dLat = this.toRad(lat2 - lat1);
+        const dLon = this.toRad(lon2 - lon1);
+        const a = 
+            Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(this.toRad(lat1)) * Math.cos(this.toRad(lat2)) * 
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+    }
+    
+    toRad(degrees) {
+        return degrees * Math.PI / 180;
+    }
+    
+    // Get type-specific matching rules
+    getTypeSpecificRules(docType) {
+        const rules = {
+            'id': {
+                requiredFields: ['document_number', 'issue_date'],
+                similarityThreshold: 0.9,
+                maxDistanceKm: 50
+            },
+            'passport': {
+                requiredFields: ['document_number', 'expiry_date'],
+                similarityThreshold: 0.95,
+                maxDistanceKm: 100
+            },
+            'driver_license': {
+                requiredFields: ['document_number', 'issue_date'],
+                similarityThreshold: 0.85,
+                maxDistanceKm: 30
+            },
+            'default': {
+                requiredFields: ['document_number'],
+                similarityThreshold: 0.8,
+                maxDistanceKm: 100
+            }
+        };
+        
+        return rules[docType] || rules['default'];
+    }
+    
+    // Find documents that match the criteria with enhanced matching
     async findMatchingDocuments(newDoc) {
         try {
-            const { data: matches, error } = await this.supabase
+            // Get all potential matches (same type, opposite status, different user)
+            const { data: potentialMatches, error } = await this.supabase
                 .from('documents')
                 .select('*')
                 .eq('type', newDoc.type)
-                .eq('document_number', newDoc.document_number)
                 .eq('status', newDoc.status === 'found' ? 'lost' : 'found')
-                .neq('user_id', newDoc.user_id); // Don't match user's own documents
-
+                .neq('user_id', newDoc.user_id);
+                
             if (error) throw error;
-            return matches || [];
+            if (!potentialMatches || potentialMatches.length === 0) return [];
+            
+            // Get type-specific matching rules
+            const rules = this.getTypeSpecificRules(newDoc.type);
+            
+            // Calculate match scores for each potential match
+            const matchesWithScores = await Promise.all(
+                potentialMatches.map(async (doc) => {
+                    let score = 0;
+                    const matchDetails = [];
+                    
+                    // Document number similarity (most important)
+                    const docNumSimilarity = this.calculateSimilarity(
+                        newDoc.document_number, 
+                        doc.document_number
+                    );
+                    
+                    // Apply type-specific threshold
+                    if (docNumSimilarity < rules.similarityThreshold) {
+                        return null; // Skip if document number doesn't match well enough
+                    }
+                    
+                    // Add to score (weighted heavily)
+                    score += docNumSimilarity * 0.6;
+                    matchDetails.push({
+                        field: 'document_number',
+                        similarity: docNumSimilarity,
+                        weight: 0.6
+                    });
+                    
+                    // Check required fields
+                    for (const field of rules.requiredFields) {
+                        if (field === 'document_number') continue; // Already checked
+                        
+                        if (newDoc[field] && doc[field]) {
+                            const fieldSimilarity = this.calculateSimilarity(
+                                String(newDoc[field]), 
+                                String(doc[field])
+                            );
+                            
+                            // Add to score with field-specific weight
+                            const fieldWeight = 0.4 / rules.requiredFields.length;
+                            score += fieldSimilarity * fieldWeight;
+                            matchDetails.push({
+                                field,
+                                similarity: fieldSimilarity,
+                                weight: fieldWeight
+                            });
+                        }
+                    }
+                    
+                    // Location-based matching (if coordinates are available)
+                    if (newDoc.latitude && newDoc.longitude && doc.latitude && doc.longitude) {
+                        const distance = this.calculateDistance(
+                            newDoc.latitude, newDoc.longitude,
+                            doc.latitude, doc.longitude
+                        );
+                        
+                        // Normalize distance to 0-1 score (closer is better)
+                        const distanceScore = Math.max(0, 1 - (distance / rules.maxDistanceKm));
+                        const distanceWeight = 0.2;
+                        
+                        score += distanceScore * distanceWeight;
+                        matchDetails.push({
+                            field: 'location',
+                            distance_km: distance,
+                            score: distanceScore,
+                            weight: distanceWeight
+                        });
+                    }
+                    
+                    // Cap score at 1
+                    score = Math.min(1, score);
+                    
+                    return {
+                        ...doc,
+                        match_score: score,
+                        match_details: matchDetails,
+                        match_timestamp: new Date().toISOString()
+                    };
+                })
+            );
+            
+            // Filter out nulls and sort by score (highest first)
+            return matchesWithScores
+                .filter(match => match !== null && match.match_score >= 0.7) // Minimum threshold
+                .sort((a, b) => b.match_score - a.match_score);
+                
         } catch (error) {
             console.error('Error finding matching documents:', error);
             return [];

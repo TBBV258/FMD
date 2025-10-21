@@ -14,8 +14,6 @@
     // Check if Supabase library is loaded
     if (typeof supabase === 'undefined' || typeof supabase.createClient !== 'function') {
         console.error('Supabase library not loaded. Make sure to include the Supabase JavaScript library before this file.');
-        // Initialize fallback APIs even if Supabase is not available
-        initializeFallbackAPIs();
         return;
     }
     
@@ -29,9 +27,6 @@
         
         // Initialize APIs
         initializeAPIs();
-        
-        // Dispatch a custom event to signal that Supabase is ready
-        window.dispatchEvent(new CustomEvent('supabaseReady'));
         
     } catch (error) {
         console.error('Error initializing Supabase client:', error);
@@ -68,7 +63,29 @@
                             type: data.type,
                             status: data.status || 'normal',
                             location: data.location,
-                            file_url: data.fileUrl || ''
+                            file_url: data.fileUrl || '',
+                            file_name: data.fileName || '',
+                            file_path: data.filePath || '',
+                            file_size: data.fileSize || null,
+                            file_type: data.fileType || '',
+                            hash_local: data.hashLocal || '',
+                            document_number: data.documentNumber || '',
+                            issue_date: data.issueDate || null,
+                            expiry_date: data.expiryDate || null,
+                            issue_place: data.issuePlace || '',
+                            issuing_authority: data.issuingAuthority || '',
+                            country_of_issue: data.countryOfIssue || '',
+                            thumbnail_url: data.thumbnailUrl || '',
+                            location_lost_found: data.locationLostFound || null,
+                            last_known_location: data.lastKnownLocation || null,
+                            location_metadata: data.locationMetadata || null,
+                            is_verified: data.isVerified || false,
+                            verification_status: data.verificationStatus || 'pending',
+                            verification_notes: data.verificationNotes || '',
+                            description: data.description || '',
+                            tags: data.tags || [],
+                            is_public: data.isPublic || false,
+                            is_archived: data.isArchived || false
                         }])
                         .select()
                         .single();
@@ -97,15 +114,43 @@
             
             async update(id, data) {
                 try {
+                    const updateData = {};
+                    
+                    // Only update fields that are provided
+                    if (data.title !== undefined) updateData.title = data.title;
+                    if (data.type !== undefined) updateData.type = data.type;
+                    if (data.status !== undefined) updateData.status = data.status;
+                    if (data.location !== undefined) updateData.location = data.location;
+                    if (data.fileUrl !== undefined) updateData.file_url = data.fileUrl;
+                    if (data.fileName !== undefined) updateData.file_name = data.fileName;
+                    if (data.filePath !== undefined) updateData.file_path = data.filePath;
+                    if (data.fileSize !== undefined) updateData.file_size = data.fileSize;
+                    if (data.fileType !== undefined) updateData.file_type = data.fileType;
+                    if (data.hashLocal !== undefined) updateData.hash_local = data.hashLocal;
+                    if (data.documentNumber !== undefined) updateData.document_number = data.documentNumber;
+                    if (data.issueDate !== undefined) updateData.issue_date = data.issueDate;
+                    if (data.expiryDate !== undefined) updateData.expiry_date = data.expiryDate;
+                    if (data.issuePlace !== undefined) updateData.issue_place = data.issuePlace;
+                    if (data.issuingAuthority !== undefined) updateData.issuing_authority = data.issuingAuthority;
+                    if (data.countryOfIssue !== undefined) updateData.country_of_issue = data.countryOfIssue;
+                    if (data.thumbnailUrl !== undefined) updateData.thumbnail_url = data.thumbnailUrl;
+                    if (data.locationLostFound !== undefined) updateData.location_lost_found = data.locationLostFound;
+                    if (data.lastKnownLocation !== undefined) updateData.last_known_location = data.lastKnownLocation;
+                    if (data.locationMetadata !== undefined) updateData.location_metadata = data.locationMetadata;
+                    if (data.isVerified !== undefined) updateData.is_verified = data.isVerified;
+                    if (data.verificationStatus !== undefined) updateData.verification_status = data.verificationStatus;
+                    if (data.verificationNotes !== undefined) updateData.verification_notes = data.verificationNotes;
+                    if (data.description !== undefined) updateData.description = data.description;
+                    if (data.tags !== undefined) updateData.tags = data.tags;
+                    if (data.isPublic !== undefined) updateData.is_public = data.isPublic;
+                    if (data.isArchived !== undefined) updateData.is_archived = data.isArchived;
+                    
+                    // Always update the updated_at timestamp
+                    updateData.updated_at = new Date().toISOString();
+                    
                     const { data: document, error } = await window.supabase
                         .from('documents')
-                        .update({
-                            title: data.title,
-                            type: data.type,
-                            status: data.status,
-                            location: data.location,
-                            file_url: data.fileUrl
-                        })
+                        .update(updateData)
                         .eq('id', id)
                         .select()
                         .single();
@@ -151,17 +196,12 @@
         window.profilesApi = {
             async getProfilesByIds(userIds) {
                 try {
-                    console.log('getProfilesByIds called with user IDs:', userIds);
                     const { data: profiles, error } = await window.supabase
                         .from('user_profiles')
-                        .select('id, full_name, avatar_url, phone_number')
+                        .select('id, full_name, avatar_url')
                         .in('id', userIds);
-                    if (error) {
-                        console.error('Supabase error in getProfilesByIds:', error);
-                        throw error;
-                    }
-                    console.log('getProfilesByIds returned profiles:', profiles);
-                    return profiles || [];
+                    if (error) throw error;
+                    return profiles;
                 } catch (error) {
                     console.error('Get profiles by IDs error:', error);
                     return [];
@@ -174,9 +214,13 @@
                         .from('user_profiles')
                         .insert([{
                             id: userId,
-                            phone_number: data.phoneNumber,
-                            country: data.country,
-                            plan: 'free'
+                            full_name: data.fullName || '',
+                            phone_number: data.phoneNumber || '',
+                            country: data.country || 'MZ',
+                            avatar_url: data.avatarUrl || '',
+                            points: data.points || 0,
+                            document_count: data.documentCount || 0,
+                            plan: data.plan || 'free'
                         }])
                         .select()
                         .single();
@@ -207,12 +251,16 @@
                 try {
                     const updateData = {};
                     
+                    if (data.fullName !== undefined) updateData.full_name = data.fullName;
                     if (data.phoneNumber !== undefined) updateData.phone_number = data.phoneNumber;
                     if (data.country !== undefined) updateData.country = data.country;
                     if (data.plan !== undefined) updateData.plan = data.plan;
-                    if (data.avatar_url !== undefined) updateData.avatar_url = data.avatar_url;
+                    if (data.avatarUrl !== undefined) updateData.avatar_url = data.avatarUrl;
                     if (data.points !== undefined) updateData.points = data.points;
-                    if (data.document_count !== undefined) updateData.document_count = data.document_count;
+                    if (data.documentCount !== undefined) updateData.document_count = data.documentCount;
+                    
+                    // Always update the updated_at timestamp
+                    updateData.updated_at = new Date().toISOString();
                     
                     const { data: profile, error } = await window.supabase
                         .from('user_profiles')
@@ -233,7 +281,6 @@
         window.chatsApi = {
             async send(data) {
                 try {
-                    console.log('Sending message with data:', data);
                     const { data: message, error } = await window.supabase
                         .from('chats')
                         .insert([{
@@ -244,20 +291,11 @@
                         }])
                         .select()
                         .single();
-                    if (error) {
-                        console.error('Supabase error details:', {
-                            message: error.message,
-                            details: error.details,
-                            hint: error.hint,
-                            code: error.code
-                        });
-                        throw error;
-                    }
-                    console.log('Message sent successfully:', message);
+                    if (error) throw error;
                     return message;
                 } catch (error) {
                     console.error('Send message error:', error);
-                    throw error; // Re-throw the error instead of returning null
+                    return null;
                 }
             },
             
@@ -273,66 +311,6 @@
                     return messages;
                 } catch (error) {
                     console.error('Get conversation error:', error);
-                    return [];
-                }
-            },
-
-            async markAsRead(documentId, userId, otherUserId) {
-                try {
-                    const { data, error } = await window.supabase
-                        .rpc('mark_messages_as_read', {
-                            p_document_id: documentId,
-                            p_user_id: userId,
-                            p_other_user_id: otherUserId
-                        });
-                    if (error) throw error;
-                    return data;
-                } catch (error) {
-                    console.error('Mark as read error:', error);
-                    return 0;
-                }
-            },
-
-            async markAsDelivered(documentId, userId) {
-                try {
-                    const { data, error } = await window.supabase
-                        .rpc('mark_messages_as_delivered', {
-                            p_document_id: documentId,
-                            p_user_id: userId
-                        });
-                    if (error) throw error;
-                    return data;
-                } catch (error) {
-                    console.error('Mark as delivered error:', error);
-                    return 0;
-                }
-            },
-
-            async getUnreadCount(userId) {
-                try {
-                    const { data, error } = await window.supabase
-                        .rpc('get_unread_message_count', {
-                            p_user_id: userId
-                        });
-                    if (error) throw error;
-                    return data || 0;
-                } catch (error) {
-                    console.error('Get unread count error:', error);
-                    return 0;
-                }
-            },
-
-            async getChatRooms(userId) {
-                try {
-                    const { data: rooms, error } = await window.supabase
-                        .from('active_chat_rooms')
-                        .select('*')
-                        .or(`participant_1_id.eq.${userId},participant_2_id.eq.${userId}`)
-                        .order('updated_at', { ascending: false });
-                    if (error) throw error;
-                    return rooms || [];
-                } catch (error) {
-                    console.error('Get chat rooms error:', error);
                     return [];
                 }
             }
@@ -449,70 +427,19 @@
         };
         
         window.subscribeToChats = (documentId, callback) => {
-            const channel = window.supabase
-                .channel(`chats-${documentId}`, {
-                    config: {
-                        broadcast: { self: false },
-                        presence: { key: documentId }
-                    }
-                })
+            return window.supabase
+                .channel('chats')
                 .on(
                     'postgres_changes',
                     {
-                        event: 'INSERT',
+                        event: '*',
                         schema: 'public',
                         table: 'chats',
                         filter: `document_id=eq.${documentId}`
                     },
-                    (payload) => {
-                        console.log('New message received via real-time:', payload);
-                        console.log('Message details:', {
-                            id: payload.new?.id,
-                            sender_id: payload.new?.sender_id,
-                            receiver_id: payload.new?.receiver_id,
-                            message: payload.new?.message,
-                            document_id: payload.new?.document_id
-                        });
-                        callback(payload);
-                    }
+                    callback
                 )
-                .on(
-                    'postgres_changes',
-                    {
-                        event: 'UPDATE',
-                        schema: 'public',
-                        table: 'chats',
-                        filter: `document_id=eq.${documentId}`
-                    },
-                    (payload) => {
-                        console.log('Message updated:', payload);
-                        callback(payload);
-                    }
-                )
-                .subscribe((status) => {
-                    console.log('Chat subscription status:', status);
-                    if (status === 'SUBSCRIBED') {
-                        // Update online status
-                        const statusElement = document.getElementById('online-status');
-                        if (statusElement) {
-                            const dot = statusElement.querySelector('.status-dot');
-                            const text = statusElement.querySelector('span:last-child');
-                            if (dot) dot.style.backgroundColor = '#4CAF50';
-                            if (text) text.textContent = 'Online';
-                        }
-                    } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-                        // Update offline status
-                        const statusElement = document.getElementById('online-status');
-                        if (statusElement) {
-                            const dot = statusElement.querySelector('.status-dot');
-                            const text = statusElement.querySelector('span:last-child');
-                            if (dot) dot.style.backgroundColor = '#ccc';
-                            if (text) text.textContent = 'Offline';
-                        }
-                    }
-                });
-            
-            return channel;
+                .subscribe();
         };
         
         console.log('All APIs initialized successfully');
@@ -521,9 +448,6 @@
     // Fallback functions for when Supabase is not available
     function initializeFallbackAPIs() {
         console.log('Initializing fallback APIs...');
-        
-        // Mark as initialized even in fallback mode
-        window.supabaseClientInitialized = true;
         
         window.documentsApi = {
             async create(data) { return createFallbackDocument(data); },
@@ -555,9 +479,6 @@
         
         window.subscribeToDocuments = () => ({ unsubscribe: () => {} });
         window.subscribeToChats = () => ({ unsubscribe: () => {} });
-        
-        // Dispatch a custom event to signal that fallback APIs are ready
-        window.dispatchEvent(new CustomEvent('supabaseReady'));
     }
     
     function createFallbackDocument(data) {
