@@ -327,6 +327,26 @@ class NotificationsManager {
         this.subscription = subscription;
     }
     
+    // Load existing conversations for notifications
+    async loadExistingConversations() {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            // Load chat conversations
+            if (window.chat && window.chat.loadChatHistoryList) {
+                await window.chat.loadChatHistoryList();
+            }
+
+            // Load document matches
+            if (window.documentMatcher) {
+                await window.documentMatcher.checkForMatches();
+            }
+        } catch (error) {
+            console.error('Error loading existing conversations:', error);
+        }
+    }
+
     // Check for subscription reminders
     async checkSubscriptionReminders() {
         try {

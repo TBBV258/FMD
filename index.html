@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="css/document-uploader.css">
     <link rel="stylesheet" href="css/profile.css">
+    <link rel="stylesheet" href="css/tutorial.css">
+    <link rel="stylesheet" href="css/profile.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,7 +28,7 @@
                     if (window.authApi) {
                         try {
                             await window.authApi.signOut();
-                        } catch (error) {
+                                                                                                                                                 } catch (error) {
                             console.error('Error signing out:', error);
                         }
                     }
@@ -134,7 +136,7 @@
                         <span data-i18n="tips.mobile_upload">Para enviar fotos pelo app, permita acesso à câmera e arquivos quando solicitado.</span>
                     </div>
                     
-                    <h2 data-i18n="welcome.title">Bem-vindo, Google User!</h2>
+                        <h2 data-i18n="welcome.title" id="welcome-title">Bem-vindo!</h2>
                     
                     <div class="tip-card">
                         <i class="fas fa-clock"></i>
@@ -177,11 +179,12 @@
             <section id="feed" class="content-section">
                 <div class="section-header">
                     <h2 data-i18n="nav.feed">Feed de Documentos</h2>
-                    <div class="search-container">
-                        <input type="text" id="search-input" class="search-input" data-i18n="[placeholder]feed.search_placeholder" placeholder="Pesquisar documentos...">
-                        <div id="search-suggestions" class="search-suggestions" style="display: none;"></div>
-                    </div>
                     <div class="feed-filters">
+                        <div class="search-filter search-field">
+                            <label for="search-input" data-i18n="feed.search_placeholder">Pesquisar documentos</label>
+                            <input type="text" id="search-input" class="search-input" data-i18n="[placeholder]feed.search_placeholder" placeholder="Pesquisar documentos...">
+                            <div id="search-suggestions" class="search-suggestions" style="display: none;"></div>
+                        </div>
                         <div class="search-filter">
                             <label for="feed-filter-type" data-i18n="filters.type">Tipo</label>
                             <select id="feed-filter-type">
@@ -428,7 +431,7 @@
                         <div class="plan-card recommended">
                             <span class="recommended-badge">Recomendado</span>
                             <h4>Premium Mensal</h4>
-                            <p class="price">50 MT<span>/mês</span></p>
+                            <p class="price">10 MT<span>/mês</span></p>
                             <ul>
                                 <li><i class="fas fa-check"></i> Upload de todos os documentos</li>
                                 <li><i class="fas fa-check"></i> Suporte prioritário</li>
@@ -441,11 +444,11 @@
                         </div>
                         <div class="plan-card">
                             <h4>Premium Anual</h4>
-                            <p class="price">450 MT<span>/ano</span></p>
-                            <p class="discount-badge">Economize 25%</p>
+                            <p class="price">96 MT<span>/ano</span></p>
+                            <p class="discount-badge">Economize 20%</p>
                             <ul>
                                 <li><i class="fas fa-check"></i> Todas as vantagens do Premium</li>
-                                <li><i class="fas fa-check"></i> Economize 150 MT/ano</li>
+                                <li><i class="fas fa-check"></i> Economize 24 MT/ano</li>
                                 <li><i class="fas fa-check"></i> Acesso antecipado a recursos</li>
                             </ul>
                             <div class="payment-options">
@@ -670,6 +673,7 @@
         </div>
     </div>
 
+ 
 
     <!-- Load Supabase library first -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -786,6 +790,7 @@
     
     <!-- Initialize Scripts -->
     <script src="script.js"></script>
+    <script src="onboarding.js"></script>
     <script src="ui.js"></script>
     <script src="views.js"></script>
     <script src="chat.js"></script>
@@ -795,6 +800,7 @@
     <!-- Document Management -->
     <script src="js/documentMatching.js"></script>
     <script src="js/documentForms.js"></script>
+    <script src="js/document-viewer.js"></script>
     <script src="enhancedDocumentUploader.js"></script>
     <script src="js/profile.js"></script>
 
@@ -869,25 +875,10 @@
         </div>
     </div>
 
-    <!-- Scripts -->
+    <!-- Initialize Scripts -->
+    <script src="script.js"></script>
     <script src="js/tutorial-manager.js"></script>
-    <script>
-        // Initialize the app when DOM is fully loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize tutorial button
-            const tutorialBtn = document.getElementById('start-tutorial');
-            if (tutorialBtn) {
-                tutorialBtn.addEventListener('click', function() {
-                    console.log('Tutorial button clicked');
-                    if (window.tutorialManager && typeof window.tutorialManager.startTutorial === 'function') {
-                        window.tutorialManager.startTutorial('main');
-                    } else {
-                        console.error('Tutorial manager not properly initialized');
-                        alert('O tutorial não pôde ser iniciado. Por favor, recarregue a página.');
-                    }
-                });
-            }
-        });
-    </script>
+    <script src="onboarding.js"></script>
+    <script src="ui.js"></script>
 </body>
 </html>

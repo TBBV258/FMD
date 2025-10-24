@@ -144,11 +144,17 @@ class PointsService {
      * Update the points and rank display in the UI
      * @param {number} points - Current points
      * @param {Object} rank - Current rank info
+     * @param {boolean} showPopup - Whether to show the ranking popup (default: true)
      */
-    updatePointsUI(points, rank) {
+    updatePointsUI(points, rank, showPopup = true) {
         // Update points display
         const pointsElement = document.getElementById('profile-points');
         if (pointsElement) pointsElement.textContent = points;
+        
+        // Show ranking popup only if explicitly requested
+        if (showPopup && window.openRankingModal) {
+            window.openRankingModal();
+        }
 
         // Update rank badge
         const rankBadge = document.getElementById('profile-rank');
@@ -227,16 +233,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.supabase) {
         pointsService = new PointsService(window.supabase);
         window.pointsService = pointsService;
-
-        // Initialize points display if user is logged in
+        
+        // Initialize points display without showing the modal
         (async () => {
             try {
                 const { data: { user } } = await window.supabase.auth.getUser();
                 if (user) {
-                    pointsService.updatePointsUI(
-                        parseInt(document.getElementById('profile-points')?.textContent || '0'),
-                        pointsService.getCurrentRank(parseInt(document.getElementById('profile-points')?.textContent || '0'))
-                    );
+                    const points = parseInt(document.getElementById('profile-points')?.textContent || '0');
+                    const rank = pointsService.getCurrentRank(points);
+                    pointsService.updatePointsUI(points, rank, false); // Don't show modal
                 }
             } catch (error) {
                 console.error('Error initializing points display:', error);

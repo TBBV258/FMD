@@ -435,6 +435,28 @@ body {
     background: #c82333;
 }
 
+/* Profile logout button positioning */
+#profile-logout-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 10;
+}
+
+/* Ranking modal centering */
+#ranking-modal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+#ranking-modal .modal-content {
+    margin: 0;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
 /* Map common classes used in uploader to app styles */
 .btn.btn-primary {
     background: var(--primary-color);
@@ -755,6 +777,39 @@ body {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-md);
+}
+
+/* Document ownership indicators */
+.ownership-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-bottom: 0.75rem;
+}
+
+.ownership-badge.my-document {
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    color: #1976d2;
+    border: 1px solid #90caf9;
+}
+
+.ownership-badge.reported-document {
+    background: linear-gradient(135deg, #f3e5f5, #e1bee7);
+    color: #7b1fa2;
+    border: 1px solid #ce93d8;
+}
+
+.document-card.my-document {
+    border-left: 4px solid #1976d2;
+    background: linear-gradient(135deg, #fafafa, #f5f5f5);
+}
+
+.document-card.reported-document {
+    border-left: 4px solid #7b1fa2;
 }
 
 /* Forms */

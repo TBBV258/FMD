@@ -324,73 +324,7 @@
     margin-left: auto;
 }
 
-/* Tutorial System Styles */
-.tutorial-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 10000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.tutorial-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(4px);
-}
-
-.tutorial-content {
-    position: relative;
-    background: var(--card-bg);
-    border-radius: var(--border-radius-lg);
-    max-width: 500px;
-    width: 90%;
-    max-height: 80vh;
-    overflow: hidden;
-    box-shadow: var(--shadow-lg);
-    z-index: 10001;
-}
-
-.tutorial-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1.5rem 1.5rem 0;
-    border-bottom: 1px solid var(--border-color);
-    margin-bottom: 1rem;
-}
-
-.tutorial-header h3 {
-    margin: 0;
-    color: var(--text-color);
-}
-
-.tutorial-close {
-    background: none;
-    border: none;
-    font-size: 1.25rem;
-    color: var(--text-light);
-    cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 50%;
-    transition: background-color 0.2s ease;
-}
-
-.tutorial-close:hover {
-    background: var(--border-color);
-}
-
-.tutorial-body {
-    padding: 0 1.5rem;
-}
+/* Tutorial System Styles - Popup Only */
 
 .tutorial-step-content {
     margin-bottom: 1.5rem;

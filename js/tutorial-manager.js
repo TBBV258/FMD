@@ -24,25 +24,73 @@ class TutorialManager {
             steps: [
                 {
                     id: 'welcome',
-                    title: 'Bem-vindo!',
-                    content: 'Bem-vindo ao FindMyDocs! Vamos fazer um tour rápido pelas principais funcionalidades.',
+                    title: 'Bem-vindo ao FindMyDocs!',
+                    content: 'Bem-vindo ao sistema de documentos perdidos e encontrados! Vamos conhecer todas as funcionalidades disponíveis para você.',
                     target: null,
                     position: 'center',
                     action: 'next'
                 },
                 {
+                    id: 'navigation',
+                    title: 'Menu Principal',
+                    content: 'Na parte superior, você encontra o menu principal com todas as seções importantes do sistema.',
+                    target: 'nav.main-nav',
+                    position: 'bottom',
+                    action: 'highlight'
+                },
+                {
+                    id: 'profile',
+                    title: 'Seu Perfil',
+                    content: 'Aqui você pode acessar seu perfil, ver seus pontos, nível e gerenciar suas configurações pessoais.',
+                    target: '#profile-section',
+                    position: 'bottom',
+                    action: 'highlight'
+                },
+                {
+                    id: 'documents',
+                    title: 'Feed de Documentos',
+                    content: 'Nesta seção central, você visualiza todos os documentos perdidos e encontrados. Use os filtros para refinar sua busca.',
+                    target: '[data-section="feed"]',
+                    position: 'bottom',
+                    action: 'highlight'
+                },
+                {
+                    id: 'search',
+                    title: 'Busca Avançada',
+                    content: 'Use a barra de pesquisa para encontrar documentos específicos por nome, número ou tipo.',
+                    target: '#search-input',
+                    position: 'bottom',
+                    action: 'highlight'
+                },
+                {
                     id: 'upload',
                     title: 'Adicionar Documento',
-                    content: 'Clique aqui para adicionar seu primeiro documento. Você pode fazer upload de fotos de BI, passaporte, DIRE e outros documentos.',
+                    content: 'Clique aqui para reportar um documento perdido ou encontrado. Você pode fazer upload de fotos e adicionar detalhes importantes.',
                     target: '#add-document',
                     position: 'bottom',
                     action: 'highlight'
                 },
                 {
-                    id: 'feed',
-                    title: 'Feed de Documentos',
-                    content: 'Aqui você pode ver todos os documentos perdidos e encontrados reportados por outros usuários.',
-                    target: '[data-section="feed"]',
+                    id: 'notifications',
+                    title: 'Notificações',
+                    content: 'Fique atento às notificações sobre documentos encontrados, mensagens e atualizações importantes.',
+                    target: '#notifications-section',
+                    position: 'bottom',
+                    action: 'highlight'
+                },
+                {
+                    id: 'points',
+                    title: 'Sistema de Pontos',
+                    content: 'Ganhe pontos ao ajudar outras pessoas, reportar documentos e manter seu perfil atualizado. Acompanhe seu progresso aqui.',
+                    target: '#points-container',
+                    position: 'bottom',
+                    action: 'highlight'
+                },
+                {
+                    id: 'help',
+                    title: 'Ajuda',
+                    content: 'Se precisar de ajuda, você pode reiniciar este tutorial a qualquer momento através do menu de ajuda.',
+                    target: '#help-section',
                     position: 'bottom',
                     action: 'highlight'
                 },
@@ -218,61 +266,15 @@ class TutorialManager {
         this.currentStep = 0;
         this.isActive = true;
 
-        this.showTutorialModal();
-        this.showStep(0);
+        // Use popup tutorial instead of modal
+        this.startPopupTutorial();
     }
 
     /**
-     * Show tutorial modal
+     * Start popup tutorial (replaces modal)
      */
-    showTutorialModal() {
-        // Remove existing modal if any
-        const existingModal = document.getElementById('tutorial-modal');
-        if (existingModal) {
-            existingModal.remove();
-        }
-
-        const modal = document.createElement('div');
-        modal.id = 'tutorial-modal';
-        modal.className = 'tutorial-modal';
-        modal.innerHTML = `
-            <div class="tutorial-overlay"></div>
-            <div class="tutorial-content">
-                <div class="tutorial-header">
-                    <h3 id="tutorial-title">${this.currentTutorial.title}</h3>
-                    <button id="tutorial-close" class="tutorial-close" aria-label="Fechar tutorial">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="tutorial-body">
-                    <div class="tutorial-step-content" id="tutorial-step-content">
-                        <!-- Step content will be inserted here -->
-                    </div>
-                    <div class="tutorial-progress">
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="tutorial-progress-fill"></div>
-                        </div>
-                        <span class="progress-text" id="tutorial-progress-text">1 de ${this.currentTutorial.steps.length}</span>
-                    </div>
-                </div>
-                <div class="tutorial-footer">
-                    <button id="tutorial-prev" class="btn secondary" disabled>
-                        <i class="fas fa-chevron-left"></i> Anterior
-                    </button>
-                    <button id="tutorial-next" class="btn primary">
-                        Próximo <i class="fas fa-chevron-right"></i>
-                    </button>
-                    <button id="tutorial-skip" class="btn secondary">
-                        Pular Tutorial
-                    </button>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
-
-        // Add event listeners
-        this.setupTutorialEventListeners();
+    startPopupTutorial() {
+        this.showStep(0);
     }
 
     /**
@@ -283,30 +285,34 @@ class TutorialManager {
         const style = document.createElement('style');
         style.id = 'tutorial-styles';
         style.textContent = `
-            .tutorial-modal{position:fixed;inset:0;z-index:9999;}
-            .tutorial-overlay{position:absolute;inset:0;background:rgba(0,0,0,.4);}
-            .tutorial-content{position:relative;margin:10vh auto;max-width:560px;background:var(--bg-color, #fff);color:var(--text-color, #222);border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.25);overflow:hidden}
-            .tutorial-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border-color, #eee)}
-            .tutorial-body{padding:16px}
-            .tutorial-footer{display:flex;gap:8px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--border-color, #eee)}
-            .tutorial-step h4{margin:0 0 8px 0}
-            .progress-bar{width:100%;height:6px;background:#eee;border-radius:6px;overflow:hidden}
-            .progress-fill{height:100%;width:0;background:var(--primary-color, #007bff);transition:width .25s ease}
-            .progress-text{display:inline-block;margin-top:8px;font-size:.85rem;color:#666}
-            .tutorial-close{background:none;border:none;cursor:pointer;font-size:18px}
+            .tutorial-popup{position:fixed;z-index:10000;max-width:300px;background:var(--card-bg, #fff);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.15);border:1px solid var(--border-color, #e0e0e0);}
+            .tutorial-popup-content{display:flex;flex-direction:column;}
+            .tutorial-popup-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border-color, #eee);}
+            .tutorial-popup-header h4{margin:0;font-size:1rem;color:var(--text-color, #222);}
+            .tutorial-popup-close{background:none;border:none;cursor:pointer;font-size:14px;color:var(--text-muted, #666);padding:4px;}
+            .tutorial-popup-body{padding:12px 16px;}
+            .tutorial-popup-body p{margin:0 0 8px 0;color:var(--text-color, #222);font-size:0.9rem;line-height:1.4;}
+            .tutorial-popup-progress{text-align:center;font-size:0.8rem;color:var(--text-muted, #666);}
+            .tutorial-popup-footer{display:flex;gap:6px;justify-content:flex-end;padding:8px 12px;border-top:1px solid var(--border-color, #eee);}
+            .tutorial-popup-footer button{background:var(--primary-color, #007bff);color:white;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:0.8rem;display:flex;align-items:center;gap:4px;}
+            .tutorial-popup-footer button:disabled{background:var(--text-muted, #ccc);cursor:not-allowed;}
+            .tutorial-popup-prev{background:var(--text-muted, #666);}
+            .tutorial-popup-skip{background:var(--text-muted, #666);}
+            .tutorial-highlight{position:fixed;z-index:9998;pointer-events:none;border:2px solid var(--primary-color, #007bff);border-radius:8px;box-shadow:0 0 0 4px rgba(0,123,255,0.2);animation:tutorial-pulse 2s infinite;}
+            @keyframes tutorial-pulse{0%{box-shadow:0 0 0 4px rgba(0,123,255,0.2);}50%{box-shadow:0 0 0 8px rgba(0,123,255,0.1);}100%{box-shadow:0 0 0 4px rgba(0,123,255,0.2);}}
         `;
         document.head.appendChild(style);
     }
 
     /**
-     * Setup tutorial event listeners
+     * Setup popup event listeners
      */
-    setupTutorialEventListeners() {
-        const modal = document.getElementById('tutorial-modal');
-        const closeBtn = document.getElementById('tutorial-close');
-        const prevBtn = document.getElementById('tutorial-prev');
-        const nextBtn = document.getElementById('tutorial-next');
-        const skipBtn = document.getElementById('tutorial-skip');
+    setupPopupEventListeners() {
+        const popup = document.getElementById('tutorial-popup');
+        const closeBtn = popup.querySelector('.tutorial-popup-close');
+        const prevBtn = popup.querySelector('.tutorial-popup-prev');
+        const nextBtn = popup.querySelector('.tutorial-popup-next');
+        const skipBtn = popup.querySelector('.tutorial-popup-skip');
 
         // Close tutorial
         closeBtn.addEventListener('click', () => this.closeTutorial());
@@ -319,9 +325,6 @@ class TutorialManager {
         
         // Next step
         nextBtn.addEventListener('click', () => this.nextStep());
-
-        // Close on overlay click
-        modal.querySelector('.tutorial-overlay').addEventListener('click', () => this.closeTutorial());
 
         // Keyboard navigation
         document.addEventListener('keydown', this.handleTutorialKeyboard.bind(this));
@@ -351,44 +354,125 @@ class TutorialManager {
     }
 
     /**
-     * Show specific step
+     * Show specific step using popup
      */
     showStep(stepIndex) {
         if (!this.currentTutorial || stepIndex >= this.currentTutorial.steps.length) {
+            console.warn('Tutorial step out of bounds:', stepIndex);
             return;
         }
 
         const step = this.currentTutorial.steps[stepIndex];
-        const stepContent = document.getElementById('tutorial-step-content');
-        const progressFill = document.getElementById('tutorial-progress-fill');
-        const progressText = document.getElementById('tutorial-progress-text');
-        const prevBtn = document.getElementById('tutorial-prev');
-        const nextBtn = document.getElementById('tutorial-next');
+        
+        // Remove previous popup if exists
+        const existingPopup = document.getElementById('tutorial-popup');
+        if (existingPopup) {
+            existingPopup.remove();
+        }
 
-        // Update step content
-        stepContent.innerHTML = `
-            <div class="tutorial-step">
-                <h4>${step.title}</h4>
-                <p>${step.content}</p>
+        // Create popup
+        const popup = document.createElement('div');
+        popup.id = 'tutorial-popup';
+        popup.className = 'tutorial-popup';
+        
+        // Handle step actions first to get target position
+        this.handleStepAction(step);
+        
+        // Position popup based on target element
+        let popupPosition = { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
+        
+        if (step.target) {
+            const targetElement = document.querySelector(step.target);
+            if (targetElement) {
+                const rect = targetElement.getBoundingClientRect();
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+                
+                switch (step.position) {
+                    case 'top':
+                        popupPosition = {
+                            top: `${rect.top + scrollTop - 10}px`,
+                            left: `${rect.left + scrollLeft + rect.width / 2}px`,
+                            transform: 'translate(-50%, -100%)'
+                        };
+                        break;
+                    case 'bottom':
+                        popupPosition = {
+                            top: `${rect.bottom + scrollTop + 10}px`,
+                            left: `${rect.left + scrollLeft + rect.width / 2}px`,
+                            transform: 'translate(-50%, 0)'
+                        };
+                        break;
+                    case 'left':
+                        popupPosition = {
+                            top: `${rect.top + scrollTop + rect.height / 2}px`,
+                            left: `${rect.left + scrollLeft - 10}px`,
+                            transform: 'translate(-100%, -50%)'
+                        };
+                        break;
+                    case 'right':
+                        popupPosition = {
+                            top: `${rect.top + scrollTop + rect.height / 2}px`,
+                            left: `${rect.right + scrollLeft + 10}px`,
+                            transform: 'translate(0, -50%)'
+                        };
+                        break;
+                    default:
+                        popupPosition = {
+                            top: `${rect.bottom + scrollTop + 10}px`,
+                            left: `${rect.left + scrollLeft + rect.width / 2}px`,
+                            transform: 'translate(-50%, 0)'
+                        };
+                }
+            }
+        }
+
+        popup.innerHTML = `
+            <div class="tutorial-popup-content">
+                <div class="tutorial-popup-header">
+                    <h4>${step.title}</h4>
+                    <button class="tutorial-popup-close" aria-label="Fechar">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="tutorial-popup-body">
+                    <p>${step.content}</p>
+                    <div class="tutorial-popup-progress">
+                        <span>${stepIndex + 1} de ${this.currentTutorial.steps.length}</span>
+                    </div>
+                </div>
+                <div class="tutorial-popup-footer">
+                    <button class="tutorial-popup-prev" ${stepIndex === 0 ? 'disabled' : ''}>
+                        <i class="fas fa-chevron-left"></i> Anterior
+                    </button>
+                    <button class="tutorial-popup-next">
+                        ${stepIndex === this.currentTutorial.steps.length - 1 ? 'Concluir <i class="fas fa-check"></i>' : 'Próximo <i class="fas fa-chevron-right"></i>'}
+                    </button>
+                    <button class="tutorial-popup-skip">
+                        Pular Tutorial
+                    </button>
+                </div>
             </div>
         `;
 
-        // Update progress
-        const progress = ((stepIndex + 1) / this.currentTutorial.steps.length) * 100;
-        progressFill.style.width = `${progress}%`;
-        progressText.textContent = `${stepIndex + 1} de ${this.currentTutorial.steps.length}`;
+        // Apply positioning
+        popup.style.cssText = `
+            position: fixed;
+            top: ${popupPosition.top};
+            left: ${popupPosition.left};
+            transform: ${popupPosition.transform};
+            z-index: 10000;
+            max-width: 300px;
+            background: var(--card-bg, #fff);
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            border: 1px solid var(--border-color, #e0e0e0);
+        `;
 
-        // Update buttons
-        prevBtn.disabled = stepIndex === 0;
-        
-        if (stepIndex === this.currentTutorial.steps.length - 1) {
-            nextBtn.innerHTML = 'Concluir <i class="fas fa-check"></i>';
-        } else {
-            nextBtn.innerHTML = 'Próximo <i class="fas fa-chevron-right"></i>';
-        }
+        document.body.appendChild(popup);
 
-        // Handle step actions
-        this.handleStepAction(step);
+        // Add event listeners
+        this.setupPopupEventListeners();
 
         this.currentStep = stepIndex;
     }
@@ -397,14 +481,18 @@ class TutorialManager {
      * Handle step-specific actions
      */
     handleStepAction(step) {
-        // Remove previous highlights
-        this.removeHighlights();
+        try {
+            // Remove previous highlights
+            this.removeHighlights();
 
-        if (step.target) {
-            const targetElement = document.querySelector(step.target);
-            if (targetElement) {
-                this.highlightElement(targetElement, step.position);
+            if (step.target) {
+                const targetElement = document.querySelector(step.target);
+                if (targetElement) {
+                    this.highlightElement(targetElement, step.position);
+                }
             }
+        } catch (error) {
+            console.warn('Error in tutorial step action:', error);
         }
 
         // Handle special actions
@@ -527,9 +615,9 @@ class TutorialManager {
         this.isActive = false;
         this.removeHighlights();
         
-        const modal = document.getElementById('tutorial-modal');
-        if (modal) {
-            modal.remove();
+        const popup = document.getElementById('tutorial-popup');
+        if (popup) {
+            popup.remove();
         }
 
         // Remove keyboard listener

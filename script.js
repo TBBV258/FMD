@@ -46,6 +46,15 @@ function initializeEnhancedFeatures() {
     if (window.loadingManager) {
         setupLoadingStates();
     }
+
+    // Listen for appInitialized event to start tutorial
+    window.addEventListener('appInitialized', () => {
+        if (window.tutorialManager && !window.tutorialManager.isTutorialCompleted('main')) {
+            setTimeout(() => {
+                window.tutorialManager.startTutorial('main');
+            }, 1500);
+        }
+    });
 }
 
 // Setup tutorial triggers
@@ -53,16 +62,35 @@ function setupTutorialTriggers() {
     const startTutorialBtn = document.getElementById('start-tutorial');
     if (startTutorialBtn) {
         startTutorialBtn.addEventListener('click', () => {
-            window.tutorialManager.startTutorial('main');
+            // Force restart tutorial when button is clicked
+            window.tutorialManager.startTutorial('main', true);
         });
     }
-    
-    // Auto-start tutorial for new users
-    const isNewUser = !localStorage.getItem('findmydocs_tutorial_completed');
-    if (isNewUser && window.tutorialManager) {
-        setTimeout(() => {
-            window.tutorialManager.startTutorial('main');
-        }, 2000);
+
+    // Initialize contextual help
+    if (window.tutorialManager) {
+        // Add help icons to important elements
+        const helpTargets = [
+            { selector: '#add-document', message: 'Adicione um novo documento aqui' },
+            { selector: '[data-section="feed"]', message: 'Veja documentos perdidos/encontrados' },
+            { selector: '#search-input', message: 'Pesquise documentos por título ou número' },
+            { selector: '[data-section="perfil"]', message: 'Gerencie seu perfil e documentos' }
+        ];
+
+        helpTargets.forEach(({ selector, message }) => {
+            const element = document.querySelector(selector);
+            if (element) {
+                const helpIcon = document.createElement('i');
+                helpIcon.className = 'fas fa-question-circle help-icon';
+                helpIcon.title = message;
+                element.appendChild(helpIcon);
+
+                helpIcon.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    window.tutorialManager.showContextualHelp(element, message);
+                });
+            }
+        });
     }
 }
 
@@ -315,8 +343,26 @@ async function initializeApp() {
     loadUserData();
     initializeForms();
     
+    // Check if tutorial should start (after successful auth and loading)
+    if (window.tutorialManager) {
+        const tutorialCompleted = window.tutorialManager.isTutorialCompleted('main');
+        if (!tutorialCompleted) {
+            // Small delay to ensure UI is ready
+            setTimeout(() => {
+                window.tutorialManager.startTutorial('main');
+            }, 1500);
+        }
+    }
+    
     // Load initial section
     showSection('documentos');
+    
+    // Disparar evento para iniciar o tutorial (onboarding.js irá escutar isto)
+    try {
+        window.dispatchEvent(new Event('appInitialized'));
+    } catch (e) {
+        console.warn('Could not dispatch appInitialized event:', e);
+    }
 }
 
 function setupNavigation() {
@@ -739,19 +785,47 @@ function createFeedCard(doc, reporterProfile) {
 
     // Determine which buttons to show
     let actionsHtml = '';
+    let ownershipIndicator = '';
+    
     if (isOwnDocument) {
         actionsHtml = `<button class="btn small secondary view-doc" data-id="${doc.id}" data-i18n="actions.details">Ver Detalhes</button>`;
+        ownershipIndicator = '<div class="ownership-badge my-document"><i class="fas fa-user"></i> <span data-i18n="feed.my_document">Meu Documento</span></div>';
     } else {
         actionsHtml = `<button class="btn small primary contact-reporter-btn" data-doc-id="${doc.id}" data-reporter-id="${doc.user_id}" data-i18n="actions.contact">Contactar</button>`;
+        ownershipIndicator = `<div class="ownership-badge reported-document"><i class="fas fa-user-plus"></i> <span data-i18n="feed.reported_by">Reportado por</span>: ${reporterName}</div>`;
+    }
+
+    // Build document details
+    let documentDetails = '';
+    if (doc.document_number) {
+        documentDetails += `<p class="muted"><span data-i18n="documents.document_number">Número</span>: ${doc.document_number}</p>`;
+    }
+    if (doc.type) {
+        documentDetails += `<p class="muted"><span data-i18n="documents.type_label">Tipo</span>: ${doc.type}</p>`;
+    }
+    if (doc.description) {
+        documentDetails += `<p class="muted"><span data-i18n="documents.description_optional">Descrição</span>: ${doc.description}</p>`;
+    }
+
+    // Build document image if available and public
+    let documentImage = '';
+    if (doc.file_url && doc.is_public) {
+        documentImage = `
+            <div class="document-image">
+                <img src="${doc.file_url}" alt="${doc.title}" style="max-width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin: 0.5rem 0;">
+            </div>
+        `;
     }
 
     div.innerHTML = `
-        <div class="document-card">
+        <div class="document-card ${isOwnDocument ? 'my-document' : 'reported-document'}">
             <div class="card-body">
+                ${ownershipIndicator}
                 <h4>${doc.title}</h4>
                 <p class="muted"><span data-i18n="feed.status">Status</span>: <span class="status-${doc.status}" data-i18n="status.${doc.status}">${doc.status}</span></p>
                 <p class="muted"><span data-i18n="feed.location">Local</span>: ${location || '<span class="muted" data-i18n="feed.location">Local</span>'}</p>
-                <p class="muted"><span data-i18n="feed.reported_by">Reportado por</span>: ${reporterName}</p>
+                ${documentDetails}
+                ${documentImage}
                 <div class="card-actions">
                     ${actionsHtml}
                 </div>
@@ -1408,7 +1482,7 @@ async function handleUploadSubmit(event) {
     event.preventDefault();
     
     if (!processedImageBlob) {
-        showToast('Por favor, selecione uma imagem primeiro', 'error');
+        showToast('Por favor, selecione um documento para fazer upload', 'error');
         return;
     }
     

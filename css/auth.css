@@ -345,6 +345,34 @@
     font-size: 1.1rem;
 }
 
+/* Phone button styles */
+.btn-phone {
+    background: linear-gradient(135deg, #25D366, #128C7E);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.btn-phone:hover {
+    background: linear-gradient(135deg, #128C7E, #0F7A6B);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.2);
+}
+
+.btn-phone i {
+    font-size: 1.1rem;
+}
+
 /* Animations */
 @keyframes fadeIn {
     from {

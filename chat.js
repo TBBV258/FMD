@@ -726,7 +726,16 @@
         
         // Initialize chat history tab
         initChatHistoryTab,
-        loadChatHistoryList
+        loadChatHistoryList,
+        
+        // Close chat modal
+        closeChatModal: function() {
+            const modal = document.getElementById('chat-modal');
+            if (modal) {
+                modal.style.display = 'none';
+                console.log('Chat modal closed');
+            }
+        }
     };
     
     // Initialize chat history tab when DOM is loaded
@@ -740,6 +749,13 @@
     window.chat = window.chat || {};
     window.chat.initChatHistoryTab = initChatHistoryTab;
     window.chat.loadChatHistoryList = loadChatHistoryList;
+    window.chat.closeChatModal = function() {
+        const modal = document.getElementById('chat-modal');
+        if (modal) {
+            modal.style.display = 'none';
+            console.log('Chat modal closed');
+        }
+    };
     
     return window.chat;
 })();
