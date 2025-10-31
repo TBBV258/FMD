@@ -164,10 +164,15 @@ class MobileManager {
         mobileStyles.textContent = `
             .mobile-device .navbar {
                 position: fixed;
-                bottom: 0;
-                top: auto;
+                top: 0;
+                bottom: auto;
+                left: 0;
+                right: 0;
                 width: 100%;
                 z-index: 1000;
+                background: var(--card-bg);
+                border-bottom: 1px solid var(--border-color);
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             }
             
             .mobile-device .nav-links {
@@ -188,7 +193,7 @@ class MobileManager {
             }
             
             .mobile-device .container {
-                padding-bottom: 80px;
+                padding-top: 80px;
             }
             
             .mobile-device .modal-content {

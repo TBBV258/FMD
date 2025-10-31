@@ -324,78 +324,6 @@
     margin-left: auto;
 }
 
-/* Tutorial System Styles - Popup Only */
-
-.tutorial-step-content {
-    margin-bottom: 1.5rem;
-}
-
-.tutorial-step h4 {
-    margin: 0 0 0.75rem;
-    color: var(--text-color);
-    font-size: 1.125rem;
-}
-
-.tutorial-step p {
-    margin: 0;
-    color: var(--text-light);
-    line-height: 1.6;
-}
-
-.tutorial-progress {
-    margin-bottom: 1.5rem;
-}
-
-.tutorial-progress .progress-bar {
-    height: 6px;
-    background: var(--border-color);
-    border-radius: 3px;
-    overflow: hidden;
-    margin-bottom: 0.5rem;
-}
-
-.tutorial-progress .progress-fill {
-    height: 100%;
-    background: var(--primary-color);
-    transition: width 0.3s ease;
-}
-
-.tutorial-progress .progress-text {
-    font-size: 0.75rem;
-    color: var(--text-light);
-    text-align: center;
-}
-
-.tutorial-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem 1.5rem 1.5rem;
-    border-top: 1px solid var(--border-color);
-    margin-top: 1rem;
-}
-
-.tutorial-footer .btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.tutorial-highlight {
-    position: fixed;
-    z-index: 9999;
-    pointer-events: none;
-    border: 2px solid var(--primary-color);
-    border-radius: 8px;
-    box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.2);
-    animation: tutorial-pulse 2s infinite;
-}
-
-@keyframes tutorial-pulse {
-    0% { box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.2); }
-    50% { box-shadow: 0 0 0 8px rgba(0, 123, 255, 0.1); }
-    100% { box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.2); }
-}
 
 .contextual-help-tooltip {
     position: fixed;
@@ -520,12 +448,15 @@
 /* Mobile Enhancements */
 .mobile-device .navbar {
     position: fixed;
-    bottom: 0;
-    top: auto;
+    top: 0;
+    bottom: auto;
+    left: 0;
+    right: 0;
     width: 100%;
     z-index: 1000;
     background: var(--card-bg);
-    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .mobile-device .nav-links {
@@ -553,7 +484,7 @@
 }
 
 .mobile-device .container {
-    padding-bottom: 80px;
+    padding-top: 80px;
 }
 
 .mobile-device .modal-content {
@@ -663,16 +594,9 @@
     background: rgba(0, 0, 0, 0.9);
 }
 
-[data-theme="dark"] .tutorial-overlay {
-    background: rgba(0, 0, 0, 0.9);
-}
 
 /* Responsive Design */
 @media (max-width: 768px) {
-    .tutorial-content {
-        width: 95%;
-        margin: 1rem;
-    }
     
     .search-filters {
         flex-direction: column;
@@ -692,21 +616,3 @@
     }
 }
 
-@media (max-width: 480px) {
-    .tutorial-header,
-    .tutorial-body,
-    .tutorial-footer {
-        padding-left: 1rem;
-        padding-right: 1rem;
-    }
-    
-    .tutorial-footer {
-        flex-direction: column;
-        gap: 0.75rem;
-    }
-    
-    .tutorial-footer .btn {
-        width: 100%;
-        justify-content: center;
-    }
-}

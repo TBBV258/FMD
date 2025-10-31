@@ -10,7 +10,6 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="css/document-uploader.css">
     <link rel="stylesheet" href="css/profile.css">
-    <link rel="stylesheet" href="css/tutorial.css">
     <link rel="stylesheet" href="css/profile.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -91,8 +90,348 @@
             </nav>
 
             <style>
-                /* Fix for mobile view */
+                /* Enhanced Feed Filters Styling */
+                .feed-filters-container {
+                    background: var(--card-bg, #fff);
+                    border: 1px solid var(--border-color, #e0e0e0);
+                    border-radius: 12px;
+                    padding: 24px;
+                    margin-bottom: 32px;
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+                }
+                
+                .filters-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 24px;
+                    padding-bottom: 16px;
+                    border-bottom: 1px solid var(--border-color, #e0e0e0);
+                }
+                
+                .filters-header h3 {
+                    margin: 0;
+                    color: var(--text-color, #333);
+                    font-size: 1.1rem;
+                    font-weight: 600;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }
+                
+                .filters-header i {
+                    color: var(--primary-color, #007bff);
+                }
+                
+                .search-section {
+                    margin-bottom: 24px;
+                }
+                
+                .search-input-container {
+                    position: relative;
+                    display: flex;
+                    align-items: center;
+                }
+                
+                .search-icon {
+                    position: absolute;
+                    left: 12px;
+                    color: var(--text-muted, #666);
+                    z-index: 1;
+                }
+                
+                .search-input {
+                    width: 100%;
+                    padding: 12px 48px 12px 40px;
+                    border: 2px solid var(--border-color, #e0e0e0);
+                    border-radius: 8px;
+                    font-size: 1rem;
+                    transition: border-color 0.2s ease;
+                }
+                
+                .search-input:focus {
+                    outline: none;
+                    border-color: var(--primary-color, #007bff);
+                    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+                }
+                
+                .search-button {
+                    position: absolute;
+                    right: 8px;
+                    background: var(--primary-color, #007bff);
+                    color: white;
+                    border: none;
+                    padding: 8px 12px;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    transition: background-color 0.2s ease;
+                }
+                
+                .search-button:hover {
+                    background: var(--primary-dark, #0056b3);
+                }
+                
+                .filters-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                    gap: 20px;
+                }
+                
+                .filter-group {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                }
+                
+                .filter-group label {
+                    font-weight: 500;
+                    color: var(--text-color, #333);
+                    font-size: 0.9rem;
+                }
+                
+                .filter-select, .filter-input {
+                    padding: 10px 12px;
+                    border: 1px solid var(--border-color, #e0e0e0);
+                    border-radius: 6px;
+                    font-size: 0.95rem;
+                    background: var(--input-bg, #fff);
+                    transition: border-color 0.2s ease;
+                }
+                
+                .filter-select:focus, .filter-input:focus {
+                    outline: none;
+                    border-color: var(--primary-color, #007bff);
+                    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+                }
+                
+                .location-input-container {
+                    position: relative;
+                    display: flex;
+                    align-items: center;
+                }
+                
+                .location-icon {
+                    position: absolute;
+                    left: 12px;
+                    color: var(--text-muted, #666);
+                    z-index: 1;
+                }
+                
+                .location-input-container .filter-input {
+                    padding-left: 36px;
+                }
+                
+                .feed-content-wrapper {
+                    margin-top: 32px;
+                }
+                
+                .feed-content {
+                    display: grid;
+                    gap: 24px;
+                }
+                
+                .feed-item {
+                    background: var(--card-bg, #fff);
+                    border: 1px solid var(--border-color, #e0e0e0);
+                    border-radius: 12px;
+                    padding: 24px;
+                    transition: all 0.2s ease;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+                }
+                
+                .feed-item:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+                    border-color: var(--primary-color, #007bff);
+                }
+
+                /* Chats list layout */
+                .chats-toolbar {
+                    display: flex;
+                    justify-content: flex-end;
+                    margin: 8px 0 12px 0;
+                }
+                .chats-search {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }
+                .chats-search input {
+                    padding: 8px 10px;
+                    border: 1px solid var(--border-color, #e0e0e0);
+                    border-radius: 6px;
+                    min-width: 240px;
+                }
+                .chats-list-header {
+                    display: none; /* Hidden - using card layout instead */
+                }
+                .chats-container .chat-item {
+                    display: grid;
+                    grid-template-columns: 60px 1fr auto;
+                    gap: 16px;
+                    align-items: center;
+                    padding: 16px;
+                    margin-bottom: 8px;
+                    background: var(--card-bg, #fff);
+                    border: 1px solid var(--border-color, #e0e0e0);
+                    border-radius: 12px;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+                }
+                .chats-container .chat-item:hover {
+                    background: var(--hover-bg, #f8f9fa);
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                    border-color: var(--primary-color, #007bff);
+                }
+                .chats-container .chat-item.has-unread {
+                    background: var(--unread-bg, #f0f7ff);
+                    border-color: var(--primary-color, #007bff);
+                    border-width: 2px;
+                }
+                .chat-avatar-container {
+                    position: relative;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                .chats-container .chat-avatar {
+                    width: 48px;
+                    height: 48px;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    border: 2px solid var(--border-color, #e0e0e0);
+                }
+                .chat-status-dot {
+                    position: absolute;
+                    bottom: 2px;
+                    right: 2px;
+                    width: 12px;
+                    height: 12px;
+                    background: var(--primary-color, #007bff);
+                    border: 2px solid var(--card-bg, #fff);
+                    border-radius: 50%;
+                }
+                .chats-container .chat-info {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 6px;
+                    min-width: 0;
+                }
+                .chats-container .chat-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    gap: 8px;
+                }
+                .chats-container .chat-name {
+                    margin: 0;
+                    font-size: 1rem;
+                    font-weight: 600;
+                    color: var(--text-color, #333);
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+                .chats-container .chat-item.has-unread .chat-name {
+                    color: var(--primary-color, #007bff);
+                    font-weight: 700;
+                }
+                .chats-container .chat-time {
+                    color: var(--text-muted, #777);
+                    font-size: 0.85rem;
+                    white-space: nowrap;
+                    flex-shrink: 0;
+                }
+                .chats-container .chat-details {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 4px;
+                }
+                .chats-container .chat-preview {
+                    margin: 0;
+                    color: var(--text-muted, #666);
+                    font-size: 0.9rem;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+                .chats-container .chat-last-message {
+                    margin: 0;
+                    color: var(--text-color, #555);
+                    font-size: 0.85rem;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                    font-style: italic;
+                }
+                .chats-container .chat-meta {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: flex-end;
+                    gap: 4px;
+                    flex-shrink: 0;
+                }
+                .chat-unread-badge {
+                    background: var(--primary-color, #007bff);
+                    color: #fff;
+                    border-radius: 12px;
+                    padding: 4px 8px;
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    min-width: 24px;
+                    text-align: center;
+                }
+                .chat-read-indicator {
+                    color: var(--text-muted, #999);
+                    font-size: 0.85rem;
+                }
+
                 @media (max-width: 768px) {
+                    .chats-container .chat-item {
+                        grid-template-columns: 48px 1fr auto;
+                        padding: 12px;
+                        gap: 12px;
+                    }
+                    .chats-container .chat-time {
+                        font-size: 0.75rem;
+                    }
+                    .chats-container .chat-last-message {
+                        display: none;
+                    }
+                }
+                
+                /* Mobile Responsiveness */
+                @media (max-width: 768px) {
+                    .feed-filters-container {
+                        padding: 16px;
+                        margin-bottom: 24px;
+                    }
+                    
+                    .filters-grid {
+                        grid-template-columns: 1fr;
+                        gap: 16px;
+                    }
+                    
+                    .filters-header {
+                        flex-direction: column;
+                        align-items: flex-start;
+                        gap: 12px;
+                    }
+                    
+                    .search-input {
+                        font-size: 16px; /* Prevent zoom on iOS */
+                    }
+                    
+                    .feed-content {
+                        gap: 16px;
+                    }
+                    
+                    .feed-item {
+                        padding: 16px;
+                    }
+                    
                     .profile-actions {
                         display: flex;
                         flex-direction: column;
@@ -108,6 +447,22 @@
                     #profile-add-document {
                         order: -1; /* Move to top */
                         margin-bottom: 10px;
+                    }
+                }
+                
+                @media (max-width: 480px) {
+                    .filters-grid {
+                        grid-template-columns: 1fr;
+                    }
+                    
+                    .search-input-container {
+                        flex-direction: column;
+                    }
+                    
+                    .search-button {
+                        position: static;
+                        width: 100%;
+                        margin-top: 8px;
                     }
                 }
             </style>
@@ -164,10 +519,6 @@
                         Adicionar Novo Documento
                     </button>
                     
-                    <button id="start-tutorial" class="btn secondary full-width" style="margin-top: 0.5rem;" data-i18n="home.start_tutorial">
-                        <i class="fas fa-graduation-cap"></i>
-                        Iniciar Tutorial
-                    </button>
                 </div>
 
                 <div id="documents-grid" class="documents-grid">
@@ -179,15 +530,37 @@
             <section id="feed" class="content-section">
                 <div class="section-header">
                     <h2 data-i18n="nav.feed">Feed de Documentos</h2>
-                    <div class="feed-filters">
-                        <div class="search-filter search-field">
+                </div>
+                
+                <!-- Enhanced Filters Section -->
+                <div class="feed-filters-container">
+                    <div class="filters-header">
+                        <h3><i class="fas fa-filter"></i> <span data-i18n="filters.title">Filtros de Pesquisa</span></h3>
+                        <button id="clear-filters" class="btn secondary small">
+                            <i class="fas fa-times"></i> <span data-i18n="filters.clear">Limpar</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Search Bar - Full Width -->
+                    <div class="search-section">
+                        <div class="search-field">
                             <label for="search-input" data-i18n="feed.search_placeholder">Pesquisar documentos</label>
-                            <input type="text" id="search-input" class="search-input" data-i18n="[placeholder]feed.search_placeholder" placeholder="Pesquisar documentos...">
+                            <div class="search-input-container">
+                                <i class="fas fa-search search-icon"></i>
+                                <input type="text" id="search-input" class="search-input" data-i18n="[placeholder]feed.search_placeholder" placeholder="Pesquisar por título, número ou descrição...">
+                                <button id="search-btn" class="search-button" type="button">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
                             <div id="search-suggestions" class="search-suggestions" style="display: none;"></div>
                         </div>
-                        <div class="search-filter">
-                            <label for="feed-filter-type" data-i18n="filters.type">Tipo</label>
-                            <select id="feed-filter-type">
+                    </div>
+                    
+                    <!-- Filter Grid -->
+                    <div class="filters-grid">
+                        <div class="filter-group">
+                            <label for="feed-filter-type" data-i18n="filters.type">Tipo de Documento</label>
+                            <select id="feed-filter-type" class="filter-select">
                                 <option value="" data-i18n="filters.all_types">Todos os tipos</option>
                                 <option value="ID card" data-i18n="document_types.id_card">BI</option>
                                 <option value="Passport" data-i18n="document_types.passport">Passaporte</option>
@@ -195,21 +568,27 @@
                                 <option value="Bank Doc" data-i18n="document_types.bank_doc">Documento Bancário</option>
                             </select>
                         </div>
-                        <div class="search-filter">
+                        
+                        <div class="filter-group">
                             <label for="feed-filter-status" data-i18n="filters.status">Status</label>
-                            <select id="feed-filter-status">
+                            <select id="feed-filter-status" class="filter-select">
                                 <option value="" data-i18n="filters.all_status">Todos os status</option>
                                 <option value="lost" data-i18n="filters.lost">Perdidos</option>
                                 <option value="found" data-i18n="filters.found">Encontrados</option>
                             </select>
                         </div>
-                        <div class="search-filter">
+                        
+                        <div class="filter-group">
                             <label for="feed-filter-location" data-i18n="filters.location">Localização</label>
-                            <input type="text" id="feed-filter-location" data-i18n="[placeholder]filters.location" placeholder="Cidade ou região">
+                            <div class="location-input-container">
+                                <i class="fas fa-map-marker-alt location-icon"></i>
+                                <input type="text" id="feed-filter-location" class="filter-input" data-i18n="[placeholder]filters.location" placeholder="Cidade ou região">
                         </div>
-                        <div class="search-filter">
+                        </div>
+                        
+                        <div class="filter-group">
                             <label for="feed-filter-distance" data-i18n="filters.distance">Distância</label>
-                            <select id="feed-filter-distance">
+                            <select id="feed-filter-distance" class="filter-select">
                                 <option value="" data-i18n="filters.any_distance">Qualquer distância</option>
                                 <option value="5" data-i18n="filters.distance_5">Até 5 km</option>
                                 <option value="10" data-i18n="filters.distance_10">Até 10 km</option>
@@ -219,8 +598,12 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Feed Content with Better Spacing -->
+                <div class="feed-content-wrapper">
                 <div id="feed-content" class="feed-content">
                     <!-- Feed items will be loaded here -->
+                    </div>
                 </div>
             </section>
 
@@ -236,8 +619,13 @@
                             <option value="">Selecione o tipo</option>
                             <option value="ID card">BI (Bilhete de Identidade)</option>
                             <option value="Passport">Passaporte</option>
+                            <option value="Driving License">Carta de Condução</option>
                             <option value="DIRE">DIRE</option>
+                            <option value="Bank Card">Cartão Bancário</option>
                             <option value="Bank Doc">Documento Bancário</option>
+                            <option value="Student Card">Cartão de Estudante</option>
+                            <option value="Voter Card">Cartão de Eleitor</option>
+                            <option value="Other">Outros</option>
                         </select>
                     </div>
 
@@ -296,8 +684,13 @@
                             <option value="">Selecione o tipo</option>
                             <option value="ID card">BI (Bilhete de Identidade)</option>
                             <option value="Passport">Passaporte</option>
+                            <option value="Driving License">Carta de Condução</option>
                             <option value="DIRE">DIRE</option>
+                            <option value="Bank Card">Cartão Bancário</option>
                             <option value="Bank Doc">Documento Bancário</option>
+                            <option value="Student Card">Cartão de Estudante</option>
+                            <option value="Voter Card">Cartão de Eleitor</option>
+                            <option value="Other">Outros</option>
                         </select>
                     </div>
 
@@ -519,7 +912,21 @@
                     <div class="section-header">
                         <h2 data-i18n="notifications.chats">Conversas</h2>
                     </div>
-                    <div id="chats-container" class="chats-container">
+                    <!-- Chats toolbar and headers -->
+                    <div class="chats-toolbar" role="region" aria-label="Ferramentas de Conversas">
+                        <div class="chats-search">
+                            <i class="fas fa-search" aria-hidden="true"></i>
+                            <input type="text" id="chat-search" placeholder="Pesquisar por pessoa ou documento" aria-label="Pesquisar conversas">
+                            <button id="chat-refresh" class="btn secondary small" type="button" aria-label="Recarregar conversas"><i class="fas fa-rotate"></i></button>
+                        </div>
+                    </div>
+                    <div class="chats-list-header" role="row">
+                        <div class="col-user" role="columnheader">Utilizador</div>
+                        <div class="col-title" role="columnheader">Documento/Assunto</div>
+                        <div class="col-last" role="columnheader">Última Mensagem</div>
+                        <div class="col-time" role="columnheader">Quando</div>
+                    </div>
+                    <div id="chats-container" class="chats-container" role="list">
                         <div class="empty-state">
                             <i class="fas fa-comments"></i>
                             <p data-i18n="notifications.no_chats">Nenhuma conversa recente</p>
@@ -780,17 +1187,15 @@
         }
     </style>
     
-    <script src="js/error-handler.js"></script>
-    <script src="js/loading-manager.js"></script>
-    <script src="js/app-state.js"></script>
-    <script src="js/performance-manager.js"></script>
-    <script src="js/search-manager.js"></script>
-    <script src="js/tutorial-manager.js"></script>
-    <script src="js/mobile-manager.js"></script>
+    <script type="module" src="js/error-handler.js"></script>
+    <script type="module" src="js/loading-manager.js"></script>
+    <script type="module" src="js/app-state.js"></script>
+    <script type="module" src="js/performance-manager.js"></script>
+    <script type="module" src="js/search-manager.js"></script>
+    <script type="module" src="js/mobile-manager.js"></script>
     
     <!-- Initialize Scripts -->
     <script src="script.js"></script>
-    <script src="onboarding.js"></script>
     <script src="ui.js"></script>
     <script src="views.js"></script>
     <script src="chat.js"></script>
@@ -807,21 +1212,18 @@
     <!-- JSZip Library for downloading documents -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
-    <!-- Ranking Progress Modal -->
-    <div id="ranking-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="ranking-modal-title">
-        <div class="modal-content" style="max-width: 600px;" tabindex="-1">
-            <div class="modal-header">
-                <h3 id="ranking-modal-title"><i class="fas fa-trophy"></i> Progresso de Ranking</h3>
-                <button class="close-btn" id="close-ranking-modal">&times;</button>
+    <!-- Ranking Section (in-page, not modal) -->
+    <section id="ranking" class="content-section">
+        <div class="section-header">
+            <h2><i class="fas fa-trophy"></i> Progresso de Ranking</h2>
             </div>
-            <div class="modal-body" id="ranking-modal-body">
+        <div id="ranking-content" class="ranking-content">
                 <div class="loading-state">
                     <i class="fas fa-spinner fa-spin"></i>
                     <p>Carregando progresso...</p>
                 </div>
             </div>
-        </div>
-    </div>
+    </section>
 
     <!-- Payment Modal -->
     <div id="payment-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="payment-modal-title">
@@ -877,8 +1279,6 @@
 
     <!-- Initialize Scripts -->
     <script src="script.js"></script>
-    <script src="js/tutorial-manager.js"></script>
-    <script src="onboarding.js"></script>
     <script src="ui.js"></script>
 </body>
 </html>

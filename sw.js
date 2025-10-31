@@ -1,5 +1,5 @@
 // Service Worker for FindMyDocs Offline Support
-const CACHE_NAME = 'findmydocs-v1';
+const CACHE_NAME = 'findmydocs-v2';
 const STATIC_CACHE_URLS = [
     '/',
     '/index.html',
@@ -14,7 +14,6 @@ const STATIC_CACHE_URLS = [
     '/js/app-state.js',
     '/js/performance-manager.js',
     '/js/search-manager.js',
-    '/js/tutorial-manager.js',
     '/js/mobile-manager.js',
     '/auth.js',
     '/translations.js',

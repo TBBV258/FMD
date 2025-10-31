@@ -22,10 +22,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Initialize enhanced features
 function initializeEnhancedFeatures() {
-    // Initialize tutorial system
-    if (window.tutorialManager) {
-        setupTutorialTriggers();
-    }
     
     // Initialize search functionality
     if (window.searchManager) {
@@ -47,52 +43,8 @@ function initializeEnhancedFeatures() {
         setupLoadingStates();
     }
 
-    // Listen for appInitialized event to start tutorial
-    window.addEventListener('appInitialized', () => {
-        if (window.tutorialManager && !window.tutorialManager.isTutorialCompleted('main')) {
-            setTimeout(() => {
-                window.tutorialManager.startTutorial('main');
-            }, 1500);
-        }
-    });
 }
 
-// Setup tutorial triggers
-function setupTutorialTriggers() {
-    const startTutorialBtn = document.getElementById('start-tutorial');
-    if (startTutorialBtn) {
-        startTutorialBtn.addEventListener('click', () => {
-            // Force restart tutorial when button is clicked
-            window.tutorialManager.startTutorial('main', true);
-        });
-    }
-
-    // Initialize contextual help
-    if (window.tutorialManager) {
-        // Add help icons to important elements
-        const helpTargets = [
-            { selector: '#add-document', message: 'Adicione um novo documento aqui' },
-            { selector: '[data-section="feed"]', message: 'Veja documentos perdidos/encontrados' },
-            { selector: '#search-input', message: 'Pesquise documentos por título ou número' },
-            { selector: '[data-section="perfil"]', message: 'Gerencie seu perfil e documentos' }
-        ];
-
-        helpTargets.forEach(({ selector, message }) => {
-            const element = document.querySelector(selector);
-            if (element) {
-                const helpIcon = document.createElement('i');
-                helpIcon.className = 'fas fa-question-circle help-icon';
-                helpIcon.title = message;
-                element.appendChild(helpIcon);
-
-                helpIcon.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    window.tutorialManager.showContextualHelp(element, message);
-                });
-            }
-        });
-    }
-}
 
 // Setup search functionality
 function setupSearchFunctionality() {
@@ -343,26 +295,10 @@ async function initializeApp() {
     loadUserData();
     initializeForms();
     
-    // Check if tutorial should start (after successful auth and loading)
-    if (window.tutorialManager) {
-        const tutorialCompleted = window.tutorialManager.isTutorialCompleted('main');
-        if (!tutorialCompleted) {
-            // Small delay to ensure UI is ready
-            setTimeout(() => {
-                window.tutorialManager.startTutorial('main');
-            }, 1500);
-        }
-    }
     
     // Load initial section
     showSection('documentos');
     
-    // Disparar evento para iniciar o tutorial (onboarding.js irá escutar isto)
-    try {
-        window.dispatchEvent(new Event('appInitialized'));
-    } catch (e) {
-        console.warn('Could not dispatch appInitialized event:', e);
-    }
 }
 
 function setupNavigation() {
@@ -588,6 +524,17 @@ function loadSectionData(sectionId) {
             break;
         case 'perfil':
             renderProfilePage();
+            break;
+        case 'notificacoes':
+            if (window.chat) {
+                try { window.chat.initChatHistoryTab && window.chat.initChatHistoryTab(); } catch (e) { /* no-op */ }
+                try { window.chat.loadChatHistoryList && window.chat.loadChatHistoryList(); } catch (e) { /* no-op */ }
+            }
+            break;
+        case 'ranking':
+            if (window.renderRankingSection) {
+                window.renderRankingSection();
+            }
             break;
     }
 }
@@ -1592,15 +1539,6 @@ async function handleUploadSubmit(event) {
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(initializeUploadModal, 100);
     setTimeout(initializeAvatarUpload, 100);
-    // Ensure tutorial manager exists and wire start button
-    try {
-        if (window.tutorialManager) {
-            const tutorialBtn = document.getElementById('start-tutorial');
-            if (tutorialBtn) {
-                tutorialBtn.addEventListener('click', () => window.tutorialManager.startTutorial('main', true));
-            }
-        }
-    } catch (e) { console.warn('Tutorial init failed', e); }
     
     // Initialize profile logout button
     const profileLogoutBtn = document.getElementById('profile-logout-btn');
@@ -1609,7 +1547,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Initialize ranking modal
-    initializeRankingModal();
+    initializeRankingSection();
     
     // Initialize feed filters
     initializeFeedFilters();
@@ -2005,45 +1943,24 @@ async function trackHelpProvided() {
     await awardPoints('help_provided', 30);
 }
 
-// Ranking Modal Functions
-function initializeRankingModal() {
+// Ranking Section Functions
+function initializeRankingSection() {
     const viewRankingBtn = document.getElementById('view-ranking-progress');
-    const rankingModal = document.getElementById('ranking-modal');
-    const closeRankingModal = document.getElementById('close-ranking-modal');
-
     if (viewRankingBtn) {
         viewRankingBtn.addEventListener('click', () => {
-            openRankingModal();
-        });
-    }
-
-    if (closeRankingModal) {
-        closeRankingModal.addEventListener('click', () => {
-            rankingModal.style.display = 'none';
-        });
-    }
-
-    // Close modal when clicking outside
-    if (rankingModal) {
-        rankingModal.addEventListener('click', (e) => {
-            if (e.target === rankingModal) {
-                rankingModal.style.display = 'none';
-            }
+            showSection('ranking');
+            renderRankingSection();
         });
     }
 }
 
-async function openRankingModal() {
-    const rankingModal = document.getElementById('ranking-modal');
-    const modalBody = document.getElementById('ranking-modal-body');
-    
-    if (!rankingModal || !modalBody) return;
-    
-    rankingModal.style.display = 'block';
+async function renderRankingSection() {
+    const rankingContent = document.getElementById('ranking-content');
+    if (!rankingContent) return;
     
     try {
         // Show loading state
-        modalBody.innerHTML = `
+        rankingContent.innerHTML = `
             <div class="loading-state">
                 <i class="fas fa-spinner fa-spin"></i>
                 <p>Carregando progresso de ranking...</p>
@@ -2094,8 +2011,8 @@ async function openRankingModal() {
             pointsToNext = nextRank.minPoints - currentPoints;
         }
         
-        // Generate ranking modal content
-        modalBody.innerHTML = `
+        // Generate ranking section content
+        rankingContent.innerHTML = `
             <div class="ranking-progress-container">
                 <div class="current-rank-display">
                     <div class="rank-badge-large" style="background: ${currentRank.color};">
@@ -2160,7 +2077,7 @@ async function openRankingModal() {
         
     } catch (error) {
         console.error('Error loading ranking data:', error);
-        modalBody.innerHTML = `
+        rankingContent.innerHTML = `
             <div class="error-state">
                 <i class="fas fa-exclamation-triangle"></i>
                 <p>Erro ao carregar dados de ranking</p>
@@ -2172,7 +2089,7 @@ async function openRankingModal() {
 
 // Accessibility helpers for modals: ESC to close, focus trap, restore focus
 function setupGlobalModalAccessibility() {
-    const modalSelectors = ['upload-modal', 'chat-modal', 'ranking-modal', 'payment-modal', 'document-preview-modal'];
+    const modalSelectors = ['upload-modal', 'chat-modal', 'payment-modal', 'document-preview-modal'];
 
     // Keep track of last focused element before opening a modal
     let lastFocusedBeforeOpen = null;
@@ -2289,4 +2206,4 @@ window.showToast = showToast;
 window.renderProfilePage = renderProfilePage;
 window.handleLogout = handleLogout;
 window.awardPoints = awardPoints;
-window.openRankingModal = openRankingModal;
+window.renderRankingSection = renderRankingSection;

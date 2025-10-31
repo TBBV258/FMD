@@ -132,7 +132,6 @@ window.translations = {
 
         // Home quick actions
         'home.add_new_document': 'Adicionar Novo Documento',
-        'home.start_tutorial': 'Iniciar Tutorial',
 
         // Profile
         'profile.stats.documents': 'Documentos',
@@ -370,7 +369,6 @@ window.translations = {
 
         // Home quick actions
         'home.add_new_document': 'Add New Document',
-        'home.start_tutorial': 'Start Tutorial',
 
         // Profile
         'profile.stats.documents': 'Documents',
@@ -520,7 +518,6 @@ window.translations = {
 
         // Home quick actions
         'home.add_new_document': 'Ajouter un Nouveau Document',
-        'home.start_tutorial': 'Démarrer le Tutoriel',
 
         // Profile
         'profile.stats.documents': 'Documents',

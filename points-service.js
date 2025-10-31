@@ -144,16 +144,16 @@ class PointsService {
      * Update the points and rank display in the UI
      * @param {number} points - Current points
      * @param {Object} rank - Current rank info
-     * @param {boolean} showPopup - Whether to show the ranking popup (default: true)
+     * @param {boolean} showPopup - Whether to navigate to ranking section (default: true)
      */
     updatePointsUI(points, rank, showPopup = true) {
         // Update points display
         const pointsElement = document.getElementById('profile-points');
         if (pointsElement) pointsElement.textContent = points;
         
-        // Show ranking popup only if explicitly requested
-        if (showPopup && window.openRankingModal) {
-            window.openRankingModal();
+        // Navigate to ranking section only if explicitly requested
+        if (showPopup && window.showSection) {
+            window.showSection('ranking');
         }
 
         // Update rank badge

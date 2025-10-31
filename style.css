@@ -443,19 +443,6 @@ body {
     z-index: 10;
 }
 
-/* Ranking modal centering */
-#ranking-modal {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-}
-
-#ranking-modal .modal-content {
-    margin: 0;
-    max-height: 80vh;
-    overflow-y: auto;
-}
 
 /* Map common classes used in uploader to app styles */
 .btn.btn-primary {
@@ -1657,7 +1644,7 @@ body {
     }
 }
 
-/* Ranking Modal Styles */
+/* Ranking Section Styles */
 .ranking-progress-container {
     padding: var(--spacing-md);
 }
@@ -1885,9 +1872,22 @@ body {
 /* Responsive Design */
 @media (max-width: 768px) {
     .navbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
         flex-direction: column;
         gap: var(--spacing-sm);
         padding: var(--spacing-sm);
+        z-index: 1000;
+        background: var(--white);
+        border-bottom: 1px solid var(--border-color);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .container {
+        padding-top: 80px;
     }
     
     .nav-links {

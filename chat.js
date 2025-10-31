@@ -94,23 +94,40 @@
             
             const threadsHtml = Object.values(threads)
                 .sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime))
-                .map(thread => `
-                    <div class="chat-item" 
+                .map(thread => {
+                    const avatarUrl = thread.otherUserAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(thread.otherUserName)}&background=random`;
+                    const hasUnread = thread.unreadCount > 0;
+                    
+                    return `
+                    <div class="chat-item ${hasUnread ? 'has-unread' : ''}" 
                          data-document-id="${thread.documentId || ''}" 
-                         data-receiver-id="${thread.otherUserId}">
-                        <img src="${thread.otherUserAvatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(thread.otherUserName) + '&background=random'}" 
-                             alt="${thread.otherUserName}" 
-                             class="chat-avatar"
-                             onerror="this.src='https://ui-avatars.com/api/?name='+encodeURIComponent('${thread.otherUserName}')+''">
+                         data-receiver-id="${thread.otherUserId}"
+                         role="listitem">
+                        <div class="chat-avatar-container">
+                            <img src="${avatarUrl}" 
+                                 alt="${thread.otherUserName}" 
+                                 class="chat-avatar"
+                                 onerror="this.src='https://ui-avatars.com/api/?name='+encodeURIComponent('${thread.otherUserName}')+'&background=random'">
+                            ${hasUnread ? '<span class="chat-status-dot"></span>' : ''}
+                        </div>
                         <div class="chat-info">
                             <div class="chat-header">
                                 <h4 class="chat-name">${thread.otherUserName}</h4>
                                 <span class="chat-time">${formatTimeAgo(thread.lastMessageTime)}</span>
                             </div>
-                            <p class="chat-preview">${thread.documentTitle}</p>
+                            <div class="chat-details">
+                                <p class="chat-preview">
+                                    <i class="fas fa-file-alt" style="margin-right: 4px; opacity: 0.6;"></i>
+                                    ${thread.documentTitle}
+                                </p>
+                                ${thread.lastMessage ? `<p class="chat-last-message">${thread.lastMessage.substring(0, 60)}${thread.lastMessage.length > 60 ? '...' : ''}</p>` : ''}
+                            </div>
                         </div>
-                        ${thread.unreadCount > 0 ? `<span class="chat-unread">${thread.unreadCount}</span>` : ''}
-                    </div>`)
+                        <div class="chat-meta">
+                            ${hasUnread ? `<span class="chat-unread-badge">${thread.unreadCount}</span>` : '<span class="chat-read-indicator"><i class="fas fa-check-double"></i></span>'}
+                        </div>
+                    </div>`;
+                })
                 .join('');
                 
             container.innerHTML = threadsHtml;
@@ -363,8 +380,14 @@
                                     appendMessage(payload.new, false);
                                     onNewMessage?.(payload.new);
                                     
-                                    // Mark message as delivered
-                                    window.chatsApi.markAsDelivered(documentId, user.id);
+                                    // Mark message as delivered (if method exists)
+                                    if (typeof window.chatsApi.markAsDelivered === 'function') {
+                                        try {
+                                            window.chatsApi.markAsDelivered(documentId, user.id);
+                                        } catch (e) {
+                                            console.warn('Could not mark message as delivered:', e);
+                                        }
+                                    }
                                 }
                             }
                         } else if (payload && payload.eventType === 'UPDATE') {
@@ -584,8 +607,8 @@
                 if (!receiverId) {
                     console.log('No receiverId provided, attempting to determine from document and chat history...');
                     try {
-                        const document = await window.documentsApi.getById(documentId);
-                        if (!document) {
+                        const docRecord = await window.documentsApi.getById(documentId);
+                        if (!docRecord) {
                             throw new Error('Document not found');
                         }
                         
@@ -606,8 +629,8 @@
                         }
                         
                         // If still no receiverId and this is not your document, chat with the document owner
-                        if (!receiverId && document.user_id !== user.id) {
-                            receiverId = document.user_id;
+                        if (!receiverId && docRecord.user_id !== user.id) {
+                            receiverId = docRecord.user_id;
                             console.log('Determined receiverId from document owner:', receiverId);
                         }
                         
@@ -682,9 +705,13 @@
                     };
                 }
                 
-                // Mark messages as read when opening chat
-                if (window.chatsApi && user && receiverId) {
-                    window.chatsApi.markAsRead(documentId, user.id, receiverId);
+                // Mark messages as read when opening chat (if method exists)
+                if (window.chatsApi && user && receiverId && typeof window.chatsApi.markAsRead === 'function') {
+                    try {
+                        window.chatsApi.markAsRead(documentId, user.id, receiverId);
+                    } catch (e) {
+                        console.warn('Could not mark messages as read:', e);
+                    }
                 }
                 
             } catch (error) {
