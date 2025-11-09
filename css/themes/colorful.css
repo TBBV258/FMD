@@ -1,0 +1,9 @@
+body.colorful {
+  background: linear-gradient(135deg, #f8fafc 0%, #a7f3d0 100%);
+  color: #0f172a;
+}
+
+nav, .card, .modal {
+  background: #fbbf24 !important;
+  color: #0f172a !important;
+}

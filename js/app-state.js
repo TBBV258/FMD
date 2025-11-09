@@ -1,3 +1,201 @@
+// app-state.js
+// Estado global e inicialização dos módulos principais
+import { renderBottomNav } from './ui/bottom-nav.js';
+import { renderThemeSwitcher } from './ui/theme-switcher.js';
+import { setupOffline } from './pwa-offline.js';
+import { showToast } from './ui/toasts.js';
+import { showModal } from './ui/modals.js';
+
+// Inicialização global
+window.addEventListener('DOMContentLoaded', () => {
+  renderBottomNav();
+  renderThemeSwitcher();
+  setupOffline();
+  initOCRDemo();
+  initGeoDemo();
+  initChatDemo();
+  // ...inicializar outros módulos conforme necessário
+});
+
+// Scanner de Documentos
+async function initScanner() {
+  const scannerUI = new ScanUI();
+  const video = document.getElementById('scanner-video');
+  const canvas = document.createElement('canvas');
+  const preview = document.getElementById('preview-image');
+  
+  if (!video || !preview) return;
+  
+  try {
+    await scannerUI.initialize(video, canvas, preview);
+    
+    // Botões de controle
+    const btnCapture = document.getElementById('btn-capture');
+    const btnRetry = document.getElementById('btn-retry');
+    const btnConfirm = document.getElementById('btn-confirm');
+    const btnSwitch = document.getElementById('btn-switch-camera');
+    const btnFlash = document.getElementById('btn-flash');
+    
+    // Containers
+    const scannerContainer = document.getElementById('scanner-container');
+    const previewContainer = document.getElementById('preview-container');
+    
+    // Evento de captura
+    btnCapture?.addEventListener('click', async () => {
+      const result = await scannerUI.capture();
+      if (result) {
+        scannerContainer.classList.add('hidden');
+        previewContainer.classList.remove('hidden');
+      }
+    });
+    
+    // Tentar novamente
+    btnRetry?.addEventListener('click', () => {
+      scannerContainer.classList.remove('hidden');
+      previewContainer.classList.add('hidden');
+      scannerUI.resetUI();
+    });
+    
+    // Confirmar documento
+    btnConfirm?.addEventListener('click', async () => {
+      showToast('Documento salvo com sucesso!', 'success');
+      // Aqui você pode implementar o salvamento no Supabase
+    });
+    
+    // Trocar câmera
+    let usingFront = false;
+    btnSwitch?.addEventListener('click', async () => {
+      usingFront = !usingFront;
+      const newStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: usingFront ? 'user' : 'environment' }
+      });
+      video.srcObject = newStream;
+    });
+    
+    // Flash (se disponível)
+    let flashOn = false;
+    btnFlash?.addEventListener('click', async () => {
+      const track = video.srcObject?.getVideoTracks()[0];
+      const capabilities = track?.getCapabilities();
+      
+      if (capabilities?.torch) {
+        flashOn = !flashOn;
+        await track.applyConstraints({
+          advanced: [{ torch: flashOn }]
+        });
+        btnFlash.innerHTML = `<i class="fas fa-bolt${flashOn ? ' text-yellow-300' : ''}"></i>`;
+      }
+    });
+    
+  } catch (error) {
+    console.error('Erro ao inicializar scanner:', error);
+    showToast('Erro ao inicializar câmera', 'error');
+  }
+}
+}
+
+// Exemplo: Geofencing UI
+function initGeoDemo() {
+  const btn = document.getElementById('btn-set-geofence');
+  const alertDiv = document.getElementById('geo-alert');
+  if (!btn) return;
+  btn.onclick = async () => {
+    try {
+      showToast('Obtendo sua localização...', 'info');
+      alertDiv.innerHTML = '<span class="animate-pulse">Obtendo localização...</span>';
+      
+      const position = await new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject(new Error('Geolocalização não suportada'));
+          return;
+        }
+        
+        navigator.geolocation.getCurrentPosition(resolve, reject);
+      });
+      
+      const coords = {
+        lat: position.coords.latitude.toFixed(4),
+        lng: position.coords.longitude.toFixed(4)
+      };
+      
+      alertDiv.innerHTML = `<b>Zona definida:</b> Lat ${coords.lat}, Lng ${coords.lng}`;
+      showToast('Localização obtida!', 'success');
+      
+      const confirmed = await showModal(`
+        <h3 class="text-lg font-bold mb-4">Confirmar Zona de Busca</h3>
+        <div class="space-y-4">
+          <p>Deseja definir uma zona de busca com raio de 1km ao redor de:</p>
+          <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded">
+            <p><b>Latitude:</b> ${coords.lat}</p>
+            <p><b>Longitude:</b> ${coords.lng}</p>
+          </div>
+        </div>
+      `, { showCancel: true, confirmText: 'Definir Zona' });
+
+      if (confirmed) {
+        showToast('Zona de busca definida!', 'success');
+      }
+    } catch (error) {
+      showToast('Erro ao obter localização', 'error');
+      alertDiv.innerHTML = '<span class="text-red-500">Erro ao obter localização</span>';
+      console.error('Erro geolocation:', error);
+    }
+      });
+    }
+  };
+}
+
+// Exemplo: Chat UI
+function initChatDemo() {
+  const chatArea = document.getElementById('chat-area');
+  const chatMessages = document.getElementById('chat-messages');
+  const chatInput = document.getElementById('chat-input');
+  const btnSend = document.getElementById('btn-chat-send');
+  if (!chatArea || !chatMessages || !chatInput || !btnSend) return;
+  chatMessages.innerHTML = '';
+  const addMsg = (msg, self=false) => {
+    const div = document.createElement('div');
+    div.className = 'mb-1 ' + (self ? 'text-right text-blue-700 dark:text-blue-300' : 'text-gray-800 dark:text-gray-200');
+    div.textContent = msg;
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  };
+  btnSend.onclick = async () => {
+    try {
+      const msg = chatInput.value.trim();
+      if (!msg) {
+        showToast('Digite uma mensagem primeiro', 'warning');
+        return;
+      }
+      
+      addMsg(msg, true);
+      chatInput.value = '';
+      showToast('Mensagem enviada!', 'success');
+      
+      // Simula resposta do bot
+      await new Promise(resolve => setTimeout(resolve, 500));
+      addMsg('🤖 Bot: Processando sua mensagem...');
+      
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      addMsg('🤖 Bot: Obrigado pelo contato! Como posso ajudar?');
+      
+      await showModal(`
+        <h3 class="text-lg font-bold mb-4">Assistente Virtual</h3>
+        <div class="space-y-4">
+          <p>Seu chat foi iniciado com sucesso!</p>
+          <p class="text-sm text-gray-600 dark:text-gray-300">
+            Use este chat para tirar dúvidas sobre documentos 
+            perdidos ou encontrados.
+          </p>
+        </div>
+      `);
+    } catch (error) {
+      showToast('Erro ao processar mensagem', 'error');
+      console.error('Erro chat:', error);
+    }
+  };
+}
+
 // State Management System for FindMyDocs
 class AppState {
     constructor() {

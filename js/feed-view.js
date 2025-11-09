@@ -20,6 +20,43 @@ class FeedViewController {
         // Filter elements
         this.typeFilter = document.getElementById('feed-filter-type');
         this.statusFilter = document.getElementById('feed-filter-status');
+        this.filterContainer = document.getElementById('feed-filters');
+        
+        // Create search and filter container if it doesn't exist
+        if (!document.getElementById('search-filter-container')) {
+            const container = document.createElement('div');
+            container.id = 'search-filter-container';
+            container.className = 'search-filter-container';
+            
+            // Create search button
+            this.searchBtn = document.createElement('button');
+            this.searchBtn.id = 'search-btn';
+            this.searchBtn.className = 'search-btn';
+            this.searchBtn.innerHTML = '<i class="fas fa-search"></i> Pesquisar';
+            
+            // Create filter panel
+            this.filterPanel = document.createElement('div');
+            this.filterPanel.id = 'filter-panel';
+            this.filterPanel.className = 'filter-panel';
+            
+            // Move existing filters to the new panel
+            if (this.filterContainer) {
+                this.filterPanel.appendChild(this.filterContainer);
+            }
+            
+            container.appendChild(this.searchBtn);
+            container.appendChild(this.filterPanel);
+            
+            // Insert the new container in the appropriate location
+            const mainContent = document.querySelector('.container');
+            if (mainContent) {
+                mainContent.insertBefore(container, mainContent.firstChild);
+            }
+        }
+        
+        // Get references to new elements
+        this.searchBtn = document.getElementById('search-btn');
+        this.filterPanel = document.getElementById('filter-panel');
     }
 
     setupEventListeners() {
@@ -35,6 +72,52 @@ class FeedViewController {
         if (this.statusFilter) {
             this.statusFilter.addEventListener('change', () => this.onFiltersChanged());
         }
+
+        // Toggle search panel
+        if (this.searchBtn) {
+            this.searchBtn.addEventListener('click', () => this.toggleSearchPanel());
+        }
+
+        // Close search panel when clicking outside
+        document.addEventListener('click', (e) => {
+            if (this.filterPanel && 
+                !this.filterPanel.contains(e.target) && 
+                !this.searchBtn.contains(e.target) &&
+                this.filterPanel.classList.contains('show')) {
+                this.hideSearchPanel();
+            }
+        });
+    }
+
+    toggleSearchPanel() {
+        if (this.filterPanel) {
+            const isVisible = this.filterPanel.classList.contains('show');
+            if (isVisible) {
+                this.hideSearchPanel();
+            } else {
+                this.showSearchPanel();
+            }
+        }
+    }
+
+    showSearchPanel() {
+        this.filterPanel.classList.add('show');
+        this.searchBtn.classList.add('active');
+        // Animate the panel
+        this.filterPanel.style.opacity = '0';
+        this.filterPanel.style.display = 'block';
+        setTimeout(() => {
+            this.filterPanel.style.opacity = '1';
+        }, 10);
+    }
+
+    hideSearchPanel() {
+        this.filterPanel.classList.remove('show');
+        this.searchBtn.classList.remove('active');
+        this.filterPanel.style.opacity = '0';
+        setTimeout(() => {
+            this.filterPanel.style.display = 'none';
+        }, 300);
     }
 
     toggleView() {

@@ -10,13 +10,18 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="css/document-uploader.css">
     <link rel="stylesheet" href="css/profile.css">
-    <link rel="stylesheet" href="css/profile.css">
+    <link rel="stylesheet" href="css/chat-box.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <script src="checkAuth.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/chat-box.js"></script>
+    <link rel="stylesheet" href="css/tailwind.css">
+    <link rel="stylesheet" href="css/themes/dark.css" id="theme-dark" disabled>
+    <link rel="stylesheet" href="css/themes/minimal.css" id="theme-minimal" disabled>
+    <link rel="stylesheet" href="css/themes/colorful.css" id="theme-colorful" disabled>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // Handle logout
@@ -38,6 +43,9 @@
     </script>
 </head>
 <body>
+    <!-- Theme Switcher -->
+    <div id="theme-switcher"></div>
+
     <!-- Toast Container -->
     <div id="toast-container" class="toast-container"></div>
 
@@ -934,6 +942,100 @@
                     </div>
                 </div>
             </section>
+
+            <!-- UI Examples Section -->
+            <main class="p-4 space-y-8">
+      <!-- 📷 OCR Scanner -->
+      <section class="bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 class="text-lg font-bold flex items-center gap-2">
+            <i class="fas fa-camera"></i> Scanner de Documentos
+          </h2>
+        </div>
+
+        <div id="scanner-container" class="relative">
+          <!-- Área da câmera -->
+          <div id="camera-area" class="relative aspect-[4/3] bg-black">
+            <video id="scanner-video" 
+              class="w-full h-full object-cover"
+              autoplay 
+              playsinline 
+              muted>
+            </video>
+            
+            <!-- Guias de alinhamento -->
+            <div class="absolute inset-0 pointer-events-none border-2 border-dashed border-white/50 m-8"></div>
+            
+            <!-- Overlay de feedback -->
+            <div id="scanner-overlay" class="absolute inset-0 pointer-events-none"></div>
+          </div>
+
+          <!-- Controles -->
+          <div class="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+            <div class="flex justify-between items-center">
+              <button id="btn-switch-camera" class="p-2 rounded-full bg-white/20 text-white hover:bg-white/30 transition">
+                <i class="fas fa-sync"></i>
+              </button>
+              
+              <button id="btn-capture" 
+                class="px-6 py-3 rounded-full bg-white text-gray-900 font-medium hover:bg-white/90 transition transform hover:scale-105">
+                Capturar
+              </button>
+              
+              <button id="btn-flash" class="p-2 rounded-full bg-white/20 text-white hover:bg-white/30 transition">
+                <i class="fas fa-bolt"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Preview e Resultados -->
+        <div id="preview-container" class="hidden p-4 space-y-4">
+          <img id="preview-image" class="w-full rounded shadow-lg" alt="Preview do documento">
+          
+          <div id="ocr-result" class="space-y-3">
+            <div class="animate-pulse">
+              <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+              <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mt-2"></div>
+            </div>
+          </div>
+          
+          <div class="flex gap-2">
+            <button id="btn-retry" 
+              class="flex-1 px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+              Tentar Novamente
+            </button>
+            <button id="btn-confirm" 
+              class="flex-1 px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition">
+              Confirmar
+            </button>
+          </div>
+        </div>
+      </section>              <!-- 🌍 Geofencing Example -->
+              <section class="bg-white dark:bg-gray-900 rounded-xl shadow p-4">
+                <h2 class="text-lg font-bold mb-2 flex items-center gap-2"><i class="fas fa-map-marker-alt"></i> Geofencing & Alertas</h2>
+                <div id="geo-map-area" class="relative h-48 w-full rounded overflow-hidden bg-gray-100 dark:bg-gray-800 animate-pulse">
+                  <!-- Mapa será renderizado aqui -->
+                  <div class="absolute inset-0 flex items-center justify-center text-gray-400">Carregando mapa...</div>
+                </div>
+                <button id="btn-set-geofence" class="mt-4 bg-green-600 text-white px-4 py-2 rounded transition hover:bg-green-700">Definir Zona</button>
+                <div id="geo-alert" class="mt-2 text-sm text-green-700 dark:text-green-300"></div>
+              </section>
+
+              <!-- 🤖 Chat Example -->
+              <section class="bg-white dark:bg-gray-900 rounded-xl shadow p-4">
+                <h2 class="text-lg font-bold mb-2 flex items-center gap-2"><i class="fas fa-comments"></i> Chat Inteligente</h2>
+                <div id="chat-area" class="flex flex-col gap-2 max-w-md mx-auto">
+                  <div id="chat-messages" class="h-32 overflow-y-auto bg-gray-50 dark:bg-gray-800 rounded p-2 animate-pulse">
+                    <div class="text-gray-400">Carregando histórico...</div>
+                  </div>
+                  <div class="flex gap-2 mt-2">
+                    <input id="chat-input" type="text" class="flex-1 rounded border px-2 py-1 dark:bg-gray-700 dark:text-white" placeholder="Digite sua mensagem...">
+                    <button id="btn-chat-send" class="bg-blue-600 text-white px-3 py-1 rounded transition hover:bg-blue-700">Enviar</button>
+                  </div>
+                </div>
+              </section>
+            </main>
         </div>
     </div>
 
@@ -1190,95 +1292,23 @@
     <script type="module" src="js/error-handler.js"></script>
     <script type="module" src="js/loading-manager.js"></script>
     <script type="module" src="js/app-state.js"></script>
-    <script type="module" src="js/performance-manager.js"></script>
-    <script type="module" src="js/search-manager.js"></script>
-    <script type="module" src="js/mobile-manager.js"></script>
-    
-    <!-- Initialize Scripts -->
-    <script src="script.js"></script>
-    <script src="ui.js"></script>
-    <script src="views.js"></script>
-    <script src="chat.js"></script>
-    <script src="map.js"></script>
-    <script src="documents.js"></script>
-    
-    <!-- Document Management -->
-    <script src="js/documentMatching.js"></script>
-    <script src="js/documentForms.js"></script>
-    <script src="js/document-viewer.js"></script>
-    <script src="enhancedDocumentUploader.js"></script>
-    <script src="js/profile.js"></script>
-
-    <!-- JSZip Library for downloading documents -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-
-    <!-- Ranking Section (in-page, not modal) -->
-    <section id="ranking" class="content-section">
-        <div class="section-header">
-            <h2><i class="fas fa-trophy"></i> Progresso de Ranking</h2>
-            </div>
-        <div id="ranking-content" class="ranking-content">
-                <div class="loading-state">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <p>Carregando progresso...</p>
-                </div>
-            </div>
-    </section>
-
-    <!-- Payment Modal -->
-    <div id="payment-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="payment-modal-title">
-        <div class="modal-content" tabindex="-1">
-            <div class="modal-header">
-                <h3 id="payment-modal-title">Processar Pagamento</h3>
-                <button class="close-btn" id="close-payment-modal">&times;</button>
-            </div>
-            <div class="modal-body" id="payment-modal-body">
-                <!-- Payment steps will be loaded here -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Document Preview Modal -->
-    <div id="document-preview-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="preview-modal-title">
-        <div class="modal-content large" tabindex="-1">
-            <div class="modal-header">
-                <h3 id="preview-modal-title">Visualizar Documento</h3>
-                <button class="close-btn" id="close-preview-modal">&times;</button>
-            </div>
-            <div class="modal-body" id="preview-modal-body">
-                <!-- Document content will be loaded here -->
-                <div class="loading-state">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <p>Carregando documento...</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Location Picker Modal (Leaflet) -->
-    <div id="location-picker-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="location-picker-title">
-        <div class="modal-content" style="max-width: 720px;" tabindex="-1">
-            <div class="modal-header">
-                <h3 id="location-picker-title"><i class="fas fa-map-marker-alt"></i> Selecionar Localização</h3>
-                <button class="close-btn" id="close-location-picker">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div id="leaflet-map" style="width:100%; height: 60vh; border-radius: 8px;"></div>
-                <div style="display:flex; gap:8px; margin-top:12px; align-items:center;">
-                    <input type="text" id="location-picker-address" class="form-control" placeholder="Descrição do local (opcional)" style="flex:1">
-                    <button id="use-current-location" class="btn secondary small" type="button"><i class="fas fa-location-arrow"></i></button>
-                </div>
-                <small class="muted">Toque no mapa para definir o local. Pode arrastar o marcador para ajustar.</small>
-            </div>
-            <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:8px; padding: 12px; border-top: 1px solid var(--border-color);">
-                <button type="button" class="btn secondary" id="cancel-location-pick">Cancelar</button>
-                <button type="button" class="btn primary" id="confirm-location-pick">Confirmar Local</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Initialize Scripts -->
-    <script src="script.js"></script>
-    <script src="ui.js"></script>
+    <script type="module" src="js/ui/bottom-nav.js"></script>
+    <script type="module" src="js/camera-ocr.js"></script>
+    <script type="module" src="js/document-matching.js"></script>
+    <script type="module" src="js/geofencing.js"></script>
+    <script type="module" src="js/dashboard.js"></script>
+    <script type="module" src="js/biometric-auth.js"></script>
+    <script type="module" src="js/document-timeline.js"></script>
+    <script type="module" src="js/chat/chat-controller.js"></script>
+    <script type="module" src="js/chat/chatbot.js"></script>
+    <script type="module" src="js/qr-code.js"></script>
+    <script type="module" src="js/skins.js"></script>
+    <script type="module" src="js/notifications.js"></script>
+    <script type="module" src="js/pwa-offline.js"></script>
+    <script type="module" src="js/ui/modals.js"></script>
+    <script type="module" src="js/ui/skeleton.js"></script>
+    <script type="module" src="js/ui/toasts.js"></script>
+    <script type="module" src="js/ui/theme-switcher.js"></script>
+    <!-- ...existing code... -->
 </body>
 </html>
