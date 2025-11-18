@@ -875,25 +875,36 @@ async function calculateUserPoints(userId) {
 }
 
 // --- Chat Initiation from Feed ---
+// Use event delegation and closest() so clicks on inner elements still trigger the button
 document.body.addEventListener('click', (e) => {
-    if (e.target.matches('.contact-reporter-btn')) {
-        const docId = e.target.dataset.docId;
-        const reporterId = e.target.dataset.reporterId;
+    const btn = e.target.closest && e.target.closest('.contact-reporter-btn');
+    if (!btn) return;
 
-        if (!docId || !reporterId) {
-            console.error('Missing document or reporter ID for chat.');
-            return;
+    const docId = btn.dataset.docId;
+    const reporterId = btn.dataset.reporterId;
+
+    if (!docId || !reporterId) {
+        console.error('Missing document or reporter ID for chat.');
+        return;
+    }
+
+    if (window.chat && typeof window.chat.openChatModal === 'function') {
+        // Get the card title; fall back to fetching the document if necessary
+        let docTitle = 'Documento';
+        const card = btn.closest('.document-card');
+        try {
+            if (card) {
+                const h = card.querySelector('h4');
+                if (h && h.textContent) docTitle = h.textContent;
+            }
+        } catch (e) {
+            console.warn('Could not read document title from card', e);
         }
 
-        if (window.chat && typeof window.chat.openChatModal === 'function') {
-            // We need the document title to display in the chat header.
-            // We can fetch the document again or get it from the card.
-            const docTitle = e.target.closest('.document-card').querySelector('h4').textContent;
-            window.chat.openChatModal(docId, docTitle, reporterId);
-        } else {
-            console.error('Chat module not available.');
-            showToast('A funcionalidade de chat não está disponível.', 'error');
-        }
+        window.chat.openChatModal(docId, docTitle, reporterId);
+    } else {
+        console.error('Chat module not available.');
+        showToast('A funcionalidade de chat não está disponível.', 'error');
     }
 });
 
