@@ -66,6 +66,7 @@ const securityMiddleware = [
           "'unsafe-inline'",
           'https://fonts.googleapis.com',
           'https://cdnjs.cloudflare.com',
+          'https://unpkg.com',
         ],
         imgSrc: [
           "'self'",

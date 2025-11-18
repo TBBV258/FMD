@@ -26,6 +26,42 @@
     let marker = null;
     let activeContext = null; // 'lost' | 'found'
 
+    // Ensure Leaflet assets are present. If missing, try to load them dynamically from CDN.
+    function ensureLeafletLoaded(timeout = 8000) {
+        return new Promise((resolve, reject) => {
+            if (typeof L !== 'undefined') return resolve();
+
+            // Add Leaflet CSS if not present
+            const cssHref = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+            if (![...document.styleSheets].some(s => s.href && s.href.includes('leaflet'))) {
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = cssHref;
+                document.head.appendChild(link);
+            }
+
+            // Add Leaflet script if not present
+            const scriptSrc = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+            let existing = [...document.scripts].find(s => s.src && s.src.includes('leaflet'));
+            if (!existing) {
+                existing = document.createElement('script');
+                existing.src = scriptSrc;
+                existing.defer = false;
+                document.head.appendChild(existing);
+            }
+
+            const start = Date.now();
+            const check = () => {
+                if (typeof L !== 'undefined') return resolve();
+                if (Date.now() - start > timeout) return reject(new Error('Leaflet load timeout'));
+                setTimeout(check, 150);
+            };
+            // If the script element emits an error, reject early
+            existing.addEventListener && existing.addEventListener('error', () => reject(new Error('Failed to load Leaflet script')));
+            check();
+        });
+    }
+
     // Simple reverse geocoder using OpenStreetMap Nominatim
     async function reverseGeocode(lat, lng) {
         try {
@@ -60,47 +96,68 @@
         const modal = document.getElementById('location-picker-modal');
         if (!modal) return;
         modal.style.display = 'flex';
+        // Try to ensure Leaflet is available; if not, attempt to load it dynamically
+        ensureLeafletLoaded().then(() => {
+            setTimeout(() => {
+                const mapEl = document.getElementById('leaflet-map');
+                if (!mapEl) return;
 
-        setTimeout(() => {
-            const mapEl = document.getElementById('leaflet-map');
-            if (!mapEl) return;
+                if (typeof L === 'undefined') {
+                    console.error('Leaflet not available after dynamic load');
+                    const body = modal.querySelector('.modal-body');
+                    if (body) body.innerHTML = '<p class="text-center error">Mapa não pôde ser carregado. Verifique sua ligação.</p>';
+                    return;
+                }
 
-            if (typeof L === 'undefined') {
-                console.error('Leaflet not loaded');
-                const body = modal.querySelector('.modal-body');
-                if (body) body.innerHTML = '<p class="text-center error">Mapa não pôde ser carregado. Verifique sua ligação.</p>';
-                return;
-            }
+                if (!map) {
+                    map = L.map(mapEl).setView([-25.9692, 32.5732], 13);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        maxZoom: 19,
+                        attribution: '&copy; OpenStreetMap'
+                    }).addTo(map);
 
-            if (!map) {
-                map = L.map(mapEl).setView([-25.9692, 32.5732], 13);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19,
-                    attribution: '&copy; OpenStreetMap'
-                }).addTo(map);
+                    map.on('click', (e) => {
+                        setMarker(e.latlng);
+                    });
+                } else {
+                    map.invalidateSize();
+                }
 
-                map.on('click', (e) => {
-                    setMarker(e.latlng);
-                });
-            } else {
-                map.invalidateSize();
-            }
-
-            // Try to center on current user location the first time
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition((pos) => {
-                    const latlng = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                    map.setView(latlng, 15);
-                    setMarker(latlng);
-                });
-            }
-        }, 50);
+                // Try to center on current user location the first time
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition((pos) => {
+                        const latlng = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                        map.setView(latlng, 15);
+                        setMarker(latlng);
+                    });
+                }
+            }, 50);
+        }).catch((err) => {
+            console.warn('ensureLeafletLoaded failed', err);
+            const body = modal.querySelector('.modal-body');
+            if (body) body.innerHTML = '<p class="text-center error">Mapa não pôde ser carregado. Verifique sua ligação.</p>';
+        });
     }
 
     // Inline mini-map initializers for lost/found sections
     function initInlineMap(mapContainerId, latInputId, lngInputId, addressInputId) {
         const container = document.getElementById(mapContainerId);
-        if (!container || typeof L === 'undefined') return null;
+        if (!container) return null;
+
+        if (typeof L === 'undefined') {
+            // Attempt to load Leaflet and re-initialize once available
+            ensureLeafletLoaded().then(() => {
+                try {
+                    // Try to initialize synchronously after load
+                    initInlineMap(mapContainerId, latInputId, lngInputId, addressInputId);
+                } catch (e) {
+                    console.warn('Failed to init inline map after loading Leaflet', e);
+                }
+            }).catch(() => {
+                // No op; return null for now
+            });
+            return null;
+        }
 
         const mapInstance = L.map(container).setView([-25.9692, 32.5732], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
