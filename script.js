@@ -1729,6 +1729,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize ranking modal
     initializeRankingSection();
+    // Ensure reload button is present
+    setTimeout(ensureRankingReloadButton, 200);
     
     // Initialize feed filters
     initializeFeedFilters();
@@ -2135,6 +2137,26 @@ function initializeRankingSection() {
     }
 }
 
+// Add a small reload button inside the ranking header so users can refresh if data fails to load
+function ensureRankingReloadButton() {
+    const rankingSection = document.getElementById('ranking');
+    if (!rankingSection) return;
+    const header = rankingSection.querySelector('.section-header');
+    if (!header) return;
+    if (header.querySelector('.ranking-reload-btn')) return; // already added
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn small secondary ranking-reload-btn';
+    btn.title = 'Recarregar Ranking';
+    btn.innerHTML = '<i class="fas fa-sync-alt"></i> Recarregar';
+    btn.style.marginLeft = '12px';
+    btn.addEventListener('click', () => {
+        renderRankingSection(true);
+    });
+    header.appendChild(btn);
+}
+
 async function renderRankingSection() {
     const rankingContent = document.getElementById('ranking-content');
     if (!rankingContent) return;
@@ -2149,9 +2171,34 @@ async function renderRankingSection() {
         `;
         
         // Get current user's ranking data
-        const user = window.currentUser;
+        let user = window.currentUser;
+        // Try to obtain current user from authApi or Supabase if missing
         if (!user) {
-            throw new Error('Usuário não autenticado');
+            try {
+                if (window.authApi && typeof window.authApi.getCurrentUser === 'function') {
+                    user = await window.authApi.getCurrentUser();
+                } else if (window.supabase && window.supabase.auth && typeof window.supabase.auth.getUser === 'function') {
+                    const { data } = await window.supabase.auth.getUser();
+                    user = data?.user || null;
+                }
+                if (user) window.currentUser = user;
+            } catch (e) {
+                console.warn('Failed to retrieve current user from authApi/supabase', e);
+            }
+        }
+
+        if (!user) {
+            // Make the UI show an actionable state rather than throwing
+            rankingContent.innerHTML = `
+                <div class="error-state">
+                    <i class="fas fa-user-lock"></i>
+                    <p>Você não está autenticado.</p>
+                    <p>Tente sair e entrar novamente.</p>
+                </div>
+            `;
+            // Ensure reload button exists
+            ensureRankingReloadButton();
+            return;
         }
         // Get user profile with points. Prefer API helper, but fall back to Supabase directly
         let userProfile = null;
