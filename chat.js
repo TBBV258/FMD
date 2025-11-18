@@ -166,6 +166,17 @@
         return date.toLocaleDateString();
     }
 
+    // Small helper to escape HTML when inserting user content into the DOM
+    function escapeHtml(unsafe) {
+        if (!unsafe && unsafe !== 0) return '';
+        return String(unsafe)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
     // Location utilities
     function initializeLocation() {
         if ('geolocation' in navigator) {
@@ -255,7 +266,9 @@
                     <img src="${avatarUrl}" alt="${senderName}'s avatar">
                 </div>
                 <div class="message-content">
-                    <div class="message-bubble">${msg.message}</div>
+                    <!-- Show sender name for received messages so it's clear who spoke -->
+                    ${!isOwn ? `<div class="message-sender">${escapeHtml(senderName)}</div>` : ''}
+                    <div class="message-bubble">${escapeHtml(msg.message)}</div>
                     <div class="message-info">
                         <span class="message-time">${time}</span>
                         ${location ? `<span class="message-location">${location}</span>` : ''}
