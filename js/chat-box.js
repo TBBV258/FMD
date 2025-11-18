@@ -84,45 +84,61 @@ class ChatBoxController {
             const { data: { user } } = await window.supabase.auth.getUser();
             if (!user) return;
 
-            // Try to use chat_rooms table with proper joins
-            const { data: chatRooms, error: roomsError } = await window.supabase
-                .from('chat_rooms')
-                .select(`
-                    id,
-                    document_id,
-                    participant_1_id,
-                    participant_2_id,
-                    last_message_at,
-                    last_message_id,
-                    document:documents(title, type),
-                    last_message:chats!chat_rooms_last_message_id_fkey(message, created_at)
-                `)
-                .or(`participant_1_id.eq.${user.id},participant_2_id.eq.${user.id}`)
-                .order('last_message_at', { ascending: false });
-
-            if (roomsError) {
-                // Fallback: try using messages table directly
-                const { data: messages, error: messagesError } = await window.supabase
-                    .from('chats')
+            // Try to use chat_rooms table with proper joins. Wrap in try/catch to handle schema differences.
+            let chatRooms = null;
+            try {
+                const resp = await window.supabase
+                    .from('chat_rooms')
                     .select(`
                         id,
                         document_id,
-                        sender_id,
-                        receiver_id,
-                        message,
-                        created_at,
-                        document:documents(title, type)
+                        participant_1_id,
+                        participant_2_id,
+                        last_message_at,
+                        last_message_id,
+                        document:documents(title, type),
+                        last_message:chats!chat_rooms_last_message_id_fkey(message, created_at)
                     `)
-                    .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
-                    .order('created_at', { ascending: false })
-                    .limit(20);
+                    .or(`participant_1_id.eq.${user.id},participant_2_id.eq.${user.id}`)
+                    .order('last_message_at', { ascending: false });
 
-                if (messagesError) throw messagesError;
+                if (resp.error) {
+                    console.warn('chat_rooms query returned error, falling back to messages:', resp.error);
+                } else {
+                    chatRooms = resp.data;
+                }
+            } catch (e) {
+                console.warn('chat_rooms query threw, falling back to messages', e);
+            }
 
-                // Group messages by document_id
+            // If chatRooms not available, fallback to scanning messages/chats table
+            if (!chatRooms || chatRooms.length === 0) {
+                let messages = [];
+                try {
+                    const resp = await window.supabase
+                        .from('chats')
+                        .select(`
+                            id,
+                            document_id,
+                            sender_id,
+                            receiver_id,
+                            message,
+                            created_at,
+                            document:documents(title, type)
+                        `)
+                        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+                        .order('created_at', { ascending: false })
+                        .limit(50);
+
+                    if (!resp.error && Array.isArray(resp.data)) messages = resp.data;
+                } catch (e) {
+                    console.warn('Fallback messages query failed', e);
+                }
+
+                // Group messages by document_id (or by participant pair)
                 const chatMap = new Map();
                 messages.forEach(msg => {
-                    const docId = msg.document_id;
+                    const docId = msg.document_id || `doc_${msg.sender_id}_${msg.receiver_id}`;
                     if (!chatMap.has(docId)) {
                         chatMap.set(docId, {
                             id: docId,
@@ -134,39 +150,45 @@ class ChatBoxController {
                     }
                 });
 
-                // Fetch participant profiles in batch so we can show display names
                 const chatsArray = Array.from(chatMap.values());
                 const otherIds = [...new Set(chatsArray.map(c => c.other_user_id).filter(Boolean))];
+
+                // Resolve participant profiles via profilesApi then Supabase, with fallbacks
+                let profileMap = new Map();
                 if (otherIds.length > 0) {
                     try {
-                        const { data: profiles } = await window.supabase
-                            .from('profiles')
-                            .select('id, display_name, avatar_url')
-                            .in('id', otherIds);
-
-                        const profileMap = new Map((profiles || []).map(p => [p.id, p]));
-                        // Attach participant info
-                        chatsArray.forEach(c => {
-                            const profile = profileMap.get(c.other_user_id) || null;
-                            if (profile) {
-                                c.participant = {
-                                    display_name: profile.display_name || 'Usuário',
-                                    avatar_url: profile.avatar_url || null,
-                                    id: profile.id
-                                };
-                            } else {
-                                c.participant = { display_name: 'Usuário', id: c.other_user_id };
-                            }
-                        });
-                    } catch (profileErr) {
-                        // If profile fetch fails, still render with IDs
-                        chatsArray.forEach(c => {
-                            c.participant = { display_name: 'Usuário', id: c.other_user_id };
-                        });
+                        if (window.profilesApi && typeof window.profilesApi.getProfilesByIds === 'function') {
+                            const profiles = await window.profilesApi.getProfilesByIds(otherIds);
+                            (profiles || []).forEach(p => profileMap.set(p.id, p));
+                        }
+                    } catch (e) {
+                        console.warn('profilesApi.getProfilesByIds failed', e);
                     }
-                } else {
-                    chatsArray.forEach(c => c.participant = { display_name: 'Usuário', id: c.other_user_id });
+
+                    if (profileMap.size === 0 && window.supabase) {
+                        try {
+                            const resp = await window.supabase
+                                .from('profiles')
+                                .select('id, display_name, avatar_url')
+                                .in('id', otherIds);
+                            if (!resp.error && Array.isArray(resp.data)) {
+                                resp.data.forEach(p => profileMap.set(p.id, p));
+                            }
+                        } catch (e) {
+                            console.warn('Supabase profiles fetch failed', e);
+                        }
+                    }
                 }
+
+                // Attach participant info with fallbacks
+                chatsArray.forEach(c => {
+                    const profile = profileMap.get(c.other_user_id);
+                    if (profile) {
+                        c.participant = { display_name: profile.display_name || 'Usuário', avatar_url: profile.avatar_url || null, id: profile.id };
+                    } else {
+                        c.participant = { display_name: `User ${String(c.other_user_id).slice(-6)}`, id: c.other_user_id };
+                    }
+                });
 
                 this.renderChats(chatsArray);
                 return;
@@ -178,20 +200,36 @@ class ChatBoxController {
                     const otherUserId = room.participant_1_id === user.id 
                         ? room.participant_2_id 
                         : room.participant_1_id;
-                    
-                    // Get other user's profile
-                    const { data: profile } = await window.supabase
-                        .from('profiles')
-                        .select('id, display_name, avatar_url')
-                        .eq('id', otherUserId)
-                        .single();
+
+                    // Attempt to get other user's profile with fallbacks
+                    let profile = null;
+                    try {
+                        if (window.profilesApi && typeof window.profilesApi.get === 'function') {
+                            profile = await window.profilesApi.get(otherUserId);
+                        }
+                    } catch (e) {
+                        console.warn('profilesApi.get failed', e);
+                    }
+
+                    if (!profile && window.supabase) {
+                        try {
+                            const resp = await window.supabase
+                                .from('profiles')
+                                .select('id, display_name, avatar_url')
+                                .eq('id', otherUserId)
+                                .single();
+                            if (!resp.error) profile = resp.data;
+                        } catch (e) {
+                            console.warn('Supabase single profile fetch failed', e);
+                        }
+                    }
 
                     return {
                         id: room.id,
                         document: room.document,
                         last_message: room.last_message?.message || 'Nenhuma mensagem',
                         last_message_time: room.last_message_at || room.last_message?.created_at,
-                        participant: profile || { id: otherUserId, display_name: 'Usuário', avatar_url: null }
+                        participant: profile || { id: otherUserId, display_name: `User ${String(otherUserId).slice(-6)}`, avatar_url: null }
                     };
                 })
             );

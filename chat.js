@@ -66,14 +66,14 @@
             chatThreads.forEach(msg => {
                 const otherUserId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
                 const threadId = msg.document_id || `user_${otherUserId}`;
-                
+
                 if (!threads[threadId]) {
                     threads[threadId] = {
                         documentId: msg.document_id,
                         documentTitle: msg.document?.title || 'Chat Privado',
                         documentType: msg.document?.type || 'private',
                         otherUserId: otherUserId,
-                        otherUserName: msg.profiles?.display_name || 'Utilizador',
+                        otherUserName: msg.profiles?.display_name || null,
                         otherUserAvatar: msg.profiles?.avatar_url || null,
                         lastMessage: msg.content,
                         lastMessageTime: msg.created_at,
@@ -81,6 +81,46 @@
                     };
                 }
             });
+
+            // If some threads are missing profile info, try to batch fetch profiles with fallbacks
+            const missingIds = Object.values(threads)
+                .filter(t => !t.otherUserName && t.otherUserId)
+                .map(t => t.otherUserId);
+            if (missingIds.length > 0) {
+                const uniqueIds = [...new Set(missingIds)];
+                let profileMap = new Map();
+                try {
+                    if (window.profilesApi && typeof window.profilesApi.getProfilesByIds === 'function') {
+                        const profiles = await window.profilesApi.getProfilesByIds(uniqueIds);
+                        (profiles || []).forEach(p => profileMap.set(p.id, p));
+                    }
+                } catch (e) {
+                    console.warn('profilesApi.getProfilesByIds failed', e);
+                }
+
+                if (profileMap.size === 0 && window.supabase) {
+                    try {
+                        const resp = await window.supabase
+                            .from('profiles')
+                            .select('id, display_name, avatar_url')
+                            .in('id', uniqueIds);
+                        if (!resp.error && Array.isArray(resp.data)) {
+                            resp.data.forEach(p => profileMap.set(p.id, p));
+                        }
+                    } catch (e) {
+                        console.warn('Supabase profiles batch fetch failed', e);
+                    }
+                }
+
+                // Apply fetched profiles to threads
+                Object.values(threads).forEach(t => {
+                    if (!t.otherUserName && profileMap.has(t.otherUserId)) {
+                        const p = profileMap.get(t.otherUserId);
+                        t.otherUserName = p.display_name || `User ${String(p.id).slice(-6)}`;
+                        t.otherUserAvatar = p.avatar_url || t.otherUserAvatar;
+                    }
+                });
+            }
             
             // Display chat threads
             if (Object.keys(threads).length === 0) {
