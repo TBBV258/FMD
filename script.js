@@ -2153,14 +2153,38 @@ async function renderRankingSection() {
         if (!user) {
             throw new Error('Usuário não autenticado');
         }
-        
-        // Get user profile with points
-        const userProfile = await window.profilesApi.get(user.id);
-        if (!userProfile) {
-            throw new Error('Perfil do usuário não encontrado');
+        // Get user profile with points. Prefer API helper, but fall back to Supabase directly
+        let userProfile = null;
+        let currentPoints = 0;
+        try {
+            if (window.profilesApi && typeof window.profilesApi.get === 'function') {
+                userProfile = await window.profilesApi.get(user.id);
+            }
+        } catch (e) {
+            console.warn('profilesApi.get failed, will try Supabase fallback', e);
+            userProfile = null;
         }
-        
-        const currentPoints = userProfile.points || 0;
+
+        // Supabase fallback: query profiles table directly
+        if (!userProfile && window.supabase) {
+            try {
+                const { data, error } = await window.supabase
+                    .from('profiles')
+                    .select('id, display_name, points, avatar_url')
+                    .eq('id', user.id)
+                    .single();
+                if (!error) userProfile = data;
+            } catch (e) {
+                console.warn('Supabase profiles fetch failed', e);
+            }
+        }
+
+        if (!userProfile) {
+            // leave an informative UI message but continue to try to render leaderboard
+            currentPoints = 0;
+        } else {
+            currentPoints = userProfile.points || 0;
+        }
         
         // Define ranking levels
         const rankingLevels = [
@@ -2192,7 +2216,41 @@ async function renderRankingSection() {
             pointsToNext = nextRank.minPoints - currentPoints;
         }
         
-        // Generate ranking section content
+        // Fetch top users for leaderboard (try profilesApi or Supabase directly)
+        let topProfiles = [];
+        try {
+            if (window.profilesApi && typeof window.profilesApi.listTop === 'function') {
+                topProfiles = await window.profilesApi.listTop(50);
+            } else if (window.supabase) {
+                const { data, error } = await window.supabase
+                    .from('profiles')
+                    .select('id, display_name, points, avatar_url')
+                    .order('points', { ascending: false })
+                    .limit(50);
+                if (!error && Array.isArray(data)) topProfiles = data;
+            }
+        } catch (e) {
+            console.warn('Failed to load top profiles for leaderboard', e);
+            topProfiles = [];
+        }
+
+        // Build leaderboard HTML
+        const leaderboardHtml = topProfiles.length > 0 ? `
+            <ol class="leaderboard-list">
+                ${topProfiles.map((p, idx) => `
+                    <li class="leader-item ${p.id === user.id ? 'highlight' : ''}">
+                        <span class="leader-rank">${idx + 1}</span>
+                        <img class="leader-avatar" src="${p.avatar_url || '/css/default-avatar.png'}" alt="${p.display_name || 'Usuário'}" />
+                        <div class="leader-info">
+                            <div class="leader-name">${p.display_name || p.id}</div>
+                            <div class="leader-points">${p.points || 0} pontos</div>
+                        </div>
+                    </li>
+                `).join('')}
+            </ol>
+        ` : `<p>Nenhum dado de ranking disponível no momento.</p>`;
+
+        // Generate ranking section content (progress + leaderboard)
         rankingContent.innerHTML = `
             <div class="ranking-progress-container">
                 <div class="current-rank-display">
@@ -2205,7 +2263,7 @@ async function renderRankingSection() {
                         <span class="points-label">pontos</span>
                     </div>
                 </div>
-                
+
                 ${nextRank ? `
                     <div class="progress-to-next">
                         <h4>Progresso para ${nextRank.name}</h4>
@@ -2225,25 +2283,12 @@ async function renderRankingSection() {
                         <p>Parabéns! Você alcançou o nível mais alto do ranking.</p>
                     </div>
                 `}
-                
-                <div class="ranking-levels-list">
-                    <h4>Todos os Níveis</h4>
-                    <div class="levels-grid">
-                        ${rankingLevels.map((level, index) => `
-                            <div class="level-item ${level === currentRank ? 'current' : ''} ${currentPoints >= level.minPoints ? 'unlocked' : 'locked'}">
-                                <div class="level-icon" style="background: ${level.color};">
-                                    <i class="fas fa-${index === rankingLevels.length - 1 ? 'crown' : 'trophy'}"></i>
-                                </div>
-                                <div class="level-info">
-                                    <div class="level-name">${level.name}</div>
-                                    <div class="level-points">${level.minPoints}+ pontos</div>
-                                </div>
-                                ${level === currentRank ? '<div class="current-badge">Atual</div>' : ''}
-                            </div>
-                        `).join('')}
-                    </div>
+
+                <div class="leaderboard-section">
+                    <h4>Top Usuários</h4>
+                    ${leaderboardHtml}
                 </div>
-                
+
                 <div class="ranking-tips">
                     <h4><i class="fas fa-lightbulb"></i> Como Ganhar Mais Pontos</h4>
                     <ul>
