@@ -5,6 +5,7 @@ const cors = require('cors');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 const { securityMiddleware, limiter } = require('./middleware/securityHeaders');
+const https = require('https');
 const { errorHandler, notFoundHandler, asyncHandler } = require('./middleware/errorHandler');
 const { authValidators, documentValidators } = require('./middleware/validators');
 const authRoutes = require('./routes/authRoutes');
@@ -51,6 +52,40 @@ app.get('/api/health', (req, res) => {
 // API Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/documents', documentRoutes);
+
+// Geocoding proxy to avoid CORS issues with public Nominatim
+app.get('/api/v1/geocode/reverse', async (req, res) => {
+  const lat = req.query.lat || req.query.latitude;
+  const lon = req.query.lon || req.query.lng || req.query.longitude;
+  if (!lat || !lon) {
+    return res.status(400).json({ error: 'Missing lat or lon query parameters' });
+  }
+
+  const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&accept-language=pt`;
+
+  const options = {
+    headers: {
+      'User-Agent': process.env.GEOCODE_USER_AGENT || 'FindMyDocs/1.0 (your-email@example.com)',
+      'Accept-Language': 'pt'
+    }
+  };
+
+  https.get(url, options, (nRes) => {
+    let data = '';
+    nRes.on('data', chunk => data += chunk);
+    nRes.on('end', () => {
+      try {
+        const parsed = JSON.parse(data);
+        return res.json(parsed);
+      } catch (e) {
+        return res.status(502).json({ error: 'Invalid response from geocoding provider' });
+      }
+    });
+  }).on('error', (err) => {
+    console.error('Geocode proxy error:', err);
+    return res.status(502).json({ error: 'Failed to reach geocoding provider' });
+  });
+});
 
 // API Documentation
 const options = {
