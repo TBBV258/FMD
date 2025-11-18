@@ -1,5 +1,12 @@
 class ChatBoxController {
     constructor() {
+        // Wait for Supabase to be initialized
+        if (!window.supabase) {
+            console.warn('Supabase not initialized, waiting...');
+            setTimeout(() => this.constructor(), 500);
+            return;
+        }
+        
         this.initializeElements();
         this.setupEventListeners();
         this.loadChats();
@@ -10,7 +17,13 @@ class ChatBoxController {
         if (!document.getElementById('chat-box')) {
             const chatBox = document.createElement('div');
             chatBox.id = 'chat-box';
-            chatBox.className = 'chat-box-container chat-box-minimized';
+            // Use a bubble style on mobile: visible but minimized (small round
+            // bubble). On larger screens keep minimized in bottom-right corner.
+            if (window.innerWidth <= 768) {
+                chatBox.className = 'chat-box-container chat-box-minimized bubble';
+            } else {
+                chatBox.className = 'chat-box-container chat-box-minimized';
+            }
             chatBox.innerHTML = `
                 <div class="chat-box-header">
                     <h3>Conversas <span id="unread-count" class="unread-badge" style="display: none">0</span></h3>
@@ -42,14 +55,15 @@ class ChatBoxController {
             }
         });
 
-        // Handle mobile view
-        if (window.innerWidth <= 768) {
-            document.addEventListener('click', (e) => {
+        // Handle mobile view: clicking outside should minimize the bubble/panel
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 768) {
                 if (!this.chatBox.contains(e.target)) {
-                    this.chatBox.classList.remove('show');
+                    // minimize bubble
+                    this.chatBox.classList.add('chat-box-minimized');
                 }
-            });
-        }
+            }
+        });
     }
 
     toggleChatBox() {
@@ -59,55 +73,134 @@ class ChatBoxController {
             ? 'fas fa-chevron-up' 
             : 'fas fa-chevron-down';
 
-        if (window.innerWidth <= 768) {
-            this.chatBox.classList.toggle('show');
-        }
+        // When expanding on mobile, ensure it's not treated as a full-screen
+        // overlay: we simply remove the minimized class which expands the
+        // bubble into a small panel instead of occupying the whole page.
     }
 
     async loadChats() {
         try {
-            const response = await supabase
-                .from('chats')
+            // Get current user
+            const { data: { user } } = await window.supabase.auth.getUser();
+            if (!user) return;
+
+            // Try to use chat_rooms table with proper joins
+            const { data: chatRooms, error: roomsError } = await window.supabase
+                .from('chat_rooms')
                 .select(`
                     id,
-                    last_message,
-                    last_message_time,
-                    participants (
-                        id,
-                        name,
-                        avatar_url
-                    )
+                    document_id,
+                    participant_1_id,
+                    participant_2_id,
+                    last_message_at,
+                    last_message_id,
+                    document:documents(title, type),
+                    last_message:chats!chat_rooms_last_message_id_fkey(message, created_at)
                 `)
-                .order('last_message_time', { ascending: false });
+                .or(`participant_1_id.eq.${user.id},participant_2_id.eq.${user.id}`)
+                .order('last_message_at', { ascending: false });
 
-            if (response.error) throw response.error;
+            if (roomsError) {
+                // Fallback: try using messages table directly
+                const { data: messages, error: messagesError } = await window.supabase
+                    .from('chats')
+                    .select(`
+                        id,
+                        document_id,
+                        sender_id,
+                        receiver_id,
+                        message,
+                        created_at,
+                        document:documents(title, type)
+                    `)
+                    .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+                    .order('created_at', { ascending: false })
+                    .limit(20);
 
-            this.renderChats(response.data);
-            this.updateUnreadCount(response.data);
+                if (messagesError) throw messagesError;
+
+                // Group messages by document_id
+                const chatMap = new Map();
+                messages.forEach(msg => {
+                    const docId = msg.document_id;
+                    if (!chatMap.has(docId)) {
+                        chatMap.set(docId, {
+                            id: docId,
+                            document: msg.document,
+                            last_message: msg.message,
+                            last_message_time: msg.created_at,
+                            other_user_id: msg.sender_id === user.id ? msg.receiver_id : msg.sender_id
+                        });
+                    }
+                });
+
+                this.renderChats(Array.from(chatMap.values()));
+                return;
+            }
+
+            // Process chat rooms and get participant info
+            const processedChats = await Promise.all(
+                (chatRooms || []).map(async (room) => {
+                    const otherUserId = room.participant_1_id === user.id 
+                        ? room.participant_2_id 
+                        : room.participant_1_id;
+                    
+                    // Get other user's profile
+                    const { data: profile } = await window.supabase
+                        .from('profiles')
+                        .select('id, display_name, avatar_url')
+                        .eq('id', otherUserId)
+                        .single();
+
+                    return {
+                        id: room.id,
+                        document: room.document,
+                        last_message: room.last_message?.message || 'Nenhuma mensagem',
+                        last_message_time: room.last_message_at || room.last_message?.created_at,
+                        participant: profile || { id: otherUserId, display_name: 'Usuário', avatar_url: null }
+                    };
+                })
+            );
+
+            this.renderChats(processedChats);
+            this.updateUnreadCount(processedChats);
         } catch (error) {
             console.error('Error loading chats:', error);
         }
     }
 
     renderChats(chats) {
-        this.chatList.innerHTML = chats.map(chat => `
-            <div class="chat-item" data-chat-id="${chat.id}">
-                <div class="chat-item-avatar">
-                    ${this.getAvatarContent(chat.participants[0])}
+        if (!chats || chats.length === 0) {
+            this.chatList.innerHTML = '<div class="empty-state">Nenhuma conversa encontrada</div>';
+            return;
+        }
+
+        this.chatList.innerHTML = chats.map(chat => {
+            const participant = chat.participant || { display_name: 'Usuário', avatar_url: null };
+            const chatName = participant.display_name || 'Usuário';
+            const documentTitle = chat.document?.title || 'Documento';
+            
+            return `
+                <div class="chat-item" data-chat-id="${chat.id}">
+                    <div class="chat-item-avatar">
+                        ${this.getAvatarContent(participant)}
+                    </div>
+                    <div class="chat-item-content">
+                        <div class="chat-item-name">${chatName}</div>
+                        <div class="chat-item-preview">${documentTitle}</div>
+                        <div class="chat-item-message">${chat.last_message || 'Iniciar conversa...'}</div>
+                    </div>
                 </div>
-                <div class="chat-item-content">
-                    <div class="chat-item-name">${chat.participants[0].name}</div>
-                    <div class="chat-item-preview">${chat.last_message || 'Iniciar conversa...'}</div>
-                </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
     }
 
     getAvatarContent(participant) {
-        if (participant.avatar_url) {
-            return `<img src="${participant.avatar_url}" alt="${participant.name}" />`;
+        if (participant?.avatar_url) {
+            return `<img src="${participant.avatar_url}" alt="${participant.display_name || 'Usuário'}" />`;
         }
-        return participant.name.charAt(0).toUpperCase();
+        const initial = (participant?.display_name || 'U').charAt(0).toUpperCase();
+        return `<div class="avatar-initial">${initial}</div>`;
     }
 
     updateUnreadCount(chats) {

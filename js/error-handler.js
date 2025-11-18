@@ -212,8 +212,12 @@ class ErrorHandler {
             event.preventDefault();
         });
 
-        // Handle global JavaScript errors
+        // Handle global JavaScript errors (skip resource loading errors here so they
+        // are handled only once by the dedicated resource handler below).
         window.addEventListener('error', (event) => {
+            // If this is a resource error (event.target is element), skip here.
+            if (event.target && event.target !== window) return;
+
             this.handleError(
                 event.error || new Error(event.message),
                 'global_error',
@@ -225,9 +229,11 @@ class ErrorHandler {
             );
         });
 
-        // Handle resource loading errors
+        // Handle resource loading errors (capture phase) — these originate from
+        // failing <script>, <link>, <img> etc. and will be reported under
+        // 'resource_load_error'. Kept separate so we can attach resource-specific metadata.
         window.addEventListener('error', (event) => {
-            if (event.target !== window) {
+            if (event.target && event.target !== window) {
                 this.handleError(
                     new Error(`Failed to load resource: ${event.target.src || event.target.href}`),
                     'resource_load_error',

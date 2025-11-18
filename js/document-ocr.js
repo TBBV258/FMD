@@ -1,6 +1,21 @@
 // document-ocr.js - Módulo de OCR e extração de dados
-import Tesseract from 'tesseract.js';
 import { showToast } from './ui/toasts.js';
+
+// Carregar Tesseract dinamicamente
+async function loadTesseract() {
+  if (window.Tesseract) {
+    return window.Tesseract;
+  }
+  
+  // Carregar via CDN
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/tesseract.js@4.1.1/dist/tesseract.min.js';
+    script.onload = () => resolve(window.Tesseract);
+    script.onerror = () => reject(new Error('Failed to load Tesseract.js'));
+    document.head.appendChild(script);
+  });
+}
 
 class DocumentOCR {
     constructor() {
@@ -12,6 +27,7 @@ class DocumentOCR {
         if (this.initialized) return;
 
         try {
+            const Tesseract = await loadTesseract();
             this.worker = await Tesseract.createWorker({
                 logger: progress => this.updateProgress(progress)
             });

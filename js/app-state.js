@@ -92,6 +92,10 @@ async function initScanner() {
     showToast('Erro ao inicializar câmera', 'error');
   }
 }
+
+// Função para inicializar OCR Demo (placeholder)
+function initOCRDemo() {
+  // Placeholder - será implementado quando necessário
 }
 
 // Exemplo: Geofencing UI
@@ -139,8 +143,6 @@ function initGeoDemo() {
       showToast('Erro ao obter localização', 'error');
       alertDiv.innerHTML = '<span class="text-red-500">Erro ao obter localização</span>';
       console.error('Erro geolocation:', error);
-    }
-      });
     }
   };
 }

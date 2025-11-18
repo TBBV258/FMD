@@ -55,7 +55,7 @@
             // Get all unique chat threads where the current user is either sender or receiver
             const { data: chatThreads, error } = await supabase
                 .from('messages')
-                .select('document_id, document:documents(title, document_type), receiver_id, sender_id, content, created_at, profiles!messages_sender_id_fkey(display_name, avatar_url)')
+                .select('document_id, document:documents(title, type), receiver_id, sender_id, content, created_at, profiles!messages_sender_id_fkey(display_name, avatar_url)')
                 .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
                 .order('created_at', { ascending: false });
                 
@@ -71,7 +71,7 @@
                     threads[threadId] = {
                         documentId: msg.document_id,
                         documentTitle: msg.document?.title || 'Chat Privado',
-                        documentType: msg.document?.document_type || 'private',
+                        documentType: msg.document?.type || 'private',
                         otherUserId: otherUserId,
                         otherUserName: msg.profiles?.display_name || 'Utilizador',
                         otherUserAvatar: msg.profiles?.avatar_url || null,

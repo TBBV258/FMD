@@ -302,14 +302,21 @@ async function initializeApp() {
 }
 
 function setupNavigation() {
-    navLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const sectionId = link.getAttribute('data-section');
-            if (sectionId) {
-                showSection(sectionId);
-            }
-        });
+    // Use event delegation so dynamically added nav links (bottom nav) work
+    document.addEventListener('click', (e) => {
+        const link = e.target.closest('.nav-link');
+        if (!link) return;
+        e.preventDefault();
+        const sectionId = link.getAttribute('data-section');
+        if (sectionId) {
+            showSection(sectionId);
+        }
+    });
+
+    // Also listen to custom navigation event (renderBottomNav may dispatch)
+    document.addEventListener('navigateTo', (ev) => {
+        const sectionId = ev.detail?.section;
+        if (sectionId) showSection(sectionId);
     });
     
     // Close tip cards
@@ -499,8 +506,9 @@ function showSection(sectionId) {
         targetSection.classList.add('active');
     }
     
-    // Update nav links
-    navLinks.forEach(link => {
+    // Update nav links (re-query to include dynamically injected nav)
+    const navLinksCurrent = document.querySelectorAll('.nav-link');
+    navLinksCurrent.forEach(link => {
         link.classList.remove('active');
         if (link.getAttribute('data-section') === sectionId) {
             link.classList.add('active');
@@ -2181,6 +2189,33 @@ function setupGlobalModalAccessibility() {
         observer.observe(modal, { attributes: true, attributeFilter: ['style', 'class'] });
     });
 }
+
+// Ensure Add Document buttons always open the upload modal (fallback)
+document.addEventListener('DOMContentLoaded', () => {
+    const addDocBtn = document.getElementById('add-document');
+    const profileAddBtn = document.getElementById('profile-add-document');
+
+    const openUploader = (e) => {
+        e?.preventDefault();
+        try {
+            if (window.documentUploader && typeof window.documentUploader.openModal === 'function') {
+                window.documentUploader.openModal();
+                return;
+            }
+            // Fallback: display the modal element directly
+            const uploadModal = document.getElementById('upload-modal');
+            if (uploadModal) {
+                uploadModal.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+            }
+        } catch (err) {
+            console.error('Failed to open uploader:', err);
+        }
+    };
+
+    addDocBtn?.addEventListener('click', openUploader);
+    profileAddBtn?.addEventListener('click', openUploader);
+});
 
 // Feed Filters Functions
 function initializeFeedFilters() {

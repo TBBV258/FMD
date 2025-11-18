@@ -1,22 +1,12 @@
-// camera-ocr.js
-// Escaneamento automático, detecção de bordas, OCR e preview
-import Tesseract from 'tesseract.js';
+// camera-ocr.js — lightweight shim to avoid 404 when referenced from index.html
+// This file intentionally minimal: if you later implement camera OCR as a module,
+// replace the contents with the real implementation.
 
-export async function scanDocument(videoElement, canvasElement) {
-  // 1. Captura de imagem da câmera
-  const context = canvasElement.getContext('2d');
-  context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
-  const imageData = canvasElement.toDataURL('image/png');
+console.info('camera-ocr.js shim loaded');
 
-  // 2. (Opcional) Detecção de bordas e perspectiva (usar opencv.js se necessário)
-  // ...
-
-  // 3. OCR
-  const result = await Tesseract.recognize(imageData, 'por');
-  return result.data.text;
+export function initCameraOCR() {
+  console.info('initCameraOCR called (shim)');
+  // no-op
 }
 
-export function showPreview(imageData, extractedText) {
-  // Exibe modal de preview para validação
-  // ...
-}
+export default { initCameraOCR };

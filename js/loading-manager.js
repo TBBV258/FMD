@@ -169,7 +169,25 @@ class LoadingManager {
 
             documentsGrid: `
                 <div class="skeleton-grid">
-                    ${Array(6).fill(0).map(() => this.skeletonTemplates.documentCard).join('')}
+                    ${Array(6).fill(0).map(() => `
+                <div class="skeleton-document-card">
+                    <div class="skeleton-header">
+                        <div class="skeleton-avatar"></div>
+                        <div class="skeleton-content">
+                            <div class="skeleton-line"></div>
+                            <div class="skeleton-line short"></div>
+                        </div>
+                    </div>
+                    <div class="skeleton-body">
+                        <div class="skeleton-line medium"></div>
+                        <div class="skeleton-line"></div>
+                    </div>
+                    <div class="skeleton-actions">
+                        <div class="skeleton-button"></div>
+                        <div class="skeleton-button"></div>
+                    </div>
+                </div>
+            `).join('')}
                 </div>
             `,
 

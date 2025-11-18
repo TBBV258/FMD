@@ -715,10 +715,30 @@ class DocumentUploader {
             
             if (error) throw error;
             
-            // Get public URL
-            const { data: urlData } = window.supabase.storage
-                .from('documents')
-                .getPublicUrl(filePath);
+            // Try to create a signed URL first (works for private buckets). If the
+            // bucket is public or signed URL creation fails, fall back to the
+            // public URL. This reduces 404s when files are stored in private buckets.
+            let fileUrl = null;
+            try {
+                const expiresInSeconds = 60 * 60 * 24; // 24 hours
+                const { data: signedData, error: signedErr } = await window.supabase.storage
+                    .from('documents')
+                    .createSignedUrl(filePath, expiresInSeconds);
+
+                if (!signedErr && signedData && (signedData.signedUrl || signedData.signedURL)) {
+                    fileUrl = signedData.signedUrl || signedData.signedURL;
+                }
+            } catch (e) {
+                // ignore and fallback below
+            }
+
+            // Fallback to public URL for public buckets
+            if (!fileUrl) {
+                const { data: urlData } = window.supabase.storage
+                    .from('documents')
+                    .getPublicUrl(filePath);
+                fileUrl = urlData?.publicUrl || null;
+            }
             
             // Save document metadata to database
             const docTitle = this.docTitleInput?.value || fileData.name;
@@ -731,7 +751,7 @@ class DocumentUploader {
                 type: docType,
                 status: 'normal', // Set status to a valid value from the CHECK constraint
                 location: {}, // Provide a default value for the NOT NULL location column
-                file_url: urlData.publicUrl,
+                file_url: fileUrl,
                 created_at: new Date().toISOString(),
                 // Re-add file_name and other optional fields as they exist in the schema
                 file_name: fileData.name,

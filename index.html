@@ -74,6 +74,7 @@
                         <i class="fas fa-list"></i>
                         <span data-i18n="nav.feed">Feed</span>
                     </button>
+                    <!-- (Removed: Scanner, Chat Inteligente, Geofencing nav buttons) -->
                     <button class="nav-link" data-section="relatar-perda" aria-label="Relatar Perda">
                         <i class="fas fa-search"></i>
                         <span data-i18n="nav.report_lost">Relatar Perda</span>
@@ -793,16 +794,18 @@
                             <span class="stat-label" data-i18n="profile.stats.helped">Ajudou</span>
                         </div>
                     </div>
-                    <div class="profile-actions">
-                        <button id="view-ranking-progress" class="btn secondary" title="Ver progresso de ranking" data-i18n="profile.ranking">
-                            <i class="fas fa-trophy"></i>
-                            Ranking
-                        </button>
-                        <button id="profile-add-document" class="btn primary" data-i18n="profile.add_document">
-                            <i class="fas fa-plus"></i>
-                            Adicionar Documento
-                        </button>
-                    </div>
+                </div>
+
+                <!-- Profile actions moved below displayed user data -->
+                <div class="profile-actions" style="margin-top:12px; display:flex; gap:8px;">
+                    <button id="view-ranking-progress" class="btn secondary" title="Ver progresso de ranking" data-i18n="profile.ranking">
+                        <i class="fas fa-trophy"></i>
+                        Ranking
+                    </button>
+                    <button id="profile-add-document" class="btn primary" data-i18n="profile.add_document">
+                        <i class="fas fa-plus"></i>
+                        Adicionar Documento
+                    </button>
                 </div>
 
                 <!-- Profile Documents List -->
@@ -945,96 +948,7 @@
 
             <!-- UI Examples Section -->
             <main class="p-4 space-y-8">
-      <!-- 📷 OCR Scanner -->
-      <section class="bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden">
-        <div class="p-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 class="text-lg font-bold flex items-center gap-2">
-            <i class="fas fa-camera"></i> Scanner de Documentos
-          </h2>
-        </div>
-
-        <div id="scanner-container" class="relative">
-          <!-- Área da câmera -->
-          <div id="camera-area" class="relative aspect-[4/3] bg-black">
-            <video id="scanner-video" 
-              class="w-full h-full object-cover"
-              autoplay 
-              playsinline 
-              muted>
-            </video>
-            
-            <!-- Guias de alinhamento -->
-            <div class="absolute inset-0 pointer-events-none border-2 border-dashed border-white/50 m-8"></div>
-            
-            <!-- Overlay de feedback -->
-            <div id="scanner-overlay" class="absolute inset-0 pointer-events-none"></div>
-          </div>
-
-          <!-- Controles -->
-          <div class="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
-            <div class="flex justify-between items-center">
-              <button id="btn-switch-camera" class="p-2 rounded-full bg-white/20 text-white hover:bg-white/30 transition">
-                <i class="fas fa-sync"></i>
-              </button>
-              
-              <button id="btn-capture" 
-                class="px-6 py-3 rounded-full bg-white text-gray-900 font-medium hover:bg-white/90 transition transform hover:scale-105">
-                Capturar
-              </button>
-              
-              <button id="btn-flash" class="p-2 rounded-full bg-white/20 text-white hover:bg-white/30 transition">
-                <i class="fas fa-bolt"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Preview e Resultados -->
-        <div id="preview-container" class="hidden p-4 space-y-4">
-          <img id="preview-image" class="w-full rounded shadow-lg" alt="Preview do documento">
-          
-          <div id="ocr-result" class="space-y-3">
-            <div class="animate-pulse">
-              <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-              <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mt-2"></div>
-            </div>
-          </div>
-          
-          <div class="flex gap-2">
-            <button id="btn-retry" 
-              class="flex-1 px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition">
-              Tentar Novamente
-            </button>
-            <button id="btn-confirm" 
-              class="flex-1 px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition">
-              Confirmar
-            </button>
-          </div>
-        </div>
-      </section>              <!-- 🌍 Geofencing Example -->
-              <section class="bg-white dark:bg-gray-900 rounded-xl shadow p-4">
-                <h2 class="text-lg font-bold mb-2 flex items-center gap-2"><i class="fas fa-map-marker-alt"></i> Geofencing & Alertas</h2>
-                <div id="geo-map-area" class="relative h-48 w-full rounded overflow-hidden bg-gray-100 dark:bg-gray-800 animate-pulse">
-                  <!-- Mapa será renderizado aqui -->
-                  <div class="absolute inset-0 flex items-center justify-center text-gray-400">Carregando mapa...</div>
-                </div>
-                <button id="btn-set-geofence" class="mt-4 bg-green-600 text-white px-4 py-2 rounded transition hover:bg-green-700">Definir Zona</button>
-                <div id="geo-alert" class="mt-2 text-sm text-green-700 dark:text-green-300"></div>
-              </section>
-
-              <!-- 🤖 Chat Example -->
-              <section class="bg-white dark:bg-gray-900 rounded-xl shadow p-4">
-                <h2 class="text-lg font-bold mb-2 flex items-center gap-2"><i class="fas fa-comments"></i> Chat Inteligente</h2>
-                <div id="chat-area" class="flex flex-col gap-2 max-w-md mx-auto">
-                  <div id="chat-messages" class="h-32 overflow-y-auto bg-gray-50 dark:bg-gray-800 rounded p-2 animate-pulse">
-                    <div class="text-gray-400">Carregando histórico...</div>
-                  </div>
-                  <div class="flex gap-2 mt-2">
-                    <input id="chat-input" type="text" class="flex-1 rounded border px-2 py-1 dark:bg-gray-700 dark:text-white" placeholder="Digite sua mensagem...">
-                    <button id="btn-chat-send" class="bg-blue-600 text-white px-3 py-1 rounded transition hover:bg-blue-700">Enviar</button>
-                  </div>
-                </div>
-              </section>
+            <!-- Removed: Scanner, Geofencing & Chat Inteligente sections per request -->
             </main>
         </div>
     </div>
@@ -1184,6 +1098,9 @@
 
  
 
+    <!-- App Initializer - Must be loaded first to fix click issues -->
+    <script src="js/app-initializer.js"></script>
+    
     <!-- Load Supabase library first -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     
@@ -1295,12 +1212,10 @@
     <script type="module" src="js/ui/bottom-nav.js"></script>
     <script type="module" src="js/camera-ocr.js"></script>
     <script type="module" src="js/document-matching.js"></script>
-    <script type="module" src="js/geofencing.js"></script>
     <script type="module" src="js/dashboard.js"></script>
     <script type="module" src="js/biometric-auth.js"></script>
     <script type="module" src="js/document-timeline.js"></script>
     <script type="module" src="js/chat/chat-controller.js"></script>
-    <script type="module" src="js/chat/chatbot.js"></script>
     <script type="module" src="js/qr-code.js"></script>
     <script type="module" src="js/skins.js"></script>
     <script type="module" src="js/notifications.js"></script>
@@ -1309,6 +1224,11 @@
     <script type="module" src="js/ui/skeleton.js"></script>
     <script type="module" src="js/ui/toasts.js"></script>
     <script type="module" src="js/ui/theme-switcher.js"></script>
+    
+    <!-- Integration script removed: functionality is provided by modules loaded above (e.g. js/app-state.js, js/chat/chat-controller.js). -->
+    
+    <!-- Main Application Script -->
+    <script src="script.js"></script>
     <!-- ...existing code... -->
 </body>
 </html>
