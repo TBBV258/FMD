@@ -134,7 +134,41 @@ class ChatBoxController {
                     }
                 });
 
-                this.renderChats(Array.from(chatMap.values()));
+                // Fetch participant profiles in batch so we can show display names
+                const chatsArray = Array.from(chatMap.values());
+                const otherIds = [...new Set(chatsArray.map(c => c.other_user_id).filter(Boolean))];
+                if (otherIds.length > 0) {
+                    try {
+                        const { data: profiles } = await window.supabase
+                            .from('profiles')
+                            .select('id, display_name, avatar_url')
+                            .in('id', otherIds);
+
+                        const profileMap = new Map((profiles || []).map(p => [p.id, p]));
+                        // Attach participant info
+                        chatsArray.forEach(c => {
+                            const profile = profileMap.get(c.other_user_id) || null;
+                            if (profile) {
+                                c.participant = {
+                                    display_name: profile.display_name || 'Usuário',
+                                    avatar_url: profile.avatar_url || null,
+                                    id: profile.id
+                                };
+                            } else {
+                                c.participant = { display_name: 'Usuário', id: c.other_user_id };
+                            }
+                        });
+                    } catch (profileErr) {
+                        // If profile fetch fails, still render with IDs
+                        chatsArray.forEach(c => {
+                            c.participant = { display_name: 'Usuário', id: c.other_user_id };
+                        });
+                    }
+                } else {
+                    chatsArray.forEach(c => c.participant = { display_name: 'Usuário', id: c.other_user_id });
+                }
+
+                this.renderChats(chatsArray);
                 return;
             }
 

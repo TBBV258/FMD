@@ -1046,6 +1046,12 @@ async function renderProfilePage() {
             profilePlan.textContent = plan;
             profilePlan.className = `plan-badge ${plan}`;
         }
+        // Show subscription plan in the profile area (visible under badges)
+        const profileSubscriptionName = document.getElementById('profile-subscription-name');
+        if (profileSubscriptionName) {
+            profileSubscriptionName.textContent = plan;
+            profileSubscriptionName.className = `subscription-name ${plan}`;
+        }
         
         // Load user documents
         await loadProfileDocuments(user.id);
