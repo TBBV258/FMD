@@ -522,7 +522,7 @@ function showSection(sectionId) {
     applyTranslations(currentLanguage);
 }
 
-function loadSectionData(sectionId) {
+async function loadSectionData(sectionId) {
     switch(sectionId) {
         case 'documentos':
             loadDocuments();
@@ -534,9 +534,12 @@ function loadSectionData(sectionId) {
             renderProfilePage();
             break;
         case 'notificacoes':
-            if (window.chat) {
-                try { window.chat.initChatHistoryTab && window.chat.initChatHistoryTab(); } catch (e) { /* no-op */ }
-                try { window.chat.loadChatHistoryList && window.chat.loadChatHistoryList(); } catch (e) { /* no-op */ }
+            // Load notifications and conversations from Supabase
+            try {
+                await loadNotificationsTab();
+                await loadConversationsTab();
+            } catch (e) {
+                console.warn('Failed to load notifications or conversations', e);
             }
             break;
         case 'ranking':
@@ -661,6 +664,170 @@ function applyFeedFilters(documents) {
         return typeMatch && statusMatch;
     });
 }
+
+// --- Notifications & Conversations (Supabase-backed)
+async function loadNotificationsTab() {
+    const listEl = document.getElementById('notifications-list');
+    if (!listEl) return;
+    listEl.innerHTML = '<div class="loading-state"><i class="fas fa-spinner fa-spin"></i><p>A carregar notificações...</p></div>';
+
+    if (!window.supabase || !currentUser) {
+        listEl.innerHTML = '<div class="empty-state"><p>Notificações indisponíveis.</p></div>';
+        return;
+    }
+
+    try {
+        const { data, error } = await window.supabase
+            .from('notifications')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .order('created_at', { ascending: false })
+            .limit(100);
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+            listEl.innerHTML = '<div class="empty-state"><i class="fas fa-bell-slash"></i><p data-i18n="notifications.empty">Nenhuma notificação no momento</p></div>';
+            return;
+        }
+
+        listEl.innerHTML = data.map(n => {
+            const time = new Date(n.created_at).toLocaleString(currentLanguage);
+            const title = n.title || 'Notificação';
+            const body = n.body || '';
+            const unreadClass = n.read ? '' : 'has-unread';
+            return `
+                <div class="notification-item ${unreadClass}" data-id="${n.id}">
+                    <div class="notification-meta">
+                        <strong>${title}</strong>
+                        <div class="notification-time">${time}</div>
+                    </div>
+                    <div class="notification-body">${body}</div>
+                </div>
+            `;
+        }).join('');
+
+        // Attach click handler to mark read
+        listEl.querySelectorAll('.notification-item').forEach(el => {
+            el.addEventListener('click', async () => {
+                const id = el.dataset.id;
+                try {
+                    await window.supabase.from('notifications').update({ read: true }).eq('id', id);
+                    el.classList.remove('has-unread');
+                } catch (e) { console.warn('Mark read failed', e); }
+            });
+        });
+
+        const markAllBtn = document.getElementById('mark-all-read');
+        if (markAllBtn) {
+            markAllBtn.onclick = async () => {
+                try {
+                    await window.supabase.from('notifications').update({ read: true }).eq('user_id', currentUser.id).eq('read', false);
+                    // Refresh
+                    await loadNotificationsTab();
+                } catch (e) {
+                    console.warn('Mark all read failed', e);
+                }
+            };
+        }
+
+    } catch (error) {
+        console.error('Error loading notifications:', error);
+        listEl.innerHTML = `<div class="error-state"><p>Erro ao carregar notificações: ${error.message}</p></div>`;
+    }
+}
+
+async function loadConversationsTab() {
+    const container = document.getElementById('chats-container');
+    if (!container) return;
+    container.innerHTML = '<div class="loading-state"><i class="fas fa-spinner fa-spin"></i><p>A carregar conversas...</p></div>';
+
+    if (!window.supabase || !currentUser) {
+        container.innerHTML = '<div class="empty-state"><p>Conversas indisponíveis.</p></div>';
+        return;
+    }
+
+    try {
+        // Fetch recent messages involving the user
+        const { data: messages, error } = await window.supabase
+            .from('chats')
+            .select('id, sender_id, receiver_id, message, created_at, document_id')
+            .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
+            .order('created_at', { ascending: false })
+            .limit(200);
+
+        if (error) throw error;
+
+        if (!messages || messages.length === 0) {
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-comments"></i><p data-i18n="notifications.no_chats">Nenhuma conversa recente</p></div>';
+            return;
+        }
+
+        // Group by the other participant and keep latest message per conversation
+        const convMap = new Map();
+        messages.forEach(m => {
+            const other = m.sender_id === currentUser.id ? m.receiver_id : m.sender_id;
+            if (!other) return;
+            if (!convMap.has(other)) {
+                convMap.set(other, m);
+            }
+        });
+
+        const convs = Array.from(convMap.values());
+        const otherIds = [...new Set(convs.map(c => (c.sender_id === currentUser.id ? c.receiver_id : c.sender_id)).filter(Boolean))];
+
+        // Fetch profiles
+        let profiles = [];
+        if (otherIds.length > 0) {
+            const { data: pData } = await window.supabase.from('profiles').select('id, display_name, avatar_url').in('id', otherIds);
+            profiles = pData || [];
+        }
+        const profileMap = new Map((profiles || []).map(p => [p.id, p]));
+
+        // Render conversations
+        container.innerHTML = convs.map(c => {
+            const otherId = c.sender_id === currentUser.id ? c.receiver_id : c.sender_id;
+            const prof = profileMap.get(otherId) || { display_name: 'Usuário', avatar_url: null };
+            const time = new Date(c.created_at).toLocaleString(currentLanguage);
+            const preview = (c.message || '').slice(0, 120);
+            return `
+                <div class="chat-item" data-user-id="${otherId}" role="listitem">
+                    <div class="chat-avatar-container">
+                        ${prof.avatar_url ? `<img class="chat-avatar" src="${prof.avatar_url}" alt="${prof.display_name}">` : `<div class="avatar-initial">${(prof.display_name||'U').charAt(0).toUpperCase()}</div>`}
+                    </div>
+                    <div class="chat-info">
+                        <div class="chat-header">
+                            <div class="chat-name">${prof.display_name || 'Usuário'}</div>
+                            <div class="chat-time">${time}</div>
+                        </div>
+                        <div class="chat-details">
+                            <p class="chat-preview">${preview}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Attach click handlers to open chat modal
+        container.querySelectorAll('.chat-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const otherId = item.dataset.userId;
+                // Try to open chat via chat module or fallback to chat page
+                if (window.chat && typeof window.chat.openChatWithUser === 'function') {
+                    window.chat.openChatWithUser(otherId);
+                } else {
+                    // Fallback: navigate to chat.html with participant id query
+                    window.location.href = `chat.html?user=${otherId}`;
+                }
+            });
+        });
+
+    } catch (error) {
+        console.error('Error loading conversations:', error);
+        container.innerHTML = `<div class="error-state"><p>Erro ao carregar conversas: ${error.message}</p></div>`;
+    }
+}
+
 
 /**
  * Gets the number of people the user has helped by returning documents
