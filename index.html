@@ -231,27 +231,55 @@
                 }
                 
                 .feed-content-wrapper {
-                    margin-top: 32px;
+                    margin-top: 20px; /* slightly reduced to tighten layout */
                 }
                 
                 .feed-content {
                     display: grid;
-                    gap: 24px;
+                    gap: 16px; /* compacted */
                 }
                 
                 .feed-item {
                     background: var(--card-bg, #fff);
                     border: 1px solid var(--border-color, #e0e0e0);
                     border-radius: 12px;
-                    padding: 24px;
-                    transition: all 0.2s ease;
-                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+                    padding: 16px; /* reduced padding for denser layout */
+                    transition: all 0.18s ease;
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
                 }
                 
-                .feed-item:hover {
+                    .feed-item:hover {
                     transform: translateY(-2px);
-                    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+                    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
                     border-color: var(--primary-color, #007bff);
+                }
+
+                /* Profile badges and subscription styling */
+                .profile-badges {
+                    display: flex;
+                    gap: 8px;
+                    align-items: center;
+                }
+
+                .plan-badge {
+                    padding: 4px 8px;
+                    border-radius: 12px;
+                    font-weight: 600;
+                    font-size: 0.85rem;
+                    background: var(--badge-bg, #f1f5f9);
+                    color: var(--text-color, #222);
+                    border: 1px solid rgba(0,0,0,0.06);
+                }
+
+                .subscription-info .subscription-name {
+                    display: inline-block;
+                    padding: 4px 8px;
+                    background: rgba(0,123,255,0.08);
+                    color: var(--primary-color, #007bff);
+                    border-radius: 999px;
+                    font-weight: 600;
+                    margin-left: 6px;
+                    border: 1px solid rgba(0,123,255,0.12);
                 }
 
                 /* Chats list layout */
@@ -502,7 +530,7 @@
                     
                         <h2 data-i18n="welcome.title" id="welcome-title">Bem-vindo!</h2>
                     
-                    <div class="tip-card">
+                    <div class="tip-card" style="padding:12px; margin-bottom:12px; border-radius:10px;">
                         <i class="fas fa-clock"></i>
                         <h4 data-i18n="tip.report_immediately.title">Reporte Imediatamente</h4>
                         <p data-i18n="tip.report_immediately.description">Reporte documentos perdidos ou encontrados o mais rápido possível para aumentar as chances de recuperação.</p>
