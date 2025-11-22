@@ -2223,17 +2223,17 @@ async function renderRankingSection() {
             userProfile = null;
         }
 
-        // Supabase fallback: query profiles table directly
+        // Supabase fallback: query user_profiles table directly
         if (!userProfile && window.supabase) {
             try {
                 const { data, error } = await window.supabase
-                    .from('profiles')
-                    .select('id, display_name, points, avatar_url')
+                    .from('user_profiles')
+                    .select('id, full_name, points, avatar_url')
                     .eq('id', user.id)
                     .single();
                 if (!error) userProfile = data;
             } catch (e) {
-                console.warn('Supabase profiles fetch failed', e);
+                console.warn('Supabase user_profiles fetch failed', e);
             }
         }
 
@@ -2281,8 +2281,8 @@ async function renderRankingSection() {
                 topProfiles = await window.profilesApi.listTop(50);
             } else if (window.supabase) {
                 const { data, error } = await window.supabase
-                    .from('profiles')
-                    .select('id, display_name, points, avatar_url')
+                    .from('user_profiles')
+                    .select('id, full_name, points, avatar_url')
                     .order('points', { ascending: false })
                     .limit(50);
                 if (!error && Array.isArray(data)) topProfiles = data;
@@ -2295,16 +2295,20 @@ async function renderRankingSection() {
         // Build leaderboard HTML
         const leaderboardHtml = topProfiles.length > 0 ? `
             <ol class="leaderboard-list">
-                ${topProfiles.map((p, idx) => `
+                ${topProfiles.map((p, idx) => {
+                    const displayName = p.full_name || p.display_name || `Usuário ${String(p.id).slice(-6)}`;
+                    const avatarUrl = p.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random`;
+                    return `
                     <li class="leader-item ${p.id === user.id ? 'highlight' : ''}">
                         <span class="leader-rank">${idx + 1}</span>
-                        <img class="leader-avatar" src="${p.avatar_url || '/css/default-avatar.png'}" alt="${p.display_name || 'Usuário'}" />
+                        <img class="leader-avatar" src="${avatarUrl}" alt="${displayName}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random'" />
                         <div class="leader-info">
-                            <div class="leader-name">${p.display_name || p.id}</div>
+                            <div class="leader-name">${displayName}</div>
                             <div class="leader-points">${p.points || 0} pontos</div>
                         </div>
                     </li>
-                `).join('')}
+                `;
+                }).join('')}
             </ol>
         ` : `<p>Nenhum dado de ranking disponível no momento.</p>`;
 

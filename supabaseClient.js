@@ -274,6 +274,21 @@
                     console.error('Update profile error:', error);
                     return null;
                 }
+            },
+            
+            async listTop(limit = 50) {
+                try {
+                    const { data: profiles, error } = await window.supabase
+                        .from('user_profiles')
+                        .select('id, full_name, points, avatar_url')
+                        .order('points', { ascending: false })
+                        .limit(limit);
+                    if (error) throw error;
+                    return profiles || [];
+                } catch (error) {
+                    console.error('List top profiles error:', error);
+                    return [];
+                }
             }
         };
         
