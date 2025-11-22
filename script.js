@@ -666,74 +666,198 @@ function applyFeedFilters(documents) {
 }
 
 // --- Notifications & Conversations (Supabase-backed)
+let notificationSubscription = null;
+
+/**
+ * Helper function to escape HTML to prevent XSS
+ * @param {string|number} text - Text to escape
+ * @returns {string} Escaped HTML
+ */
+function escapeHtml(text) {
+    if (!text && text !== 0) return '';
+    const div = document.createElement('div');
+    div.textContent = String(text);
+    return div.innerHTML;
+}
+
 async function loadNotificationsTab() {
     const listEl = document.getElementById('notifications-list');
     if (!listEl) return;
+    
+    // Show loading state
     listEl.innerHTML = '<div class="loading-state"><i class="fas fa-spinner fa-spin"></i><p>A carregar notificações...</p></div>';
 
-    if (!window.supabase || !currentUser) {
-        listEl.innerHTML = '<div class="empty-state"><p>Notificações indisponíveis.</p></div>';
+    if (!window.supabase) {
+        listEl.innerHTML = '<div class="empty-state"><p>Supabase não está disponível. Notificações indisponíveis.</p></div>';
+        return;
+    }
+
+    if (!currentUser) {
+        listEl.innerHTML = '<div class="empty-state"><p>Utilizador não autenticado. Faça login para ver notificações.</p></div>';
         return;
     }
 
     try {
+        // Query melhorada com tratamento de erros
         const { data, error } = await window.supabase
             .from('notifications')
-            .select('*')
+            .select('id, user_id, type, title, message, body, is_read, read, read_at, action_url, metadata, created_at, updated_at')
             .eq('user_id', currentUser.id)
             .order('created_at', { ascending: false })
             .limit(100);
 
-        if (error) throw error;
+        if (error) {
+            console.error('Supabase query error:', error);
+            throw new Error(`Erro ao carregar notificações: ${error.message}`);
+        }
 
         if (!data || data.length === 0) {
             listEl.innerHTML = '<div class="empty-state"><i class="fas fa-bell-slash"></i><p data-i18n="notifications.empty">Nenhuma notificação no momento</p></div>';
+            setupNotificationsRealtime(); // Setup real-time even if no notifications
             return;
         }
 
+        // Render notifications
         listEl.innerHTML = data.map(n => {
             const time = new Date(n.created_at).toLocaleString(currentLanguage);
             const title = n.title || 'Notificação';
-            const body = n.body || '';
-            const unreadClass = n.read ? '' : 'has-unread';
+            const body = n.message || n.body || '';
+            // Check both is_read and read fields for compatibility
+            const isRead = n.is_read !== false && n.read !== false;
+            const unreadClass = isRead ? '' : 'has-unread';
+            const actionUrl = n.action_url || '#';
+            
             return `
-                <div class="notification-item ${unreadClass}" data-id="${n.id}">
+                <div class="notification-item ${unreadClass}" data-id="${n.id}" data-type="${n.type || 'general'}">
                     <div class="notification-meta">
-                        <strong>${title}</strong>
+                        <strong>${escapeHtml(title)}</strong>
                         <div class="notification-time">${time}</div>
                     </div>
-                    <div class="notification-body">${body}</div>
+                    <div class="notification-body">${escapeHtml(body)}</div>
+                    ${actionUrl !== '#' ? `<a href="${actionUrl}" class="notification-action">Ver detalhes</a>` : ''}
                 </div>
             `;
         }).join('');
 
         // Attach click handler to mark read
         listEl.querySelectorAll('.notification-item').forEach(el => {
-            el.addEventListener('click', async () => {
+            el.addEventListener('click', async (e) => {
+                // Don't mark as read if clicking on action link
+                if (e.target.tagName === 'A') return;
+                
                 const id = el.dataset.id;
                 try {
-                    await window.supabase.from('notifications').update({ read: true }).eq('id', id);
+                    // Try both field names for compatibility
+                    const updateData = {};
+                    if (window.supabase) {
+                        // Check which field exists in the schema
+                        const { error: updateError } = await window.supabase
+                            .from('notifications')
+                            .update({ 
+                                is_read: true,
+                                read: true,
+                                read_at: new Date().toISOString()
+                            })
+                            .eq('id', id);
+                        
+                        if (updateError) throw updateError;
+                        el.classList.remove('has-unread');
+                    }
+                } catch (e) { 
+                    console.warn('Mark read failed:', e);
+                    // Still remove visual indicator even if update fails
                     el.classList.remove('has-unread');
-                } catch (e) { console.warn('Mark read failed', e); }
+                }
             });
         });
 
+        // Setup mark all as read button
         const markAllBtn = document.getElementById('mark-all-read');
         if (markAllBtn) {
             markAllBtn.onclick = async () => {
                 try {
-                    await window.supabase.from('notifications').update({ read: true }).eq('user_id', currentUser.id).eq('read', false);
+                    const { error: updateError } = await window.supabase
+                        .from('notifications')
+                        .update({ 
+                            is_read: true,
+                            read: true,
+                            read_at: new Date().toISOString()
+                        })
+                        .eq('user_id', currentUser.id)
+                        .or('is_read.is.null,is_read.eq.false,read.is.null,read.eq.false');
+                    
+                    if (updateError) throw updateError;
+                    
                     // Refresh
                     await loadNotificationsTab();
+                    showToast('Todas as notificações marcadas como lidas', 'success');
                 } catch (e) {
-                    console.warn('Mark all read failed', e);
+                    console.error('Mark all read failed:', e);
+                    showToast('Erro ao marcar todas como lidas', 'error');
                 }
             };
         }
 
+        // Setup real-time updates
+        setupNotificationsRealtime();
+
     } catch (error) {
         console.error('Error loading notifications:', error);
-        listEl.innerHTML = `<div class="error-state"><p>Erro ao carregar notificações: ${error.message}</p></div>`;
+        listEl.innerHTML = `
+            <div class="error-state">
+                <i class="fas fa-exclamation-circle"></i>
+                <p>Erro ao carregar notificações: ${error.message || 'Erro desconhecido'}</p>
+                <button class="btn secondary small" onclick="loadNotificationsTab()">Tentar novamente</button>
+            </div>
+        `;
+    }
+}
+
+/**
+ * Setup real-time subscription for notifications
+ */
+function setupNotificationsRealtime() {
+    if (!window.supabase || !currentUser) return;
+
+    // Remove existing subscription if any
+    if (notificationSubscription) {
+        try {
+            window.supabase.removeChannel(notificationSubscription);
+        } catch (e) {
+            console.warn('Error removing notification subscription:', e);
+        }
+    }
+
+    try {
+        notificationSubscription = window.supabase
+            .channel('notifications-realtime')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'notifications',
+                    filter: `user_id=eq.${currentUser.id}`
+                },
+                (payload) => {
+                    console.log('New notification received:', payload);
+                    // Reload notifications when new one arrives
+                    loadNotificationsTab();
+                    // Show toast notification
+                    if (payload.new && window.showToast) {
+                        showToast(payload.new.title || 'Nova notificação', 'info');
+                    }
+                }
+            )
+            .subscribe((status) => {
+                if (status === 'SUBSCRIBED') {
+                    console.log('Subscribed to notifications real-time updates');
+                } else if (status === 'CHANNEL_ERROR') {
+                    console.error('Error subscribing to notifications');
+                }
+            });
+    } catch (error) {
+        console.error('Error setting up notifications real-time:', error);
     }
 }
 
@@ -1040,6 +1164,104 @@ async function handleLostForm(e) {
     }
 }
 
+/**
+ * Verifica se um número de documento existe na base de dados com status 'lost'
+ * Usa o módulo document-matching.js para melhor matching
+ * @param {string} documentNumber - Número do documento
+ * @param {string} documentType - Tipo do documento
+ * @param {Object} location - Localização do documento (opcional)
+ * @param {string} userId - ID do usuário atual (opcional)
+ * @returns {Promise<Array>} Array de documentos perdidos que correspondem
+ */
+async function checkDocumentMatch(documentNumber, documentType, location = null, userId = null) {
+    if (!documentNumber || !documentType) {
+        return [];
+    }
+
+    try {
+        // Tentar usar o módulo document-matching se disponível
+        if (window.checkFoundDocumentMatches) {
+            try {
+                const matches = await window.checkFoundDocumentMatches({
+                    document_number: documentNumber,
+                    type: documentType,
+                    status: 'found',
+                    user_id: userId,
+                    location: location
+                });
+                return matches || [];
+            } catch (e) {
+                console.warn('Error using document-matching module, falling back:', e);
+            }
+        }
+
+        // Fallback: busca direta no Supabase
+        if (!window.supabase) {
+            console.warn('Supabase not available for document matching');
+            return [];
+        }
+
+        // Buscar documentos perdidos com o mesmo número e tipo
+        const { data, error } = await window.supabase
+            .from('documents')
+            .select('id, user_id, title, type, document_number, status, created_at, location')
+            .eq('document_number', documentNumber)
+            .eq('type', documentType)
+            .eq('status', 'lost');
+
+        if (error) {
+            console.error('Error checking document match:', error);
+            return [];
+        }
+
+        return data || [];
+    } catch (error) {
+        console.error('Error in checkDocumentMatch:', error);
+        return [];
+    }
+}
+
+/**
+ * Cria notificação para o dono do documento quando um match é encontrado
+ * @param {Object} foundDocument - Documento encontrado
+ * @param {Object} lostDocument - Documento perdido que corresponde
+ * @returns {Promise<void>}
+ */
+async function createMatchNotification(foundDocument, lostDocument) {
+    try {
+        if (!window.supabase) {
+            console.warn('Supabase not available for creating notification');
+            return;
+        }
+
+        // Criar notificação para o dono do documento perdido
+        const { error } = await window.supabase
+            .from('notifications')
+            .insert([{
+                user_id: lostDocument.user_id,
+                type: 'document_match',
+                title: 'Documento Encontrado!',
+                message: `Um ${foundDocument.type} com número ${foundDocument.document_number} foi encontrado e pode ser seu documento perdido.`,
+                action_url: `#documentos?id=${foundDocument.id}`,
+                metadata: {
+                    found_document_id: foundDocument.id,
+                    lost_document_id: lostDocument.id,
+                    document_number: foundDocument.document_number,
+                    document_type: foundDocument.type
+                },
+                is_read: false
+            }]);
+
+        if (error) {
+            console.error('Error creating match notification:', error);
+        } else {
+            console.log('Match notification created successfully');
+        }
+    } catch (error) {
+        console.error('Error in createMatchNotification:', error);
+    }
+}
+
 async function handleFoundForm(e) {
     e.preventDefault();
     
@@ -1047,6 +1269,7 @@ async function handleFoundForm(e) {
     const lat = parseFloat(document.getElementById('found-lat')?.value || '');
     const lng = parseFloat(document.getElementById('found-lng')?.value || '');
     const phone = document.getElementById('found-contact')?.value || '';
+    const documentNumber = document.getElementById('found-document-number')?.value?.trim() || '';
 
     if (!address) {
         showToast('Indique o local onde encontrou o documento', 'warning');
@@ -1067,12 +1290,50 @@ async function handleFoundForm(e) {
         type: document.getElementById('found-type').value,
         status: 'found',
         location,
-        fileUrl: ''
+        fileUrl: '',
+        document_number: documentNumber
     };
     
     try {
-        await window.documentsApi.create(data);
+        const createdDocument = await window.documentsApi.create(data);
         showToast('Documento encontrado reportado com sucesso!', 'success');
+        
+        // Verificar se há documentos perdidos correspondentes
+        if (documentNumber) {
+            try {
+                const matches = await checkDocumentMatch(
+                    documentNumber, 
+                    data.type, 
+                    location, 
+                    currentUser.id
+                );
+                if (matches.length > 0) {
+                    // Criar notificações para cada documento perdido correspondente
+                    for (const match of matches) {
+                        await createMatchNotification(createdDocument || data, match);
+                    }
+                    
+                    // Mostrar notificação com detalhes dos matches
+                    const matchDetails = matches.map(m => 
+                        `${m.type} (${m.document_number})`
+                    ).join(', ');
+                    
+                    showToast(
+                        `🎉 Encontramos ${matches.length} documento(s) perdido(s) correspondente(s)! Notificações enviadas aos donos.`,
+                        'success'
+                    );
+                    
+                    // Log para debug
+                    console.log('Document matches found:', matches);
+                } else {
+                    console.log('No matching lost documents found for:', documentNumber);
+                }
+            } catch (matchError) {
+                console.error('Error checking document matches:', matchError);
+                // Não bloquear o fluxo se a verificação falhar
+                showToast('Documento salvo, mas houve um erro ao verificar correspondências.', 'warning');
+            }
+        }
         
         // Award points for reporting found document
         await trackDocumentFound();

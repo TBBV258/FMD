@@ -7,9 +7,11 @@ class ChatBoxController {
             return;
         }
         
+        this.subscriptions = [];
         this.initializeElements();
         this.setupEventListeners();
         this.loadChats();
+        this.setupRealtimeUpdates();
     }
 
     initializeElements() {
@@ -251,9 +253,11 @@ class ChatBoxController {
             const participant = chat.participant || { display_name: 'Usuário', avatar_url: null };
             const chatName = participant.display_name || 'Usuário';
             const documentTitle = chat.document?.title || 'Documento';
+            const documentId = chat.document_id || chat.id;
+            const receiverId = chat.other_user_id || participant.id;
             
             return `
-                <div class="chat-item" data-chat-id="${chat.id}">
+                <div class="chat-item" data-chat-id="${chat.id}" data-document-id="${documentId}" data-receiver-id="${receiverId}">
                     <div class="chat-item-avatar">
                         ${this.getAvatarContent(participant)}
                     </div>
@@ -269,7 +273,7 @@ class ChatBoxController {
 
     getAvatarContent(participant) {
         if (participant?.avatar_url) {
-            return `<img src="${participant.avatar_url}" alt="${participant.display_name || 'Usuário'}" />`;
+            return `<img src="${participant.avatar_url}" alt="${participant.display_name || 'Usuário'}" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'avatar-initial\\'>${(participant?.display_name || 'U').charAt(0).toUpperCase()}</div>';" />`;
         }
         const initial = (participant?.display_name || 'U').charAt(0).toUpperCase();
         return `<div class="avatar-initial">${initial}</div>`;
@@ -287,7 +291,72 @@ class ChatBoxController {
 
     openChat(chatId) {
         // Navigate to chat page or open chat modal
-        window.location.href = `/chat.html?id=${chatId}`;
+        if (window.chat && typeof window.chat.openChatModal === 'function') {
+            // Try to get document info from the chat item
+            const chatItem = document.querySelector(`[data-chat-id="${chatId}"]`);
+            if (chatItem) {
+                const documentId = chatItem.dataset.documentId;
+                const receiverId = chatItem.dataset.receiverId;
+                const title = chatItem.querySelector('.chat-item-preview')?.textContent || 'Documento';
+                window.chat.openChatModal(documentId || chatId, title, receiverId);
+            } else {
+                window.location.href = `/chat.html?id=${chatId}`;
+            }
+        } else {
+            window.location.href = `/chat.html?id=${chatId}`;
+        }
+    }
+
+    /**
+     * Setup real-time updates for chat list
+     */
+    setupRealtimeUpdates() {
+        if (!window.supabase) return;
+
+        try {
+            // Get current user
+            window.supabase.auth.getUser().then(({ data: { user }, error }) => {
+                if (error || !user) return;
+
+                // Subscribe to new messages
+                const channel = window.supabase
+                    .channel('chat-box-updates')
+                    .on(
+                        'postgres_changes',
+                        {
+                            event: 'INSERT',
+                            schema: 'public',
+                            table: 'chats',
+                            filter: `receiver_id=eq.${user.id}`
+                        },
+                        (payload) => {
+                            // Reload chats when new message arrives
+                            this.loadChats();
+                        }
+                    )
+                    .subscribe();
+
+                this.subscriptions.push(channel);
+            });
+        } catch (error) {
+            console.error('Error setting up real-time updates:', error);
+        }
+    }
+
+    /**
+     * Cleanup subscriptions
+     */
+    cleanup() {
+        this.subscriptions.forEach(channel => {
+            try {
+                if (window.supabase && channel) {
+                    window.supabase.removeChannel(channel);
+                }
+            } catch (error) {
+                console.warn('Error removing channel:', error);
+            }
+        });
+        this.subscriptions = [];
     }
 }
 

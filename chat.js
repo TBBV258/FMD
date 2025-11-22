@@ -358,9 +358,12 @@
 
     console.log('Initializing chat module...');
     window.chat = {
-        async init(documentId, onNewMessage) {
+        async init(documentId, onNewMessage, receiverId) {
             currentDocumentId = documentId;
             currentChatId = `chat_${documentId}`;
+            if (receiverId) {
+                currentReceiverId = receiverId;
+            }
             
             // Initialize location tracking
             initializeLocation();
@@ -369,6 +372,18 @@
                 // Get current user info
                 const { data: { user }, error } = await supabase.auth.getUser();
                 if (error) throw error;
+                
+                // Try to use chat-controller if available
+                if (window.chatController && receiverId) {
+                    try {
+                        await window.chatController.initChat(documentId, receiverId, (enrichedMessage) => {
+                            appendMessage(enrichedMessage, enrichedMessage.isOwn);
+                            onNewMessage?.(enrichedMessage);
+                        });
+                    } catch (controllerError) {
+                        console.warn('Error using chat-controller, falling back to legacy:', controllerError);
+                    }
+                }
                 
                 // Show welcome message
                 const welcomeMessage = {
@@ -389,8 +404,8 @@
                 // Load existing messages
                 this.loadChatHistory();
                 
-                // Set up real-time subscription if available
-                if (window.subscribeToChats && window.chatsApi) {
+                // Set up real-time subscription if available (fallback if chat-controller not used)
+                if (window.subscribeToChats && window.chatsApi && (!window.chatController || !receiverId)) {
                     if (subscription) subscription.unsubscribe?.();
                     subscription = window.subscribeToChats(documentId, async (payload) => {
                         console.log('Real-time payload received:', payload);
@@ -566,6 +581,31 @@
                     throw new Error('Missing required chat information');
                 }
 
+                // Try to use chat-controller if available
+                if (window.chatController && typeof window.chatController.sendMessage === 'function') {
+                    try {
+                        const response = await window.chatController.sendMessage(
+                            currentDocumentId,
+                            currentReceiverId,
+                            text,
+                            { location: userLocation, messageType: 'text' }
+                        );
+                        
+                        // Add message to UI
+                        const message = {
+                            ...response,
+                            isOwn: true,
+                            sender_name: user.user_metadata?.full_name || user.email || 'Você'
+                        };
+                        appendMessage(message, true);
+                        if (input) input.value = '';
+                        
+                        return response;
+                    } catch (controllerError) {
+                        console.warn('Error using chat-controller, falling back to legacy:', controllerError);
+                    }
+                }
+
                 // Create message object
                 const message = {
                     id: `temp-${Date.now()}`,
@@ -731,7 +771,7 @@
                 currentDocumentId = documentId; // Ensure document ID is set
                 
                 console.log('Initializing chat with document ID:', documentId, 'and receiver ID:', receiverId);
-                this.init(documentId);
+                this.init(documentId, null, receiverId);
 
                 // Wire header quick actions after modal is open
                 const openMapsBtn = document.getElementById('chat-open-maps');
