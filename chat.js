@@ -858,12 +858,23 @@
         }
     };
     
-    // Initialize chat history tab when DOM is loaded
-    document.addEventListener('DOMContentLoaded', () => {
-        if (window.chat) {
-            window.chat.initChatHistoryTab();
+    // Initialize chat history tab when DOM is loaded (guarding addEventListener availability)
+    (function onReadyInit() {
+        const doWhenReady = () => {
+            if (window.chat) {
+                window.chat.initChatHistoryTab();
+            }
+        };
+
+        if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+            document.addEventListener('DOMContentLoaded', doWhenReady);
+        } else if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+            window.addEventListener('load', doWhenReady);
+        } else {
+            // Fallback
+            try { window.onload = doWhenReady; } catch (e) { /* ignore */ }
         }
-    });
+    })();
     
     // Make chat functions available globally
     window.chat = window.chat || {};
@@ -880,38 +891,48 @@
     return window.chat;
 })();
 
-// Initialize chat modal controls
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM fully loaded, setting up chat modal...');
-    const modal = document.getElementById('chat-modal');
-    if (!modal) {
-        console.error('Chat modal element not found!');
-        return;
-    }
-    
-    const closeBtn = modal.querySelector('.close');
-    
-    if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
-            console.log('Close button clicked');
-            if (window.chat && window.chat.closeChatModal) {
+// Initialize chat modal controls (guard addEventListener again)
+(function setupChatModal() {
+    const init = () => {
+        console.log('DOM fully loaded, setting up chat modal...');
+        const modal = document.getElementById('chat-modal');
+        if (!modal) {
+            console.error('Chat modal element not found!');
+            return;
+        }
+
+        const closeBtn = modal.querySelector('.close');
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                console.log('Close button clicked');
+                if (window.chat && window.chat.closeChatModal) {
+                    window.chat.closeChatModal();
+                }
+            });
+        }
+
+        // Initialize chat history tab if on notifications page
+        if (window.location.hash === '#notificacoes' && window.chat && window.chat.initChatHistoryTab) {
+            window.chat.initChatHistoryTab();
+        }
+
+        // Close modal when clicking outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal && window.chat && window.chat.closeChatModal) {
+                console.log('Clicked outside modal, closing...');
                 window.chat.closeChatModal();
             }
         });
+
+        console.log('Chat module setup complete');
+    };
+
+    if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+        window.addEventListener('load', init);
+    } else {
+        try { window.onload = init; } catch (e) { /* ignore */ }
     }
-    
-    // Initialize chat history tab if on notifications page
-    if (window.location.hash === '#notificacoes' && window.chat && window.chat.initChatHistoryTab) {
-        window.chat.initChatHistoryTab();
-    }
-    
-    // Close modal when clicking outside
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal && window.chat && window.chat.closeChatModal) {
-            console.log('Clicked outside modal, closing...');
-            window.chat.closeChatModal();
-        }
-    });
-    
-    console.log('Chat module setup complete');
 })();

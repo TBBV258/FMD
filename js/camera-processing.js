@@ -1,5 +1,4 @@
 // camera-processing.js - Módulo de processamento avançado de imagem
-import cv from 'opencv.js';
 import { showToast } from './ui/toasts.js';
 
 class DocumentScanner {
@@ -36,6 +35,8 @@ class DocumentScanner {
     }
 
     async detectDocumentBorders(imageData) {
+        const cv = window.cv;
+        if (!cv) throw new Error('OpenCV not loaded');
         const src = cv.matFromImageData(imageData);
         const dst = new cv.Mat();
         
@@ -83,6 +84,8 @@ class DocumentScanner {
     }
 
     async correctPerspective(imageData, corners) {
+        const cv = window.cv;
+        if (!cv) throw new Error('OpenCV not loaded');
         const src = cv.matFromImageData(imageData);
         const dst = new cv.Mat();
         
@@ -120,6 +123,8 @@ class DocumentScanner {
     }
 
     async optimizeForOCR(imageUrl) {
+        const cv = window.cv;
+        if (!cv) throw new Error('OpenCV not loaded');
         const img = await this.loadImage(imageUrl);
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
