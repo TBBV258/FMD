@@ -1,5 +1,11 @@
 class ChatBoxController {
     constructor() {
+        // Allow disabling the chat box UI by adding `hide-chat-box` to <body>
+        if (typeof document !== 'undefined' && document.body && document.body.classList.contains('hide-chat-box')) {
+            console.info('Chat box initialization skipped (hide-chat-box set on body)');
+            return;
+        }
+
         // Wait for Supabase to be initialized
         if (!window.supabase) {
             console.warn('Supabase not initialized, waiting...');
@@ -362,5 +368,10 @@ class ChatBoxController {
 
 // Initialize chat box
 document.addEventListener('DOMContentLoaded', () => {
+    // Allow hiding chat box by adding `hide-chat-box` to <body>
+    if (document.body && document.body.classList.contains('hide-chat-box')) {
+        console.info('Chat box initialization skipped (hide-chat-box present on body).');
+        return;
+    }
     new ChatBoxController();
 });

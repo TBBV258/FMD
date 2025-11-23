@@ -29,6 +29,7 @@ export function renderBottomNav() {
           <i class="fas fa-user"></i>
           <div class="text-xs">Perfil</div>
         </button>
+        
       </div>
     </nav>
   `;
@@ -37,6 +38,7 @@ export function renderBottomNav() {
   container.addEventListener('click', (e) => {
     const btn = e.target.closest('.nav-link');
     if (!btn) return;
+
     const section = btn.getAttribute('data-section');
     if (section) {
       // Prefer calling global API if available

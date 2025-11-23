@@ -42,7 +42,7 @@
         });
     </script>
 </head>
-<body>
+<body class="hide-chat-box">
     <!-- Theme Switcher -->
     <div id="theme-switcher"></div>
 
@@ -91,6 +91,10 @@
                     <button class="nav-link" data-section="perfil" aria-label="Perfil">
                         <i class="fas fa-user"></i>
                         <span data-i18n="nav.profile">Perfil</span>
+                    </button>
+                    <button class="nav-link logout-btn" id="nav-logout-btn" aria-label="Sair">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Sair</span>
                     </button>
                     <button id="theme-toggle" class="btn secondary small" aria-label="Alternar tema" data-i18n="[aria-label]nav.toggle_theme">
                         <i class="fas fa-moon"></i>
@@ -880,10 +884,6 @@
                             </div>
                         </div>
                     </div>
-                    <button id="profile-logout-btn" class="btn danger small">
-                        <i class="fas fa-sign-out-alt"></i>
-                        Sair
-                    </button>
                 </div>
 
                 <!-- Profile Control Panel -->

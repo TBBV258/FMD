@@ -1999,10 +1999,40 @@ document.addEventListener('DOMContentLoaded', () => {
         profileLogoutBtn.addEventListener('click', handleLogout);
     }
 
+    // Initialize top-nav logout button (if present)
+    const navLogoutBtn = document.getElementById('nav-logout-btn');
+    if (navLogoutBtn) {
+        navLogoutBtn.addEventListener('click', handleLogout);
+    }
+
     // Initialize ranking modal
     initializeRankingSection();
     // Ensure reload button is present
     setTimeout(ensureRankingReloadButton, 200);
+    // Attempt to auto-load notifications if user is authenticated
+    setTimeout(async () => {
+        try {
+            // Try to determine current user from available auth helpers
+            let user = window.currentUser || null;
+            if (!user) {
+                if (window.authApi && typeof window.authApi.getCurrentUser === 'function') {
+                    user = await window.authApi.getCurrentUser();
+                } else if (window.supabase && window.supabase.auth && typeof window.supabase.auth.getUser === 'function') {
+                    const { data } = await window.supabase.auth.getUser();
+                    user = data?.user || null;
+                }
+                if (user) window.currentUser = user;
+            }
+
+            if (user && typeof loadNotificationsTab === 'function') {
+                await loadNotificationsTab();
+                // Ensure realtime subscription is active
+                if (typeof setupNotificationsRealtime === 'function') setupNotificationsRealtime();
+            }
+        } catch (e) {
+            console.warn('Auto-load notifications failed:', e);
+        }
+    }, 300);
     
     // Initialize feed filters
     initializeFeedFilters();

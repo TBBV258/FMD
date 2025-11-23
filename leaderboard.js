@@ -365,7 +365,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             // Listen for section changes to handle leaderboard updates
             document.addEventListener('sectionChanged', (e) => {
-                if (e.detail === 'leaderboard') {
+                // Accept both 'leaderboard' (component) and 'ranking' (page) events
+                if (e.detail === 'leaderboard' || e.detail === 'ranking') {
+                    leaderboard.currentPage = 1;
+                    leaderboard.render();
+                }
+            });
+
+            // Some parts of the app use a custom 'navigateTo' event — listen for it too
+            document.addEventListener('navigateTo', (e) => {
+                const section = e.detail && e.detail.section;
+                if (section === 'leaderboard' || section === 'ranking') {
                     leaderboard.currentPage = 1;
                     leaderboard.render();
                 }
