@@ -99,6 +99,11 @@
             // Verificar se é um nav-link
             const navLink = e.target.closest('.nav-link');
             if (navLink) {
+                // Skip logout buttons - they have their own handler
+                if (navLink.classList.contains('logout-btn') || navLink.id === 'nav-logout-btn' || navLink.id === 'profile-logout-btn') {
+                    return; // Let logout handler take over
+                }
+                
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 

@@ -23,23 +23,8 @@
     <link rel="stylesheet" href="css/themes/minimal.css" id="theme-minimal" disabled>
     <link rel="stylesheet" href="css/themes/colorful.css" id="theme-colorful" disabled>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // Handle logout
-            const logoutButtons = document.querySelectorAll('.logout-btn');
-            logoutButtons.forEach(btn => {
-                btn.addEventListener('click', async () => {
-                    // Sign out from Supabase
-                    if (window.authApi) {
-                        try {
-                            await window.authApi.signOut();
-                                                                                                                                                 } catch (error) {
-                            console.error('Error signing out:', error);
-                        }
-                    }
-                    window.location.href = 'login.html';
-                });
-            });
-        });
+        // Logout handlers are initialized in script.js
+        // This ensures handleLogout() is used consistently
     </script>
 </head>
 <body class="hide-chat-box">
@@ -185,9 +170,26 @@
                 }
                 
                 .filters-grid {
-                    display: grid;
+                    display: none; /* Hidden by default, shown after clicking search */
                     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
                     gap: 20px;
+                    margin-top: 16px;
+                    animation: slideDown 0.3s ease-out;
+                }
+                
+                .filters-grid.show {
+                    display: grid;
+                }
+                
+                @keyframes slideDown {
+                    from {
+                        opacity: 0;
+                        transform: translateY(-10px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
                 }
                 
                 .filter-group {
@@ -680,10 +682,21 @@
                             <label for="feed-filter-type" data-i18n="filters.type">Tipo de Documento</label>
                             <select id="feed-filter-type" class="filter-select">
                                 <option value="" data-i18n="filters.all_types">Todos os tipos</option>
-                                <option value="ID card" data-i18n="document_types.id_card">BI</option>
+                                <option value="ID card" data-i18n="document_types.id_card">BI (Bilhete de Identidade)</option>
                                 <option value="Passport" data-i18n="document_types.passport">Passaporte</option>
                                 <option value="DIRE" data-i18n="document_types.dire">DIRE</option>
-                                <option value="Bank Doc" data-i18n="document_types.bank_doc">Documento Bancário</option>
+                                <option value="Driving License">Carta de Condução</option>
+                                <option value="Bank Card">Cartão Bancário</option>
+                                <option value="Bank Doc">Documento Bancário</option>
+                                <option value="Student Card">Cartão de Estudante</option>
+                                <option value="Voter Card">Cartão de Eleitor</option>
+                                <option value="Birth Certificate">Certidão de Nascimento</option>
+                                <option value="Marriage Certificate">Certidão de Casamento</option>
+                                <option value="Death Certificate">Certidão de Óbito</option>
+                                <option value="NUIT">NUIT (Número Único de Identificação Tributária)</option>
+                                <option value="Work Card">Cartão de Trabalhador</option>
+                                <option value="Health Card">Cartão de Saúde</option>
+                                <option value="Other">Outros</option>
                             </select>
                         </div>
                         
@@ -714,6 +727,11 @@
                                 <option value="50" data-i18n="filters.distance_50">Até 50 km</option>
                             </select>
                         </div>
+                        
+                        <div class="filter-group">
+                            <label for="feed-filter-document-number" data-i18n="documents.document_number">Número do Documento</label>
+                            <input type="text" id="feed-filter-document-number" class="filter-input" data-i18n="[placeholder]documents.document_number" placeholder="Número do documento">
+                        </div>
                     </div>
                 </div>
                 
@@ -737,12 +755,18 @@
                             <option value="">Selecione o tipo</option>
                             <option value="ID card">BI (Bilhete de Identidade)</option>
                             <option value="Passport">Passaporte</option>
-                            <option value="Driving License">Carta de Condução</option>
                             <option value="DIRE">DIRE</option>
+                            <option value="Driving License">Carta de Condução</option>
                             <option value="Bank Card">Cartão Bancário</option>
                             <option value="Bank Doc">Documento Bancário</option>
                             <option value="Student Card">Cartão de Estudante</option>
                             <option value="Voter Card">Cartão de Eleitor</option>
+                            <option value="Birth Certificate">Certidão de Nascimento</option>
+                            <option value="Marriage Certificate">Certidão de Casamento</option>
+                            <option value="Death Certificate">Certidão de Óbito</option>
+                            <option value="NUIT">NUIT (Número Único de Identificação Tributária)</option>
+                            <option value="Work Card">Cartão de Trabalhador</option>
+                            <option value="Health Card">Cartão de Saúde</option>
                             <option value="Other">Outros</option>
                         </select>
                     </div>
@@ -802,12 +826,18 @@
                             <option value="">Selecione o tipo</option>
                             <option value="ID card">BI (Bilhete de Identidade)</option>
                             <option value="Passport">Passaporte</option>
-                            <option value="Driving License">Carta de Condução</option>
                             <option value="DIRE">DIRE</option>
+                            <option value="Driving License">Carta de Condução</option>
                             <option value="Bank Card">Cartão Bancário</option>
                             <option value="Bank Doc">Documento Bancário</option>
                             <option value="Student Card">Cartão de Estudante</option>
                             <option value="Voter Card">Cartão de Eleitor</option>
+                            <option value="Birth Certificate">Certidão de Nascimento</option>
+                            <option value="Marriage Certificate">Certidão de Casamento</option>
+                            <option value="Death Certificate">Certidão de Óbito</option>
+                            <option value="NUIT">NUIT (Número Único de Identificação Tributária)</option>
+                            <option value="Work Card">Cartão de Trabalhador</option>
+                            <option value="Health Card">Cartão de Saúde</option>
                             <option value="Other">Outros</option>
                         </select>
                     </div>
@@ -1095,11 +1125,18 @@
                             <option value="">Selecione o tipo de documento</option>
                             <option value="ID card">B.I (Bilhete de Identidade)</option>
                             <option value="Passport">Passaporte</option>
-                            <option value="Driving License">Carta de Condução</option>
                             <option value="DIRE">DIRE</option>
+                            <option value="Driving License">Carta de Condução</option>
                             <option value="Bank Card">Cartão Bancário</option>
+                            <option value="Bank Doc">Documento Bancário</option>
                             <option value="Student Card">Cartão de Estudante</option>
                             <option value="Voter Card">Cartão de Eleitor</option>
+                            <option value="Birth Certificate">Certidão de Nascimento</option>
+                            <option value="Marriage Certificate">Certidão de Casamento</option>
+                            <option value="Death Certificate">Certidão de Óbito</option>
+                            <option value="NUIT">NUIT (Número Único de Identificação Tributária)</option>
+                            <option value="Work Card">Cartão de Trabalhador</option>
+                            <option value="Health Card">Cartão de Saúde</option>
                             <option value="Other">Outros</option>
                         </select>
                     </div>
