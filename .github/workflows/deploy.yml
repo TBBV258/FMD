@@ -29,7 +29,7 @@ jobs:
       - name: Build Vue Project
         run: |
           cd frontend
-          npm run build
+          npm run build:ci
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
