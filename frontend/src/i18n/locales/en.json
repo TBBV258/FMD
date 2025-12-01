@@ -1,0 +1,146 @@
+{
+  "common": {
+    "yes": "Yes",
+    "no": "No",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search",
+    "filter": "Filter",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "logout": "Logout"
+  },
+  "nav": {
+    "home": "Home",
+    "map": "Map",
+    "report": "Report",
+    "notifications": "Notifications",
+    "profile": "Profile"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "fullName": "Full Name",
+    "phoneNumber": "Phone Number",
+    "country": "Country",
+    "loginTitle": "Welcome back!",
+    "registerTitle": "Create Account",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "loginSuccess": "Successfully logged in!",
+    "registerSuccess": "Account created successfully!",
+    "logoutSuccess": "Successfully logged out!",
+    "loginError": "Login error",
+    "registerError": "Registration error"
+  },
+  "feed": {
+    "title": "Documents",
+    "filters": {
+      "all": "All",
+      "lost": "Lost",
+      "found": "Found"
+    },
+    "empty": "No documents found",
+    "loadMore": "Load more",
+    "refreshed": "Feed refreshed!",
+    "searchPlaceholder": "Search documents..."
+  },
+  "document": {
+    "types": {
+      "bi": "Identity Card (BI)",
+      "passport": "Passport",
+      "driver_license": "Driver's License",
+      "dire": "DIRE",
+      "nuit": "NUIT",
+      "work_card": "Work Card",
+      "student_card": "Student Card",
+      "voter_card": "Voter Card",
+      "birth_certificate": "Birth Certificate",
+      "title_deed": "Title Deed",
+      "other": "Other"
+    },
+    "status": {
+      "lost": "Lost",
+      "found": "Found",
+      "matched": "Matched",
+      "returned": "Returned"
+    },
+    "title": "Title",
+    "type": "Document Type",
+    "description": "Description",
+    "location": "Location",
+    "documentNumber": "Document Number",
+    "details": "Details",
+    "contact": "Contact",
+    "interested": "I'm Interested",
+    "reportLost": "Report Lost",
+    "reportFound": "Report Found"
+  },
+  "profile": {
+    "title": "Profile",
+    "points": "Points",
+    "documents": "Documents",
+    "plan": "Plan",
+    "ranking": "Ranking",
+    "menu": {
+      "editProfile": "Edit Profile",
+      "myDocuments": "My Documents",
+      "notifications": "Notifications",
+      "privacy": "Privacy & Security",
+      "help": "Help & Support",
+      "settings": "Settings",
+      "logout": "Logout"
+    },
+    "plans": {
+      "free": "Free",
+      "premium": "Premium"
+    },
+    "ranks": {
+      "bronze": "Bronze",
+      "silver": "Silver",
+      "gold": "Gold",
+      "platinum": "Platinum"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "tabs": {
+      "all": "All",
+      "chats": "Chats"
+    },
+    "empty": "No notifications",
+    "types": {
+      "match": "Match Found",
+      "message": "New Message",
+      "system": "System",
+      "verification": "Verification"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "privacy": "Privacy",
+    "suggestions": "Suggestions",
+    "backup": "Backup",
+    "language": "Language"
+  },
+  "map": {
+    "title": "Map",
+    "loading": "Loading map...",
+    "myLocation": "You are here"
+  },
+  "footer": {
+    "copyright": "© 2025 FindMyDocs. All rights reserved."
+  }
+}
+

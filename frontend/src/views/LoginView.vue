@@ -152,7 +152,7 @@
 
     <!-- Footer -->
       <p class="text-center text-white/80 text-sm mt-6">
-        © 2024 FindMyDocs. Todos os direitos reservados.
+        © 2025 FindMyDocs. Todos os direitos reservados.
       </p>
     </div>
     

@@ -5,6 +5,8 @@ import { fileURLToPath, URL } from 'node:url'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // Uncomment the line below and set repository name when deploying to GitHub Pages
+  // base: '/your-repository-name/',
   plugins: [
     vue(),
     VitePWA({

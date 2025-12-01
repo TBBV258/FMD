@@ -33,7 +33,18 @@ export interface Document {
   updated_at: string
 }
 
-export type DocumentType = 'passport' | 'id_card' | 'driver_license' | 'birth_certificate' | 'other'
+export type DocumentType = 
+  | 'bi' // Bilhete de Identidade
+  | 'passport' // Passaporte
+  | 'driver_license' // Carta de Condução
+  | 'dire' // DIRE - Documento de Identificação de Residentes Estrangeiros
+  | 'nuit' // NUIT - Número Único de Identificação Tributária
+  | 'work_card' // Cartão de Trabalho
+  | 'student_card' // Cartão de Estudante
+  | 'voter_card' // Cartão de Eleitor
+  | 'birth_certificate' // Certidão de Nascimento
+  | 'title_deed' // Título de Propriedade
+  | 'other' // Outro
 export type DocumentStatus = 'lost' | 'found' | 'normal' | 'matched' | 'returned'
 export type VerificationStatus = 'pending' | 'verified' | 'rejected'
 
@@ -53,13 +64,29 @@ export interface UserProfile {
   country: string
   avatar_url?: string
   points: number
+  rank: UserRank
   document_count: number
   plan: UserPlan
+  subscription_expires_at?: string
+  privacy_settings?: PrivacySettings
+  backup_settings?: BackupSettings
   created_at: string
   updated_at: string
 }
 
 export type UserPlan = 'free' | 'premium' | 'enterprise'
+export type UserRank = 'bronze' | 'silver' | 'gold' | 'platinum'
+
+export interface PrivacySettings {
+  showExactLocation: boolean
+  allowContact: boolean
+}
+
+export interface BackupSettings {
+  autoBackup: boolean
+  frequency: 'daily' | 'weekly' | 'monthly'
+  lastBackup?: string
+}
 
 // Auth Types
 export interface User {

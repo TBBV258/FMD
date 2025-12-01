@@ -136,7 +136,7 @@ const fileInputRef = ref<HTMLInputElement | null>(null)
 
 const formData = reactive<DocumentFormData>({
   title: '',
-  type: 'id_card',
+  type: 'bi',
   status: 'found',
   description: '',
   location: '',
@@ -144,10 +144,16 @@ const formData = reactive<DocumentFormData>({
 })
 
 const documentTypes = [
-  { label: 'BI', value: 'id_card' as DocumentType, icon: 'fas fa-id-card' },
+  { label: 'Bilhete de Identidade (BI)', value: 'bi' as DocumentType, icon: 'fas fa-id-card' },
   { label: 'Passaporte', value: 'passport' as DocumentType, icon: 'fas fa-passport' },
-  { label: 'Carta', value: 'driver_license' as DocumentType, icon: 'fas fa-id-card-alt' },
-  { label: 'Certidão', value: 'birth_certificate' as DocumentType, icon: 'fas fa-file-alt' },
+  { label: 'Carta de Condução', value: 'driver_license' as DocumentType, icon: 'fas fa-id-card-alt' },
+  { label: 'DIRE', value: 'dire' as DocumentType, icon: 'fas fa-id-card' },
+  { label: 'NUIT', value: 'nuit' as DocumentType, icon: 'fas fa-file-invoice' },
+  { label: 'Cartão de Trabalho', value: 'work_card' as DocumentType, icon: 'fas fa-briefcase' },
+  { label: 'Cartão de Estudante', value: 'student_card' as DocumentType, icon: 'fas fa-graduation-cap' },
+  { label: 'Cartão de Eleitor', value: 'voter_card' as DocumentType, icon: 'fas fa-vote-yea' },
+  { label: 'Certidão de Nascimento', value: 'birth_certificate' as DocumentType, icon: 'fas fa-file-alt' },
+  { label: 'Título de Propriedade', value: 'title_deed' as DocumentType, icon: 'fas fa-home' },
   { label: 'Outro', value: 'other' as DocumentType, icon: 'fas fa-file' }
 ]
 

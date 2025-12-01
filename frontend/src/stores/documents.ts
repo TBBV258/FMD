@@ -159,6 +159,24 @@ export const useDocumentsStore = defineStore('documents', () => {
       
       if (data) {
         documents.value.unshift(data as Document)
+        
+        // Search for matches if this is a lost or found document
+        if (data.status === 'lost' || data.status === 'found') {
+          // Import and run matching in background
+          import('@/utils/documentMatching').then(({ findDocumentMatches, notifyMatch }) => {
+            findDocumentMatches(data as Document).then(matches => {
+              if (matches.length > 0) {
+                // Notify about the best match
+                const bestMatch = matches[0]
+                if (bestMatch.matchScore >= 50) {
+                  const lostDoc = data.status === 'lost' ? (data as Document) : bestMatch.document
+                  const foundDoc = data.status === 'found' ? (data as Document) : bestMatch.document
+                  notifyMatch(lostDoc, foundDoc, bestMatch.matchScore)
+                }
+              }
+            })
+          })
+        }
       }
       
       return { success: true, data }

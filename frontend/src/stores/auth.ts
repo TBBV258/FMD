@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { User, UserProfile, AuthSession } from '@/types'
 import { supabase } from '@/utils/supabase'
+import { calculateRank } from '@/utils/pointsSystem'
 
 export const useAuthStore = defineStore('auth', () => {
   // State
@@ -234,6 +235,36 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function updatePoints(points: number, action: string) {
+    if (!user.value) return { success: false, error: 'Usuário não autenticado' }
+    
+    try {
+      const newPoints = (profile.value?.points || 0) + points
+      const newRank = calculateRank(newPoints)
+      
+      const { error: updateError } = await supabase
+        .from('user_profiles')
+        .update({ 
+          points: newPoints,
+          rank: newRank
+        })
+        .eq('id', user.value.id)
+      
+      if (updateError) throw updateError
+      
+      // Update local profile
+      if (profile.value) {
+        profile.value.points = newPoints
+        profile.value.rank = newRank
+      }
+      
+      return { success: true, points: newPoints, rank: newRank }
+    } catch (err: any) {
+      console.error('Error updating points:', err)
+      return { success: false, error: err.message }
+    }
+  }
+
   return {
     // State
     user,
@@ -250,6 +281,7 @@ export const useAuthStore = defineStore('auth', () => {
     signOut,
     loadProfile,
     checkSession,
-    updateProfile
+    updateProfile,
+    updatePoints
   }
 })

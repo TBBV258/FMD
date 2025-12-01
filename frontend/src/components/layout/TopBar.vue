@@ -10,6 +10,9 @@
       <!-- Actions -->
       <div class="flex items-center space-x-2">
         <slot name="actions">
+          <!-- Language selector -->
+          <LanguageSelector />
+          
           <!-- Theme toggle -->
           <button
             class="btn-icon"
@@ -17,16 +20,6 @@
             aria-label="Alternar tema"
           >
             <i :class="isDark ? 'fas fa-sun' : 'fas fa-moon'"></i>
-          </button>
-          
-          <!-- Language selector (optional) -->
-          <button
-            v-if="showLanguageSelector"
-            class="btn-icon"
-            @click="$emit('languageClick')"
-            aria-label="Selecionar idioma"
-          >
-            <i class="fas fa-globe"></i>
           </button>
         </slot>
       </div>
@@ -39,22 +32,17 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import LanguageSelector from '@/components/common/LanguageSelector.vue'
 
 interface Props {
   title?: string
   logo?: string
-  showLanguageSelector?: boolean
 }
 
 withDefaults(defineProps<Props>(), {
   title: 'FindMyDocs',
-  logo: '/logofmd.jpg',
-  showLanguageSelector: false
+  logo: '/logofmd.jpg'
 })
-
-defineEmits<{
-  languageClick: []
-}>()
 
 const isDark = ref(false)
 

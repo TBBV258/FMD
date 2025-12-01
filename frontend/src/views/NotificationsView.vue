@@ -47,12 +47,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Notification } from '@/types'
 import MainLayout from '@/components/layout/MainLayout.vue'
 
 const router = useRouter()
+
+const activeTab = ref<'all' | 'chats'>('all')
 
 // Notifications (vazias inicialmente - serão carregadas via API quando integrar)
 const notifications = ref<Notification[]>([
@@ -67,6 +69,16 @@ const notifications = ref<Notification[]>([
     created_at: new Date().toISOString()
   }
 ])
+
+const allNotifications = computed(() => notifications.value)
+
+const chatNotifications = computed(() => 
+  notifications.value.filter(n => n.type === 'message')
+)
+
+const displayedNotifications = computed(() => 
+  activeTab.value === 'all' ? allNotifications.value : chatNotifications.value
+)
 
 const notificationClass = (read: boolean) => {
   return read ? 'opacity-60' : ''

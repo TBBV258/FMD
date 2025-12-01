@@ -106,6 +106,20 @@ const initials = computed(() => {
     .toUpperCase()
 })
 
+// Define handleLogout BEFORE menuItems
+const handleLogout = async () => {
+  isLoggingOut.value = true
+  
+  const result = await authStore.signOut()
+  
+  isLoggingOut.value = false
+  
+  if (result.success) {
+    success('Logout realizado com sucesso!')
+    router.push('/login')
+  }
+}
+
 const menuItems = [
   {
     icon: 'fas fa-user-edit',
@@ -151,19 +165,11 @@ const menuItems = [
       // TODO: Criar view de configurações
       success('Funcionalidade em breve!')
     }
+  },
+  {
+    icon: 'fas fa-sign-out-alt',
+    label: 'Sair',
+    action: handleLogout
   }
 ]
-
-const handleLogout = async () => {
-  isLoggingOut.value = true
-  
-  const result = await authStore.signOut()
-  
-  isLoggingOut.value = false
-  
-  if (result.success) {
-    success('Logout realizado com sucesso!')
-    router.push('/login')
-  }
-}
 </script>
