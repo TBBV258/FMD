@@ -1,98 +1,101 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-primary to-success flex items-center justify-center px-4">
+  <div class="min-h-screen bg-gradient-to-br from-orange-400 via-orange-300 to-orange-200 flex items-center justify-center px-4 relative overflow-hidden">
+    <!-- Decorative circles -->
+    <div class="absolute top-10 right-20 w-2 h-2 bg-white/30 rounded-full"></div>
+    <div class="absolute top-16 right-32 w-2 h-2 bg-white/30 rounded-full"></div>
+    <div class="absolute top-12 right-24 w-2 h-2 bg-white/30 rounded-full"></div>
+    <div class="absolute top-20 right-16 w-2 h-2 bg-white/40 rounded-full"></div>
+    <div class="absolute bottom-32 left-16 w-2 h-2 bg-white/30 rounded-full"></div>
+    <div class="absolute bottom-40 left-20 w-2 h-2 bg-white/30 rounded-full"></div>
+    <div class="absolute bottom-36 left-12 w-2 h-2 bg-white/40 rounded-full"></div>
+    
     <div class="w-full max-w-md">
-      <!-- Logo -->
-      <div class="text-center mb-8">
-        <img :src="logoImg" alt="FindMyDocs Logo" class="h-20 w-20 mx-auto rounded-2xl shadow-lg mb-4" />
-      <h1 class="text-3xl font-bold text-white mb-2">FindMyDocs</h1>
-        <p class="text-white/80">Gestão de Documentos Perdidos</p>
+      <!-- Welcome card -->
+      <div v-if="!showAuthForm" class="bg-white dark:bg-dark-card rounded-3xl shadow-2xl p-8 text-center animate-fade-in">
+        <!-- Logo/Icon -->
+        <div class="mb-8">
+          <img :src="logoImg" alt="FindMyDocs Logo" class="h-32 w-32 mx-auto rounded-2xl shadow-lg mb-4" />
+        </div>
+        
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-dark-text mb-2">Welcome!</h1>
+        <p class="text-gray-600 dark:text-gray-400 mb-8 text-sm">
+          Sign in to access your documents
+        </p>
+        
+        <button
+          @click="showLogin"
+          class="w-full bg-gradient-to-r from-orange-400 to-orange-500 text-white font-semibold py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 mb-4"
+        >
+          Go to Sign in
+        </button>
+        
+        <p class="text-sm text-gray-600 dark:text-gray-400">
+          No account yet? <button @click="showRegister" class="text-orange-500 font-semibold hover:underline">Sign up</button>
+        </p>
       </div>
 
-      <!-- Auth Card -->
-      <div class="card">
-        <!-- Tabs -->
-        <div class="flex border-b border-gray-200 dark:border-dark-border mb-6">
-            <button
-            :class="tabClass('login')"
-            @click="currentTab = 'login'"
-            >
-            Login
-            </button>
-            <button
-            :class="tabClass('register')"
-            @click="currentTab = 'register'"
-            >
-              Registar
-            </button>
-          </div>
+      <!-- Auth Form (Login/Register) -->
+      <div v-else class="bg-white dark:bg-dark-card rounded-3xl shadow-2xl p-8 animate-slide-in"
 
-          <!-- Login Form -->
-        <form v-if="currentTab === 'login'" @submit.prevent="handleLogin" class="space-y-4">
+        <!-- Back button -->
+        <button @click="showAuthForm = false" class="mb-6 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white flex items-center">
+          <i class="fas fa-arrow-left mr-2"></i>
+        </button>
+        
+        <!-- Title -->
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-dark-text mb-2">
+          {{ currentTab === 'login' ? 'Welcome back!' : 'Create new account' }}
+        </h2>
+        <div class="w-12 h-1 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full mb-6"></div>
+
+        <!-- Login Form -->
+        <form v-if="currentTab === 'login'" @submit.prevent="handleLogin" class="space-y-5">
           <BaseInput
-                v-model="loginForm.email"
+            v-model="loginForm.email"
             label="Email"
-                type="email"
-            placeholder="seu@email.com"
+            type="email"
+            placeholder="Enter your email"
             icon="fas fa-envelope"
             :error="errors.email"
-                required
-              />
+            required
+          />
 
           <BaseInput
-                v-model="loginForm.password"
-            label="Senha"
-                type="password"
-                placeholder="••••••••"
+            v-model="loginForm.password"
+            label="Password"
+            type="password"
+            placeholder="Enter your password"
             icon="fas fa-lock"
             :error="errors.password"
-                required
+            required
           />
           
           <div class="flex items-center justify-between text-sm">
-            <label class="flex items-center">
-              <input type="checkbox" class="mr-2" />
-              <span class="text-gray-600 dark:text-gray-400">Lembrar-me</span>
+            <label class="flex items-center cursor-pointer">
+              <input type="checkbox" class="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500" />
+              <span class="ml-2 text-gray-600 dark:text-gray-400">Remember me</span>
             </label>
-            <a href="#" class="text-primary hover:underline">Esqueceu a senha?</a>
-            </div>
-
-          <BaseButton
-              type="submit"
-            variant="primary"
-            size="lg"
-            full-width
-            :loading="isLoading"
-            loading-text="Entrando..."
-          >
-            Entrar
-          </BaseButton>
-          
-          <div class="relative my-6">
-            <div class="absolute inset-0 flex items-center">
-              <div class="w-full border-t border-gray-300 dark:border-dark-border"></div>
-            </div>
-            <div class="relative flex justify-center text-sm">
-              <span class="px-2 bg-white dark:bg-dark-card text-gray-500">Ou continue com</span>
-            </div>
           </div>
 
-          <BaseButton
-            variant="outline"
-            size="lg"
-            full-width
-            @click="handleGoogleLogin"
+          <button
+            type="submit"
+            :disabled="isLoading"
+            class="w-full bg-gradient-to-r from-orange-400 to-orange-500 text-white font-semibold py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <i class="fab fa-google mr-2 text-red-500"></i>
-            Google
-          </BaseButton>
+            {{ isLoading ? 'Signing in...' : 'Sign in!' }}
+          </button>
+          
+          <p class="text-center text-sm text-gray-600 dark:text-gray-400 mt-4">
+            Don't have an account? <button type="button" @click="currentTab = 'register'" class="text-orange-500 font-semibold hover:underline">Sign up</button>
+          </p>
         </form>
         
         <!-- Register Form -->
-        <form v-else @submit.prevent="handleRegister" class="space-y-4">
+        <form v-else @submit.prevent="handleRegister" class="space-y-5">
           <BaseInput
             v-model="registerForm.fullName"
-            label="Nome Completo"
-            placeholder="João Silva"
+            label="Full name"
+            placeholder="John Doe"
             icon="fas fa-user"
             :error="errors.fullName"
             required
@@ -100,60 +103,37 @@
           
           <BaseInput
             v-model="registerForm.email"
-            label="Email"
+            label="Email address"
             type="email"
-            placeholder="seu@email.com"
+            placeholder="Enter your email"
             icon="fas fa-envelope"
             :error="errors.email"
             required
           />
           
           <BaseInput
-            v-model="registerForm.phoneNumber"
-            label="Telefone (opcional)"
-            type="tel"
-            placeholder="+258 XX XXX XXXX"
-            icon="fas fa-phone"
-          />
-          
-          <BaseInput
             v-model="registerForm.password"
-            label="Senha"
+            label="Create password"
             type="password"
-            placeholder="••••••••"
+            placeholder="Min 6 characters"
             icon="fas fa-lock"
             :error="errors.password"
-            hint="Mínimo 6 caracteres"
             required
           />
           
-          <BaseInput
-            v-model="registerForm.confirmPassword"
-            label="Confirmar Senha"
-            type="password"
-            placeholder="••••••••"
-            icon="fas fa-lock"
-            :error="errors.confirmPassword"
-            required
-          />
-          
-          <BaseButton
+          <button
             type="submit"
-            variant="primary"
-            size="lg"
-            full-width
-            :loading="isLoading"
-            loading-text="Criando conta..."
+            :disabled="isLoading"
+            class="w-full bg-gradient-to-r from-orange-400 to-orange-500 text-white font-semibold py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Criar Conta
-          </BaseButton>
+            {{ isLoading ? 'Creating account...' : 'Sign Up!' }}
+          </button>
+          
+          <p class="text-center text-sm text-gray-600 dark:text-gray-400 mt-4">
+            Already have an account? <button type="button" @click="currentTab = 'login'" class="text-orange-500 font-semibold hover:underline">Sign in</button>
+          </p>
         </form>
-    </div>
-
-    <!-- Footer -->
-      <p class="text-center text-white/80 text-sm mt-6">
-        © 2025 FindMyDocs. Todos os direitos reservados.
-      </p>
+      </div>
     </div>
     
     <!-- Toast Container -->
@@ -177,7 +157,18 @@ const authStore = useAuthStore()
 const { success, error: showError } = useToast()
 
 const currentTab = ref<'login' | 'register'>('login')
+const showAuthForm = ref(false)
 const isLoading = ref(false)
+
+const showLogin = () => {
+  currentTab.value = 'login'
+  showAuthForm.value = true
+}
+
+const showRegister = () => {
+  currentTab.value = 'register'
+  showAuthForm.value = true
+}
 
 const loginForm = reactive({
   email: '',
@@ -302,3 +293,35 @@ const handleGoogleLogin = async () => {
   showError('Login com Google em breve!')
 }
 </script>
+
+<style scoped>
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out;
+}
+
+.animate-slide-in {
+  animation: slide-in 0.4s ease-out;
+}
+</style>
