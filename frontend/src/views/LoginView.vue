@@ -14,7 +14,7 @@
       <div v-if="!showAuthForm" class="bg-white dark:bg-dark-card rounded-3xl shadow-2xl p-8 text-center animate-fade-in">
         <!-- Logo/Icon -->
         <div class="mb-8">
-          <img :src="logoImg" alt="FindMyDocs Logo" class="h-32 w-32 mx-auto rounded-2xl shadow-lg mb-4" />
+          <img src="/logofmd.jpg" alt="FindMyDocs Logo" class="h-32 w-32 mx-auto rounded-2xl shadow-lg mb-4" />
         </div>
         
         <h1 class="text-2xl font-bold text-gray-900 dark:text-dark-text mb-2">Welcome!</h1>
@@ -35,8 +35,7 @@
       </div>
 
       <!-- Auth Form (Login/Register) -->
-      <div v-else class="bg-white dark:bg-dark-card rounded-3xl shadow-2xl p-8 animate-slide-in"
-
+      <div v-if="showAuthForm" class="bg-white dark:bg-dark-card rounded-3xl shadow-2xl p-8 animate-slide-in">
         <!-- Back button -->
         <button @click="showAuthForm = false" class="mb-6 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white flex items-center">
           <i class="fas fa-arrow-left mr-2"></i>
@@ -147,9 +146,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import BaseInput from '@/components/common/BaseInput.vue'
-import BaseButton from '@/components/common/BaseButton.vue'
 import ToastContainer from '@/components/common/ToastContainer.vue'
-import logoImg from '/logofmd.jpg'
 
 const router = useRouter()
 const route = useRoute()
@@ -190,14 +187,6 @@ const errors = reactive({
   fullName: '',
   confirmPassword: ''
 })
-
-const tabClass = (tab: string) => {
-  const base = 'flex-1 py-3 font-medium transition-all border-b-2'
-  if (tab === currentTab.value) {
-    return `${base} border-primary text-primary`
-  }
-  return `${base} border-transparent text-gray-500 hover:text-gray-700`
-}
 
 const validateEmail = (email: string) => {
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -286,11 +275,6 @@ const handleRegister = async () => {
   } else {
     showError(result.error || 'Erro ao criar conta')
   }
-}
-
-const handleGoogleLogin = async () => {
-  // TODO: Implement Google OAuth
-  showError('Login com Google em breve!')
 }
 </script>
 
