@@ -63,58 +63,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import { notificationsApi } from '@/api/notifications'
+import { useToast } from '@/composables/useToast'
 import type { Notification } from '@/types'
 import MainLayout from '@/components/layout/MainLayout.vue'
 
 const router = useRouter()
+const authStore = useAuthStore()
+const { error: showError } = useToast()
 
 const activeTab = ref<'all' | 'chats'>('all')
-
-// Notifications (vazias inicialmente - serão carregadas via API quando integrar)
-const notifications = ref<Notification[]>([
-  {
-    id: '1',
-    user_id: '1',
-    type: 'system',
-    title: 'Bem-vindo ao FindMyDocs!',
-    message: 'Comece reportando um documento perdido ou encontrado.',
-    data: {},
-    read: false,
-    created_at: new Date().toISOString()
-  },
-  {
-    id: '2',
-    user_id: '1',
-    type: 'message',
-    title: 'Nova mensagem de João Silva',
-    message: 'Olá! Vi que você perdeu um documento. Posso ajudar?',
-    data: { documentId: 'doc-123', senderId: 'user-456' },
-    read: false,
-    created_at: new Date(Date.now() - 3600000).toISOString() // 1 hour ago
-  },
-  {
-    id: '3',
-    user_id: '1',
-    type: 'message',
-    title: 'Maria Costa respondeu',
-    message: 'Encontrei um documento parecido. Vamos conversar?',
-    data: { documentId: 'doc-789', senderId: 'user-789' },
-    read: true,
-    created_at: new Date(Date.now() - 7200000).toISOString() // 2 hours ago
-  },
-  {
-    id: '4',
-    user_id: '1',
-    type: 'match',
-    title: 'Possível Match!',
-    message: 'Encontramos um documento que pode ser o que você procura.',
-    data: { documentId: 'doc-456' },
-    read: false,
-    created_at: new Date(Date.now() - 10800000).toISOString() // 3 hours ago
-  }
-])
+const notifications = ref<Notification[]>([])
+const isLoading = ref(false)
+let unsubscribe: (() => void) | null = null
 
 const allNotifications = computed(() => notifications.value)
 
@@ -187,8 +151,31 @@ const formatTime = (dateString: string) => {
   return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
 }
 
-const handleNotificationClick = (notification: Notification) => {
-  markAsRead(notification.id)
+const loadNotifications = async () => {
+  if (!authStore.userId) {
+    router.push({ name: 'Login', query: { redirect: router.currentRoute.value.fullPath } })
+    return
+  }
+
+  isLoading.value = true
+  try {
+    notifications.value = await notificationsApi.fetch(authStore.userId)
+  } catch (err: any) {
+    showError(err.message || 'Erro ao carregar notificações')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const startRealtime = () => {
+  if (!authStore.userId || unsubscribe) return
+  unsubscribe = notificationsApi.subscribeToUser(authStore.userId, (notification) => {
+    notifications.value = [notification, ...notifications.value]
+  })
+}
+
+const handleNotificationClick = async (notification: Notification) => {
+  await markAsRead(notification.id)
   
   // Navigate based on notification type
   if (notification.type === 'match' && notification.data?.documentId) {
@@ -201,10 +188,28 @@ const handleNotificationClick = (notification: Notification) => {
   // System notifications don't navigate anywhere
 }
 
-const markAsRead = (id: string) => {
+const markAsRead = async (id: string) => {
   const notification = notifications.value.find(n => n.id === id)
-  if (notification) {
-    notification.read = true
+  if (!notification || notification.read) return
+
+  notification.read = true
+  try {
+    await notificationsApi.markAsRead(id)
+  } catch (err: any) {
+    showError(err.message || 'Erro ao atualizar notificação')
+    notification.read = false
   }
 }
+
+onMounted(async () => {
+  await loadNotifications()
+  startRealtime()
+})
+
+onBeforeUnmount(() => {
+  if (unsubscribe) {
+    unsubscribe()
+    unsubscribe = null
+  }
+})
 </script>

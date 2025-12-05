@@ -103,6 +103,18 @@ const filterButtonClass = (value: string) => {
 // Infinite scroll
 const { isLoading, hasMore, setLoading, setHasMore } = useInfiniteScroll(loadMore)
 
+// Ensure the feed always starts with the public lost/found documents of all users
+async function fetchInitialFeed() {
+  setLoading(true)
+  const result = await documentsStore.fetchDocuments(true) // reset pagination + list
+  setHasMore(documentsStore.hasMore)
+  setLoading(false)
+
+  if (result && !result.success && result.error) {
+    showError(result.error)
+  }
+}
+
 async function loadMore() {
   const result = await documentsStore.fetchDocuments()
   setLoading(false)
@@ -163,7 +175,6 @@ async function handleShare(documentId: string) {
 }
 
 onMounted(async () => {
-  setLoading(true)
-  await loadMore()
+  await fetchInitialFeed()
 })
 </script>

@@ -61,9 +61,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useDocumentsStore } from '@/stores/documents'
+import { useToast } from '@/composables/useToast'
+import { chatsApi } from '@/api/chats'
 import type { ChatMessage } from '@/types'
 import MainLayout from '@/components/layout/MainLayout.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
@@ -71,32 +74,69 @@ import BaseButton from '@/components/common/BaseButton.vue'
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const documentsStore = useDocumentsStore()
+const { error: showError } = useToast()
 
 const documentId = route.params.documentId as string
 const newMessage = ref('')
 const messagesContainer = ref<HTMLElement | null>(null)
+const messages = ref<ChatMessage[]>([])
+const isLoading = ref(false)
+const receiverId = ref<string>('')
+let unsubscribe: (() => void) | null = null
 
-// Mock messages
-const messages = ref<ChatMessage[]>([
-  {
-    id: '1',
-    document_id: documentId,
-    sender_id: 'other',
-    receiver_id: authStore.userId || '',
-    message: 'Olá! Vi que você perdeu um documento.',
-    created_at: new Date(Date.now() - 3600000).toISOString(),
-    read: true
-  },
-  {
-    id: '2',
-    document_id: documentId,
-    sender_id: authStore.userId || '',
-    receiver_id: 'other',
-    message: 'Sim, é meu BI. Você o encontrou?',
-    created_at: new Date(Date.now() - 3000000).toISOString(),
-    read: true
+const ensureAuthenticated = () => {
+  if (!authStore.userId) {
+    router.push({ name: 'Login', query: { redirect: route.fullPath } })
+    return false
   }
-])
+  return true
+}
+
+const resolveReceiver = (items: ChatMessage[], documentOwnerId?: string) => {
+  const current = authStore.userId
+  const participant = items
+    .map(m => (m.sender_id === current ? m.receiver_id : m.sender_id))
+    .find(id => id && id !== current)
+
+  if (participant) return participant
+  if (documentOwnerId && documentOwnerId !== current) return documentOwnerId
+  return ''
+}
+
+const loadChat = async () => {
+  if (!ensureAuthenticated()) return
+
+  isLoading.value = true
+  let documentOwnerId = ''
+
+  try {
+    const documentResult = await documentsStore.fetchDocumentById(documentId)
+    documentOwnerId = (documentResult?.data?.user_id || documentsStore.currentDocument?.user_id || '') as string
+
+    messages.value = await chatsApi.fetchMessages(documentId, authStore.userId || undefined)
+    receiverId.value = resolveReceiver(messages.value, documentOwnerId)
+  } catch (err: any) {
+    showError(err.message || 'Erro ao carregar chat')
+  } finally {
+    isLoading.value = false
+  }
+
+  await nextTick()
+  scrollToBottom()
+  startRealtime()
+}
+
+const startRealtime = () => {
+  if (unsubscribe) return
+  unsubscribe = chatsApi.subscribeToDocument(documentId, (message) => {
+    const exists = messages.value.some(m => m.id === message.id)
+    if (!exists) {
+      messages.value.push(message)
+      nextTick().then(scrollToBottom)
+    }
+  })
+}
 
 const messageClass = (senderId: string) => {
   const isOwn = senderId === authStore.userId
@@ -121,22 +161,28 @@ const formatTime = (dateString: string) => {
 
 const handleSend = async () => {
   if (!newMessage.value.trim()) return
-  
-  const message: ChatMessage = {
-    id: Date.now().toString(),
-    document_id: documentId,
-    sender_id: authStore.userId || '',
-    receiver_id: 'other',
-    message: newMessage.value,
-    created_at: new Date().toISOString(),
-    read: false
+  if (!ensureAuthenticated()) return
+
+  if (!receiverId.value) {
+    showError('Não foi possível identificar o destinatário.')
+    return
   }
-  
-  messages.value.push(message)
-  newMessage.value = ''
-  
-  await nextTick()
-  scrollToBottom()
+
+  try {
+    const message = await chatsApi.sendMessage({
+      document_id: documentId,
+      sender_id: authStore.userId as string,
+      receiver_id: receiverId.value,
+      message: newMessage.value.trim()
+    })
+
+    messages.value.push(message)
+    newMessage.value = ''
+    await nextTick()
+    scrollToBottom()
+  } catch (err: any) {
+    showError(err.message || 'Erro ao enviar mensagem')
+  }
 }
 
 const scrollToBottom = () => {
@@ -146,6 +192,13 @@ const scrollToBottom = () => {
 }
 
 onMounted(() => {
-  scrollToBottom()
+  loadChat()
+})
+
+onBeforeUnmount(() => {
+  if (unsubscribe) {
+    unsubscribe()
+    unsubscribe = null
+  }
 })
 </script>
