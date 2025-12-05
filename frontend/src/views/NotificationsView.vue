@@ -1,19 +1,35 @@
 <template>
   <MainLayout>
-    <div class="px-4 py-6">
-      <div v-if="notifications.length === 0" class="text-center py-12">
+    <div class="px-4 py-6 space-y-6">
+      <!-- Tabs -->
+      <div class="flex rounded-full bg-gray-100 dark:bg-dark-card p-1">
+        <button
+          :class="tabClass('all')"
+          @click="activeTab = 'all'"
+        >
+          Notificações
+        </button>
+        <button
+          :class="tabClass('chats')"
+          @click="activeTab = 'chats'"
+        >
+          Conversas
+        </button>
+      </div>
+
+      <div v-if="displayedNotifications.length === 0" class="text-center py-12 card">
         <i class="fas fa-bell-slash text-gray-400 text-6xl mb-4"></i>
         <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
-          Sem notificações
+          {{ emptyState.title }}
         </h3>
         <p class="text-gray-500 dark:text-gray-400">
-          Você está em dia!
+          {{ emptyState.subtitle }}
         </p>
       </div>
       
       <div v-else class="space-y-3">
         <div
-          v-for="notification in notifications"
+          v-for="notification in displayedNotifications"
           :key="notification.id"
           :class="notificationClass(notification.read)"
           class="card card-hover"
@@ -67,6 +83,36 @@ const notifications = ref<Notification[]>([
     data: {},
     read: false,
     created_at: new Date().toISOString()
+  },
+  {
+    id: '2',
+    user_id: '1',
+    type: 'message',
+    title: 'Nova mensagem de João Silva',
+    message: 'Olá! Vi que você perdeu um documento. Posso ajudar?',
+    data: { documentId: 'doc-123', senderId: 'user-456' },
+    read: false,
+    created_at: new Date(Date.now() - 3600000).toISOString() // 1 hour ago
+  },
+  {
+    id: '3',
+    user_id: '1',
+    type: 'message',
+    title: 'Maria Costa respondeu',
+    message: 'Encontrei um documento parecido. Vamos conversar?',
+    data: { documentId: 'doc-789', senderId: 'user-789' },
+    read: true,
+    created_at: new Date(Date.now() - 7200000).toISOString() // 2 hours ago
+  },
+  {
+    id: '4',
+    user_id: '1',
+    type: 'match',
+    title: 'Possível Match!',
+    message: 'Encontramos um documento que pode ser o que você procura.',
+    data: { documentId: 'doc-456' },
+    read: false,
+    created_at: new Date(Date.now() - 10800000).toISOString() // 3 hours ago
   }
 ])
 
@@ -80,8 +126,29 @@ const displayedNotifications = computed(() =>
   activeTab.value === 'all' ? allNotifications.value : chatNotifications.value
 )
 
+const emptyState = computed(() => {
+  if (activeTab.value === 'chats') {
+    return {
+      title: 'Sem conversas',
+      subtitle: 'Quando alguém enviar uma mensagem, ela aparecerá aqui.'
+    }
+  }
+  return {
+    title: 'Sem notificações',
+    subtitle: 'Você está em dia!'
+  }
+})
+
 const notificationClass = (read: boolean) => {
   return read ? 'opacity-60' : ''
+}
+
+const tabClass = (tab: 'all' | 'chats') => {
+  const base = 'flex-1 py-2 rounded-full text-sm font-semibold transition-colors'
+  if (activeTab.value === tab) {
+    return `${base} bg-white dark:bg-dark-bg text-primary shadow`
+  }
+  return `${base} text-gray-500`
 }
 
 const iconClass = (type: string) => {

@@ -1,17 +1,18 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-dark-bg">
-    <!-- Header -->
-    <header class="fixed top-0 left-0 right-0 z-40 bg-white/90 dark:bg-dark-card/90 backdrop-blur-sm border-b border-gray-200 dark:border-dark-border pt-safe">
-      <div class="flex items-center justify-between px-4 h-14">
-        <button class="btn-icon" @click="router.back()">
-          <i class="fas fa-arrow-left"></i>
-        </button>
-        <h1 class="text-lg font-semibold">Detalhes</h1>
-        <button class="btn-icon" @click="handleShare">
-          <i class="fas fa-share-alt"></i>
-        </button>
-      </div>
-    </header>
+  <MainLayout :show-top-bar="false">
+    <div class="min-h-screen bg-gray-50 dark:bg-dark-bg">
+      <!-- Header -->
+      <header class="fixed top-0 left-0 right-0 z-40 bg-white/90 dark:bg-dark-card/90 backdrop-blur-sm border-b border-gray-200 dark:border-dark-border pt-safe">
+        <div class="flex items-center justify-between px-4 h-14">
+          <button class="btn-icon" @click="router.back()">
+            <i class="fas fa-arrow-left"></i>
+          </button>
+          <h1 class="text-lg font-semibold">Detalhes</h1>
+          <button class="btn-icon" @click="handleShare">
+            <i class="fas fa-share-alt"></i>
+          </button>
+        </div>
+      </header>
 
     <div class="pt-14 pb-safe">
       <!-- Loading state -->
@@ -128,7 +129,8 @@
     </div>
 
     <ToastContainer />
-  </div>
+    </div>
+  </MainLayout>
 </template>
 
 <script setup lang="ts">
@@ -137,6 +139,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useDocumentsStore } from '@/stores/documents'
 import { useToast } from '@/composables/useToast'
 import type { Document } from '@/types'
+import MainLayout from '@/components/layout/MainLayout.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
 import LoadingSkeleton from '@/components/common/LoadingSkeleton.vue'
 import ToastContainer from '@/components/common/ToastContainer.vue'

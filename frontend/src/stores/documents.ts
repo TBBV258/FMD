@@ -23,6 +23,7 @@ export const useDocumentsStore = defineStore('documents', () => {
   )
 
   // Actions
+  // Busca documentos públicos de todos os usuários (para o feed)
   async function fetchDocuments(refresh = false) {
     if (refresh) {
       page.value = 0
@@ -41,10 +42,12 @@ export const useDocumentsStore = defineStore('documents', () => {
       const from = page.value * pageSize
       const to = from + pageSize - 1
       
+      // Busca APENAS documentos marcados como perdidos ou encontrados (públicos no feed)
       const { data, error: fetchError } = await supabase
         .from('documents')
         .select('*')
         .in('status', ['lost', 'found'])
+        .eq('is_public', true)
         .order('created_at', { ascending: false })
         .range(from, to)
       
@@ -61,6 +64,37 @@ export const useDocumentsStore = defineStore('documents', () => {
         if (data.length > 0) {
         page.value++
         }
+      }
+      
+      return { success: true }
+    } catch (err: any) {
+      error.value = err.message || 'Erro ao carregar documentos'
+      return { success: false, error: error.value }
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  // Busca TODOS os documentos do usuário atual (para "Meus Documentos")
+  async function fetchUserDocuments(userId: string, refresh = false) {
+    if (refresh) {
+      documents.value = []
+    }
+    
+    isLoading.value = true
+    error.value = null
+
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+      
+      if (fetchError) throw fetchError
+      
+      if (data) {
+        documents.value = data as Document[]
       }
       
       return { success: true }
@@ -114,9 +148,15 @@ export const useDocumentsStore = defineStore('documents', () => {
         
         const { error: uploadError } = await supabase.storage
           .from('documents')
-          .upload(filePath, formData.file)
+          .upload(filePath, formData.file, {
+            cacheControl: '3600',
+            upsert: false
+          })
         
-        if (uploadError) throw uploadError
+        if (uploadError) {
+          console.error('Storage upload error:', uploadError)
+          throw new Error(`Erro ao fazer upload do arquivo: ${uploadError.message}. Verifique se o bucket 'documents' está criado no Supabase Storage.`)
+        }
         
         const { data: urlData } = supabase.storage
           .from('documents')
@@ -266,6 +306,7 @@ export const useDocumentsStore = defineStore('documents', () => {
     foundDocuments,
     // Actions
     fetchDocuments,
+    fetchUserDocuments,
     fetchDocumentById,
     createDocument,
     updateDocument,

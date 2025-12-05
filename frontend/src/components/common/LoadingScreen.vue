@@ -3,7 +3,7 @@
     <!-- Logo -->
     <div class="mb-8">
       <img
-        src="/logofmd.jpg"
+        :src="logoImg"
         alt="FindMyDocs Logo"
         class="h-24 w-24 rounded-2xl shadow-lg animate-pulse"
       />
@@ -34,6 +34,8 @@
 </template>
 
 <script setup lang="ts">
+import logoImg from '/logofmd.jpg'
+
 interface Props {
   loadingText?: string
   progress?: number | null

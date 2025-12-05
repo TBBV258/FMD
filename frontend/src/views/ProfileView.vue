@@ -4,13 +4,8 @@
       <!-- Profile Header -->
       <div class="card text-center">
         <!-- Avatar -->
-        <div class="relative inline-block mb-4">
-          <div class="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-success flex items-center justify-center text-white text-3xl font-bold mx-auto">
-              {{ initials }}
-          </div>
-          <button class="absolute bottom-0 right-0 bg-white dark:bg-dark-card rounded-full p-2 shadow-md border-2 border-gray-200 dark:border-dark-border">
-            <i class="fas fa-camera text-gray-600 dark:text-gray-400"></i>
-          </button>
+        <div class="flex justify-center mb-4">
+          <ProfilePhotoUpload />
         </div>
 
         <!-- Name and Email -->
@@ -74,6 +69,9 @@
       </p>
     </div>
 
+    <!-- Subscription Plans Modal -->
+    <SubscriptionPlansModal v-model="showPlansModal" />
+
     <ToastContainer />
   </MainLayout>
 </template>
@@ -86,25 +84,18 @@ import { useToast } from '@/composables/useToast'
 import MainLayout from '@/components/layout/MainLayout.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
 import ToastContainer from '@/components/common/ToastContainer.vue'
+import ProfilePhotoUpload from '@/components/profile/ProfilePhotoUpload.vue'
+import SubscriptionPlansModal from '@/components/profile/SubscriptionPlansModal.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const { success } = useToast()
 
 const isLoggingOut = ref(false)
+const showPlansModal = ref(false)
 
 const user = computed(() => authStore.user)
 const profile = computed(() => authStore.profile)
-
-const initials = computed(() => {
-  const name = profile.value?.full_name || 'U'
-  return name
-    .split(' ')
-    .map(n => n[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase()
-})
 
 // Define handleLogout BEFORE menuItems
 const handleLogout = async () => {
@@ -132,10 +123,12 @@ const menuItems = [
   {
     icon: 'fas fa-file-alt',
     label: 'Meus Documentos',
-    action: () => {
-      // TODO: Criar view de documentos do usuário
-      success('Funcionalidade em breve!')
-    }
+    action: () => router.push('/documents')
+  },
+  {
+    icon: 'fas fa-crown',
+    label: 'Planos de Subscrição',
+    action: () => showPlansModal.value = true
   },
   {
     icon: 'fas fa-bell',

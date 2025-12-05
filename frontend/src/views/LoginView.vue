@@ -3,7 +3,7 @@
     <div class="w-full max-w-md">
       <!-- Logo -->
       <div class="text-center mb-8">
-        <img src="/logofmd.jpg" alt="FindMyDocs Logo" class="h-20 w-20 mx-auto rounded-2xl shadow-lg mb-4" />
+        <img :src="logoImg" alt="FindMyDocs Logo" class="h-20 w-20 mx-auto rounded-2xl shadow-lg mb-4" />
       <h1 class="text-3xl font-bold text-white mb-2">FindMyDocs</h1>
         <p class="text-white/80">Gestão de Documentos Perdidos</p>
       </div>
@@ -169,6 +169,7 @@ import { useToast } from '@/composables/useToast'
 import BaseInput from '@/components/common/BaseInput.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
 import ToastContainer from '@/components/common/ToastContainer.vue'
+import logoImg from '/logofmd.jpg'
 
 const router = useRouter()
 const route = useRoute()

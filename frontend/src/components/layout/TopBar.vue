@@ -33,6 +33,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import LanguageSelector from '@/components/common/LanguageSelector.vue'
+import logoImg from '/logofmd.jpg'
 
 interface Props {
   title?: string
@@ -41,7 +42,7 @@ interface Props {
 
 withDefaults(defineProps<Props>(), {
   title: 'FindMyDocs',
-  logo: '/logofmd.jpg'
+  logo: logoImg
 })
 
 const isDark = ref(false)

@@ -1,20 +1,21 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-dark-bg flex flex-col">
-    <!-- Header -->
-    <header class="bg-white dark:bg-dark-card border-b border-gray-200 dark:border-dark-border pt-safe px-4 py-3">
-      <div class="flex items-center space-x-3">
-        <button class="btn-icon" @click="router.back()">
-          <i class="fas fa-arrow-left"></i>
-        </button>
-        <div class="flex-1">
-          <h3 class="font-semibold text-gray-900 dark:text-dark-text">Chat</h3>
-          <p class="text-sm text-gray-500">Documento #{{ documentId.slice(0, 8) }}</p>
+  <MainLayout :show-top-bar="false">
+    <div class="min-h-screen bg-gray-50 dark:bg-dark-bg flex flex-col">
+      <!-- Header -->
+      <header class="bg-white dark:bg-dark-card border-b border-gray-200 dark:border-dark-border pt-safe px-4 py-3">
+        <div class="flex items-center space-x-3">
+          <button class="btn-icon" @click="router.back()">
+            <i class="fas fa-arrow-left"></i>
+          </button>
+          <div class="flex-1">
+            <h3 class="font-semibold text-gray-900 dark:text-dark-text">Chat</h3>
+            <p class="text-sm text-gray-500">Documento #{{ documentId.slice(0, 8) }}</p>
+          </div>
         </div>
-      </div>
-    </header>
-    
-    <!-- Messages Container -->
-    <div class="flex-1 overflow-y-auto p-4 space-y-4" ref="messagesContainer">
+      </header>
+      
+      <!-- Messages Container -->
+      <div class="flex-1 overflow-y-auto p-4 space-y-4" ref="messagesContainer">
       <div
         v-for="message in messages"
         :key="message.id"
@@ -55,7 +56,8 @@
         </BaseButton>
       </form>
     </div>
-  </div>
+    </div>
+  </MainLayout>
 </template>
 
 <script setup lang="ts">
@@ -63,6 +65,7 @@ import { ref, onMounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import type { ChatMessage } from '@/types'
+import MainLayout from '@/components/layout/MainLayout.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
 
 const router = useRouter()
