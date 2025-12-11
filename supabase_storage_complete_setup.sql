@@ -147,8 +147,10 @@ USING (
 -- PARTE 6: POLÍTICAS PARA BUCKETS (OPCIONAL)
 -- ========================================
 
--- Permitir que todos vejam os buckets
-CREATE POLICY IF NOT EXISTS "Public buckets are viewable"
+-- Nota: CREATE POLICY não suporta IF NOT EXISTS no Postgres utilizado pelo Supabase
+-- Para manter idempotência, removemos a política antes de recriá-la
+DROP POLICY IF EXISTS "Public buckets are viewable" ON storage.buckets;
+CREATE POLICY "Public buckets are viewable"
 ON storage.buckets
 FOR SELECT
 TO public
