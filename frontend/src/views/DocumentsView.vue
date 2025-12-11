@@ -46,7 +46,7 @@
       </div>
 
       <!-- Loading State -->
-      <div v-if="loading" class="space-y-4">
+      <div v-if="isLoading" class="space-y-4">
         <LoadingSkeleton v-for="i in 3" :key="i" type="card" />
       </div>
 
@@ -121,8 +121,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useDocumentsStore } from '@/stores/documents'
 import { useAuthStore } from '@/stores/auth'
-import { useDocuments } from '@/composables/useDocuments'
 import { useToast } from '@/composables/useToast'
 import type { Document } from '@/types'
 import MainLayout from '@/components/layout/MainLayout.vue'
@@ -132,11 +132,12 @@ import EmptyState from '@/components/common/EmptyState.vue'
 import ToastContainer from '@/components/common/ToastContainer.vue'
 
 const router = useRouter()
+const documentsStore = useDocumentsStore()
 const authStore = useAuthStore()
-const { items, loading, error, fetchMyDocuments } = useDocuments()
 const { success, error: showError } = useToast()
 
 const activeFilter = ref<'all' | 'lost' | 'found' | 'matched' | 'returned'>('all')
+const isLoading = ref(false)
 const isDownloading = ref(false)
 
 const filters = [
@@ -149,14 +150,14 @@ const filters = [
 
 const filteredDocuments = computed(() => {
   if (activeFilter.value === 'all') {
-    return items.value
+    return documentsStore.documents
   }
-  return items.value.filter(doc => doc.status === activeFilter.value)
+  return documentsStore.documents.filter(doc => doc.status === activeFilter.value)
 })
 
-const totalDocuments = computed(() => items.value.length)
-const lostDocuments = computed(() => items.value.filter(d => d.status === 'lost').length)
-const foundDocuments = computed(() => items.value.filter(d => d.status === 'found').length)
+const totalDocuments = computed(() => documentsStore.documents.length)
+const lostDocuments = computed(() => documentsStore.documents.filter(d => d.status === 'lost').length)
+const foundDocuments = computed(() => documentsStore.documents.filter(d => d.status === 'found').length)
 
 const filterButtonClass = (filter: string) => {
   const base = 'px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap'
@@ -220,7 +221,7 @@ const handleDownloadBackup = async () => {
         email: authStore.user?.email,
         profile: authStore.profile
       },
-      documents: items.value,
+      documents: documentsStore.documents,
       exportDate: new Date().toISOString(),
       version: '2.0.0'
     }
@@ -253,7 +254,11 @@ onMounted(async () => {
     showError('Usuário não autenticado')
     return
   }
-  await fetchMyDocuments(authStore.userId)
+  
+  isLoading.value = true
+  // Busca TODOS os documentos do usuário (não apenas perdidos/encontrados)
+  await documentsStore.fetchUserDocuments(authStore.userId, true)
+  isLoading.value = false
 })
 </script>
 

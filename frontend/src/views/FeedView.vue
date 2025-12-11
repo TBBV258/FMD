@@ -42,8 +42,15 @@
         <!-- Loading skeleton -->
         <FeedSkeleton v-if="isLoading" :count="3" />
 
-        <div v-if="error" class="text-center text-red-600">
-          {{ error }}
+        <!-- Load more indicator -->
+        <div v-if="hasMore && !isLoading && filteredDocuments.length > 0" class="text-center py-4">
+          <div class="spinner mx-auto"></div>
+            </div>
+
+        <!-- No more items -->
+        <div v-if="!hasMore && filteredDocuments.length > 0" class="text-center py-4 text-gray-500">
+          <i class="fas fa-check-circle mr-2"></i>
+          Todos os documentos carregados
         </div>
       </div>
     </PullToRefresh>
@@ -56,8 +63,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useDocuments } from '@/composables/useDocuments'
+import { useDocumentsStore } from '@/stores/documents'
 import { useToast } from '@/composables/useToast'
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import MainLayout from '@/components/layout/MainLayout.vue'
 import PullToRefresh from '@/components/layout/PullToRefresh.vue'
 import FeedCard from '@/components/feed/FeedCard.vue'
@@ -65,12 +73,11 @@ import FeedSkeleton from '@/components/feed/FeedSkeleton.vue'
 import ToastContainer from '@/components/common/ToastContainer.vue'
 
 const router = useRouter()
+const documentsStore = useDocumentsStore()
 const { success, error: showError } = useToast()
-const pullToRefreshRef = ref<InstanceType<typeof PullToRefresh> | null>(null)
-
-const { items, loading: isLoading, error, fetchPublicFeed } = useDocuments()
 
 const currentFilter = ref<'all' | 'lost' | 'found'>('all')
+const pullToRefreshRef = ref<InstanceType<typeof PullToRefresh> | null>(null)
 
 const filters = [
   { label: 'Todos', value: 'all' as const, icon: 'fas fa-th' },
@@ -80,9 +87,9 @@ const filters = [
 
 const filteredDocuments = computed(() => {
   if (currentFilter.value === 'all') {
-    return items.value
+    return documentsStore.documents
   }
-  return items.value.filter(doc => doc.status === currentFilter.value)
+  return documentsStore.documents.filter(doc => doc.status === currentFilter.value)
 })
 
 const filterButtonClass = (value: string) => {
@@ -93,17 +100,43 @@ const filterButtonClass = (value: string) => {
   return `${base} bg-gray-100 dark:bg-dark-card text-gray-700 dark:text-gray-300`
 }
 
-async function handleRefresh() {
-  await fetchPublicFeed()
+// Infinite scroll
+const { isLoading, hasMore, setLoading, setHasMore } = useInfiniteScroll(loadMore)
 
+// Ensure the feed always starts with the public lost/found documents of all users
+async function fetchInitialFeed() {
+  setLoading(true)
+  const result = await documentsStore.fetchDocuments(true) // reset pagination + list
+  setHasMore(documentsStore.hasMore)
+  setLoading(false)
+
+  if (result && !result.success && result.error) {
+    showError(result.error)
+  }
+}
+
+async function loadMore() {
+  const result = await documentsStore.fetchDocuments()
+  setLoading(false)
+  setHasMore(documentsStore.hasMore)
+  
+  if (result && !result.success && result.error) {
+    showError(result.error)
+  }
+}
+
+async function handleRefresh() {
+  const result = await documentsStore.fetchDocuments(true)
+  setHasMore(documentsStore.hasMore)
+  
   if (pullToRefreshRef.value) {
     pullToRefreshRef.value.finishRefresh()
   }
   
-  if (!error.value) {
+  if (result && result.success) {
     success('Feed atualizado!')
-  } else {
-    showError(error.value)
+  } else if (result && result.error) {
+    showError(result.error)
   }
 }
 
@@ -112,12 +145,13 @@ function handleInterested(documentId: string) {
   success('Abrindo detalhes do documento...')
 }
 
-function handleDismiss(_documentId: string) {
+function handleDismiss(documentId: string) {
   success('Documento dispensado')
+  // Could implement a "hide" feature here
 }
 
 async function handleShare(documentId: string) {
-  const document = items.value.find(d => d.id === documentId)
+  const document = documentsStore.documents.find(d => d.id === documentId)
   if (!document) return
   
   const shareData = {
@@ -131,6 +165,7 @@ async function handleShare(documentId: string) {
       await navigator.share(shareData)
       success('Documento compartilhado!')
     } else {
+      // Fallback: copy to clipboard
       await navigator.clipboard.writeText(shareData.url)
       success('Link copiado para área de transferência!')
     }
@@ -140,6 +175,6 @@ async function handleShare(documentId: string) {
 }
 
 onMounted(async () => {
-  await fetchPublicFeed()
+  await fetchInitialFeed()
 })
 </script>

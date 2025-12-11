@@ -42,11 +42,12 @@ export const useDocumentsStore = defineStore('documents', () => {
       const from = page.value * pageSize
       const to = from + pageSize - 1
       
-      // Feed público: apenas perdidos ou encontrados, mais recentes primeiro
+      // Busca APENAS documentos marcados como perdidos ou encontrados (públicos no feed)
       const { data, error: fetchError } = await supabase
         .from('documents')
         .select('*')
         .in('status', ['lost', 'found'])
+        .eq('is_public', true)
         .order('created_at', { ascending: false })
         .range(from, to)
       
