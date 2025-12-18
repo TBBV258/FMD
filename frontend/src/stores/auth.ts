@@ -78,16 +78,8 @@ export const useAuthStore = defineStore('auth', () => {
       
       if (signUpError) throw signUpError
       
-      if (data.user) {
-        user.value = {
-          id: data.user.id,
-          email: data.user.email!,
-          created_at: data.user.created_at || new Date().toISOString()
-        }
-        
-        // Create user profile
-        await createProfile(data.user.id, userData)
-      }
+      // Profile will be created automatically by the trigger
+      // No manual profile creation needed
       
       return { success: true }
     } catch (err: any) {
