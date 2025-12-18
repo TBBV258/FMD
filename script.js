@@ -23,10 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
 // Initialize enhanced features
 function initializeEnhancedFeatures() {
     
-    // Initialize search functionality
-    if (window.searchManager) {
-        setupSearchFunctionality();
-    }
+    // Initialize search functionality (always setup, even without searchManager)
+    setupSearchFunctionality();
     
     // Initialize mobile features
     if (window.mobileManager) {
@@ -50,29 +48,64 @@ function initializeEnhancedFeatures() {
 function setupSearchFunctionality() {
     const searchInput = document.getElementById('search-input');
     const suggestionsContainer = document.getElementById('search-suggestions');
+    const searchBtn = document.getElementById('search-btn');
+    const filtersGrid = document.querySelector('.filters-grid');
     
-    if (searchInput && suggestionsContainer) {
-        // Debounced search
-        const debouncedSearch = window.performanceManager.debounce(async (query) => {
-            if (query.length >= 2) {
-                const suggestions = window.searchManager.getSearchSuggestions(query);
-                showSearchSuggestions(suggestions);
-            } else {
-                hideSearchSuggestions();
-            }
-        }, 300, 'search-suggestions');
+    // Show filters when search button is clicked
+    if (searchBtn && filtersGrid) {
+        // Remove any existing listeners to avoid duplicates
+        const newSearchBtn = searchBtn.cloneNode(true);
+        searchBtn.parentNode.replaceChild(newSearchBtn, searchBtn);
         
-        searchInput.addEventListener('input', (e) => {
-            debouncedSearch(e.target.value);
+        newSearchBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Search button clicked');
+            filtersGrid.classList.add('show');
+            performSearch();
         });
         
-        // Handle search submission
+        // Also setup on the original element if it still exists
+        const currentSearchBtn = document.getElementById('search-btn');
+        if (currentSearchBtn && !currentSearchBtn.hasAttribute('data-search-initialized')) {
+            currentSearchBtn.setAttribute('data-search-initialized', 'true');
+            currentSearchBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Search button clicked (fallback)');
+                if (filtersGrid) filtersGrid.classList.add('show');
+                performSearch();
+            });
+        }
+    }
+    
+    // Also show filters when Enter is pressed in search input
+    if (searchInput && filtersGrid) {
         searchInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
+                filtersGrid.classList.add('show');
                 performSearch(e.target.value);
                 hideSearchSuggestions();
             }
         });
+    }
+    
+    if (searchInput && suggestionsContainer) {
+        // Debounced search (only if searchManager and performanceManager are available)
+        if (window.searchManager && window.performanceManager) {
+            const debouncedSearch = window.performanceManager.debounce(async (query) => {
+                if (query.length >= 2) {
+                    const suggestions = window.searchManager.getSearchSuggestions(query);
+                    showSearchSuggestions(suggestions);
+                } else {
+                    hideSearchSuggestions();
+                }
+            }, 300, 'search-suggestions');
+            
+            searchInput.addEventListener('input', (e) => {
+                debouncedSearch(e.target.value);
+            });
+        }
         
         // Hide suggestions when clicking outside
         document.addEventListener('click', (e) => {
@@ -83,7 +116,7 @@ function setupSearchFunctionality() {
     }
     
     // Setup filter changes
-    const filterElements = document.querySelectorAll('#feed-filter-type, #feed-filter-status, #feed-filter-location, #feed-filter-distance');
+    const filterElements = document.querySelectorAll('#feed-filter-type, #feed-filter-status, #feed-filter-location, #feed-filter-distance, #feed-filter-document-number');
     filterElements.forEach(element => {
         element.addEventListener('change', () => {
             performSearch();
@@ -125,26 +158,124 @@ function hideSearchSuggestions() {
 async function performSearch(query = null) {
     const searchInput = document.getElementById('search-input');
     const searchQuery = query || searchInput?.value || '';
+    const feedContent = document.getElementById('feed-content');
+    
+    if (!feedContent) {
+        console.error('Feed content element not found');
+        return;
+    }
     
     const filters = {
         type: document.getElementById('feed-filter-type')?.value || '',
         status: document.getElementById('feed-filter-status')?.value || '',
         location: document.getElementById('feed-filter-location')?.value || '',
-        distance: document.getElementById('feed-filter-distance')?.value || ''
+        distance: document.getElementById('feed-filter-distance')?.value || '',
+        document_number: document.getElementById('feed-filter-document-number')?.value || ''
     };
     
     // Show loading state
-    if (window.loadingManager) {
-        window.loadingManager.showLoading('feed-content', 'skeleton', { template: 'feed' });
-    }
+    feedContent.innerHTML = '<div class="loading-state"><i class="fas fa-spinner fa-spin"></i><p>A pesquisar...</p></div>';
     
     try {
-        const results = await window.searchManager.search(searchQuery, filters);
-        displaySearchResults(results);
+        // Check if searchManager is available
+        if (window.searchManager && typeof window.searchManager.search === 'function') {
+            const results = await window.searchManager.search(searchQuery, filters);
+            displaySearchResults(results);
+        } else {
+            // Fallback: use loadFeed with filters
+            console.warn('searchManager not available, using loadFeed fallback');
+            await loadFeedWithFilters(searchQuery, filters);
+        }
     } catch (error) {
+        console.error('Error performing search:', error);
+        feedContent.innerHTML = `
+            <div class="error-state">
+                <i class="fas fa-exclamation-circle"></i>
+                <p>Erro ao realizar pesquisa: ${error.message || 'Erro desconhecido'}</p>
+                <button class="btn secondary small" onclick="loadFeed()">Carregar Feed Completo</button>
+            </div>
+        `;
         if (window.ErrorHandler) {
             window.ErrorHandler.handle(error, 'search_execution');
         }
+    }
+}
+
+// Fallback function to load feed with filters when searchManager is not available
+async function loadFeedWithFilters(searchQuery, filters) {
+    const feedContent = document.getElementById('feed-content');
+    if (!feedContent) return;
+    
+    try {
+        if (!window.documentsApi) throw new Error('API de documentos não inicializada.');
+        
+        const documents = await window.documentsApi.getAllPublicDocuments();
+        
+        if (!documents || documents.length === 0) {
+            feedContent.innerHTML = '<p class="text-center muted">Nenhum documento encontrado.</p>';
+            return;
+        }
+        
+        // Apply filters manually
+        let filteredDocuments = documents.filter(doc => {
+            // Type filter
+            if (filters.type && doc.type !== filters.type) return false;
+            
+            // Status filter
+            if (filters.status && doc.status !== filters.status) return false;
+            
+            // Location filter (partial match)
+            if (filters.location && doc.location) {
+                const docLocation = doc.location.toLowerCase();
+                const filterLocation = filters.location.toLowerCase();
+                if (!docLocation.includes(filterLocation)) return false;
+            }
+            
+            // Document number filter
+            if (filters.document_number && doc.document_number) {
+                const docNumber = doc.document_number.toLowerCase();
+                const filterNumber = filters.document_number.toLowerCase();
+                if (!docNumber.includes(filterNumber)) return false;
+            }
+            
+            // Text search in title, description, or document_number
+            if (searchQuery && searchQuery.trim()) {
+                const query = searchQuery.toLowerCase().trim();
+                const titleMatch = doc.title?.toLowerCase().includes(query);
+                const descMatch = doc.description?.toLowerCase().includes(query);
+                const numberMatch = doc.document_number?.toLowerCase().includes(query);
+                if (!titleMatch && !descMatch && !numberMatch) return false;
+            }
+            
+            return true;
+        });
+        
+        if (filteredDocuments.length === 0) {
+            feedContent.innerHTML = '<p class="text-center muted">Nenhum documento encontrado com os critérios de pesquisa.</p>';
+            return;
+        }
+        
+        // Get profiles for users
+        const userIds = [...new Set(filteredDocuments.map(doc => doc.user_id))];
+        const profiles = await window.profilesApi.getProfilesByIds(userIds);
+        const profilesMap = new Map(profiles.map(p => [p.id, p]));
+        
+        // Display results
+        feedContent.innerHTML = '';
+        filteredDocuments.forEach(doc => {
+            const reporterProfile = profilesMap.get(doc.user_id);
+            const card = createFeedCard(doc, reporterProfile);
+            feedContent.appendChild(card);
+        });
+        
+    } catch (error) {
+        console.error('Error loading feed with filters:', error);
+        feedContent.innerHTML = `
+            <div class="error-state">
+                <i class="fas fa-exclamation-circle"></i>
+                <p>Erro ao carregar documentos: ${error.message || 'Erro desconhecido'}</p>
+            </div>
+        `;
     }
 }
 
@@ -306,6 +437,12 @@ function setupNavigation() {
     document.addEventListener('click', (e) => {
         const link = e.target.closest('.nav-link');
         if (!link) return;
+        
+        // Skip logout buttons - they have their own handler
+        if (link.classList.contains('logout-btn') || link.id === 'nav-logout-btn') {
+            return; // Let logout handler take over
+        }
+        
         e.preventDefault();
         const sectionId = link.getAttribute('data-section');
         if (sectionId) {
@@ -701,7 +838,7 @@ async function loadNotificationsTab() {
         // Query melhorada com tratamento de erros
         const { data, error } = await window.supabase
             .from('notifications')
-            .select('id, user_id, type, title, message, body, is_read, read, read_at, action_url, metadata, created_at, updated_at')
+            .select('id, user_id, type, title, message, is_read, read_at, action_url, metadata, created_at')
             .eq('user_id', currentUser.id)
             .order('created_at', { ascending: false })
             .limit(100);
@@ -721,9 +858,9 @@ async function loadNotificationsTab() {
         listEl.innerHTML = data.map(n => {
             const time = new Date(n.created_at).toLocaleString(currentLanguage);
             const title = n.title || 'Notificação';
-            const body = n.message || n.body || '';
-            // Check both is_read and read fields for compatibility
-            const isRead = n.is_read !== false && n.read !== false;
+            const body = n.message || '';
+            // Check is_read field
+            const isRead = n.is_read === true;
             const unreadClass = isRead ? '' : 'has-unread';
             const actionUrl = n.action_url || '#';
             
@@ -747,15 +884,11 @@ async function loadNotificationsTab() {
                 
                 const id = el.dataset.id;
                 try {
-                    // Try both field names for compatibility
-                    const updateData = {};
                     if (window.supabase) {
-                        // Check which field exists in the schema
                         const { error: updateError } = await window.supabase
                             .from('notifications')
                             .update({ 
                                 is_read: true,
-                                read: true,
                                 read_at: new Date().toISOString()
                             })
                             .eq('id', id);
@@ -780,11 +913,10 @@ async function loadNotificationsTab() {
                         .from('notifications')
                         .update({ 
                             is_read: true,
-                            read: true,
                             read_at: new Date().toISOString()
                         })
                         .eq('user_id', currentUser.id)
-                        .or('is_read.is.null,is_read.eq.false,read.is.null,read.eq.false');
+                        .or('is_read.is.null,is_read.eq.false');
                     
                     if (updateError) throw updateError;
                     
@@ -958,10 +1090,20 @@ async function loadConversationsTab() {
  */
 async function getHelpedCount(userId) {
     try {
-        if (!window.documentsApi) return 0;
+        if (!window.supabase) return 0;
         
-        // Get all documents found by this user
-        const foundDocs = await window.documentsApi.getByFinder(userId);
+        // Get all documents found by this user (status='found' and user_id is the finder)
+        const { data: foundDocs, error } = await window.supabase
+            .from('documents')
+            .select('id, status, returned_to_owner')
+            .eq('status', 'found')
+            .eq('user_id', userId);
+        
+        if (error) {
+            console.error('Error getting found documents:', error);
+            return 0;
+        }
+        
         if (!foundDocs || foundDocs.length === 0) return 0;
         
         // Count how many have been returned to their owners
@@ -1651,17 +1793,35 @@ async function deleteProfileDocument(docId) {
 
 // Logout Function
 async function handleLogout() {
+    console.log('handleLogout called');
     try {
-        if (window.authApi) {
+        // Try authApi first
+        if (window.authApi && typeof window.authApi.signOut === 'function') {
             await window.authApi.signOut();
+        } 
+        // Fallback to Supabase auth
+        else if (window.supabase && window.supabase.auth) {
+            const { error } = await window.supabase.auth.signOut();
+            if (error) throw error;
         }
+        
+        // Clear local storage
+        localStorage.removeItem('currentUser');
+        sessionStorage.clear();
+        
+        // Redirect to login
         window.location.href = 'login.html';
     } catch (error) {
         console.error('Logout error:', error);
         // Force logout even if API fails
+        localStorage.removeItem('currentUser');
+        sessionStorage.clear();
         window.location.href = 'login.html';
     }
 }
+
+// Expose handleLogout globally immediately
+window.handleLogout = handleLogout;
 
 // Upload Modal Functions
 let selectedFile = null;
@@ -1993,17 +2153,46 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(initializeUploadModal, 100);
     setTimeout(initializeAvatarUpload, 100);
     
-    // Initialize profile logout button
-    const profileLogoutBtn = document.getElementById('profile-logout-btn');
-    if (profileLogoutBtn) {
-        profileLogoutBtn.addEventListener('click', handleLogout);
+    // Initialize logout buttons with high priority
+    function setupLogoutButtons() {
+        const logoutHandler = async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation(); // Prevent other listeners
+            console.log('Logout button clicked');
+            
+            try {
+                if (window.authApi && typeof window.authApi.signOut === 'function') {
+                    await window.authApi.signOut();
+                } else if (window.supabase && window.supabase.auth) {
+                    const { error } = await window.supabase.auth.signOut();
+                    if (error) throw error;
+                }
+            } catch (error) {
+                console.error('Error signing out:', error);
+            }
+            
+            // Clear any local storage
+            localStorage.removeItem('currentUser');
+            sessionStorage.clear();
+            
+            // Redirect to login
+            window.location.href = 'login.html';
+        };
+        
+        // Setup with capture phase for high priority
+        document.addEventListener('click', (e) => {
+            const logoutBtn = e.target.closest('.logout-btn, #nav-logout-btn, #profile-logout-btn');
+            if (logoutBtn) {
+                logoutHandler(e);
+            }
+        }, true); // Capture phase - runs before other listeners
     }
-
-    // Initialize top-nav logout button (if present)
-    const navLogoutBtn = document.getElementById('nav-logout-btn');
-    if (navLogoutBtn) {
-        navLogoutBtn.addEventListener('click', handleLogout);
-    }
+    
+    // Setup immediately and retry
+    setupLogoutButtons();
+    setTimeout(setupLogoutButtons, 500);
+    setTimeout(setupLogoutButtons, 1500);
 
     // Initialize ranking modal
     initializeRankingSection();
@@ -2036,6 +2225,37 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize feed filters
     initializeFeedFilters();
+    
+    // Ensure search button is initialized (retry in case elements load late)
+    setTimeout(() => {
+        const searchBtn = document.getElementById('search-btn');
+        const filtersGrid = document.querySelector('.filters-grid');
+        if (searchBtn && filtersGrid && !searchBtn.hasAttribute('data-search-initialized')) {
+            searchBtn.setAttribute('data-search-initialized', 'true');
+            searchBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Search button clicked (late init)');
+                filtersGrid.classList.add('show');
+                performSearch();
+            });
+        }
+    }, 500);
+    
+    // Ensure logout buttons are initialized (retry)
+    setTimeout(() => {
+        const logoutButtons = document.querySelectorAll('.logout-btn:not([data-logout-initialized])');
+        logoutButtons.forEach(btn => {
+            btn.setAttribute('data-logout-initialized', 'true');
+            btn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (window.handleLogout) {
+                    await window.handleLogout();
+                }
+            });
+        });
+    }, 500);
 
     // Global: enable ESC to close any open modal and trap focus inside
     setupGlobalModalAccessibility();

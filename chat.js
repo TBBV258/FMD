@@ -178,7 +178,11 @@
                     const documentId = item.getAttribute('data-document-id');
                     const receiverId = item.getAttribute('data-receiver-id');
                     const title = item.querySelector('.chat-name').textContent;
-                    openChatModal(documentId, title, receiverId);
+                    if (window.chat && typeof window.chat.openChatModal === 'function') {
+                        window.chat.openChatModal(documentId, title, receiverId);
+                    } else {
+                        console.error('openChatModal is not available');
+                    }
                 });
             });
             
