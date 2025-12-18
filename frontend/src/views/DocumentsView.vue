@@ -55,7 +55,7 @@
         v-else-if="filteredDocuments.length === 0"
         icon="fas fa-file-alt"
         title="Nenhum documento encontrado"
-        message="Você ainda não cadastrou nenhum documento."
+        description="Você ainda não cadastrou nenhum documento."
       >
         <BaseButton variant="primary" @click="router.push('/report-lost')">
           <i class="fas fa-plus mr-2"></i>
@@ -213,6 +213,11 @@ const formatDate = (dateString: string) => {
 const handleDownloadBackup = async () => {
   try {
     isDownloading.value = true
+
+    // Sempre buscar versão mais recente dos documentos no Supabase antes do backup
+    if (authStore.userId) {
+      await documentsStore.fetchUserDocuments(authStore.userId, true)
+    }
 
     // Prepare backup data
     const backupData = {

@@ -25,6 +25,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 
 interface NavItem {
@@ -44,36 +45,37 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const route = useRoute()
+const { t } = useI18n()
 
 const navItems = computed<NavItem[]>(() => [
   {
     name: 'feed',
-    label: 'Início',
+    label: t('nav.home'),
     icon: 'fas fa-home',
     to: '/'
   },
   {
     name: 'map',
-    label: 'Mapa',
+    label: t('nav.map'),
     icon: 'fas fa-map',
     to: '/map'
   },
   {
     name: 'report-found',
-    label: 'Reportar',
+    label: t('nav.report'),
     icon: 'fas fa-plus-circle',
     to: '/report-found'
   },
   {
     name: 'notifications',
-    label: 'Notificações',
+    label: t('nav.notifications'),
     icon: 'fas fa-bell',
     to: '/notifications',
     badge: props.notificationCount
   },
   {
     name: 'profile',
-    label: 'Perfil',
+    label: t('nav.profile'),
     icon: 'fas fa-user',
     to: '/profile'
   }

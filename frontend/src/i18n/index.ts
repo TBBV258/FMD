@@ -12,6 +12,7 @@ export type MessageSchema = typeof pt
 
 const i18n = createI18n<[MessageSchema], 'pt' | 'en' | 'fr' | 'ts' | 'ro'>({
   legacy: false,
+  globalInjection: true, // habilita uso de $t diretamente nos templates
   locale: savedLanguage,
   fallbackLocale: 'pt',
   messages: {

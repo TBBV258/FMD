@@ -72,15 +72,48 @@
     <!-- Subscription Plans Modal -->
     <SubscriptionPlansModal v-model="showPlansModal" />
 
+    <!-- Meus documentos (lista compacta) -->
+    <div class="card mt-6">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-dark-text">Meus documentos</h3>
+        <button class="text-primary text-sm" @click="router.push('/documents')">
+          Ver todos
+        </button>
+      </div>
+
+      <div v-if="docsLoading" class="text-gray-500">Carregando documentos...</div>
+      <div v-else-if="docsError" class="text-red-500">{{ docsError }}</div>
+      <div v-else-if="myDocuments.length === 0" class="text-gray-500">
+        Nenhum documento cadastrado.
+      </div>
+
+      <ul v-else class="space-y-3">
+        <li
+          v-for="doc in myDocuments.slice(0, 3)"
+          :key="doc.id"
+          class="flex items-center justify-between border border-gray-200 dark:border-dark-border rounded-lg px-3 py-2"
+        >
+          <div class="min-w-0">
+            <p class="font-medium text-gray-900 dark:text-dark-text truncate">{{ doc.title }}</p>
+            <p class="text-xs text-gray-500 capitalize">{{ doc.status }}</p>
+          </div>
+          <span class="text-xs text-gray-400">
+            {{ new Date(doc.created_at).toLocaleDateString('pt-BR') }}
+          </span>
+        </li>
+      </ul>
+    </div>
+
     <ToastContainer />
   </MainLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
+import { useDocuments } from '@/composables/useDocuments'
 import MainLayout from '@/components/layout/MainLayout.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
 import ToastContainer from '@/components/common/ToastContainer.vue'
@@ -90,6 +123,7 @@ import SubscriptionPlansModal from '@/components/profile/SubscriptionPlansModal.
 const router = useRouter()
 const authStore = useAuthStore()
 const { success } = useToast()
+const { items: myDocuments, loading: docsLoading, error: docsError, fetchMyDocuments } = useDocuments()
 
 const isLoggingOut = ref(false)
 const showPlansModal = ref(false)
@@ -165,4 +199,10 @@ const menuItems = [
     action: handleLogout
   }
 ]
+
+onMounted(async () => {
+  if (authStore.user?.id) {
+    await fetchMyDocuments(authStore.user.id)
+  }
+})
 </script>
