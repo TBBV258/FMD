@@ -1,0 +1,42 @@
+{
+  "name": "fmd-frontend",
+  "version": "2.0.0",
+  "type": "module",
+  "description": "FindMyDocs - Vue.js Frontend",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc && vite build",
+    "build:ci": "vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
+    "format": "prettier --write src/",
+    "deploy": "npm run build && gh-pages -d dist"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "pinia": "^2.1.7",
+    "vue": "^3.4.15",
+    "vue-i18n": "^9.14.5",
+    "vue-router": "^4.2.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "@vitejs/plugin-vue": "^5.0.3",
+    "@vue/test-utils": "^2.4.3",
+    "@vue/tsconfig": "^0.5.1",
+    "@vitest/ui": "^1.2.0",
+    "autoprefixer": "^10.4.17",
+    "happy-dom": "^12.10.3",
+    "postcss": "^8.4.33",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.12",
+    "vite-plugin-pwa": "^0.17.5",
+    "vitest": "^1.2.0",
+    "vue-tsc": "^2.0.0"
+  }
+}

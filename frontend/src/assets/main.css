@@ -1,0 +1,145 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply box-border;
+  }
+
+  html {
+    @apply h-full;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+
+  body {
+    @apply h-full m-0 p-0 bg-neutral-50 text-neutral-800;
+    @apply font-sans antialiased;
+    @apply dark:bg-neutral-900 dark:text-neutral-100;
+    overflow-x: hidden;
+    overscroll-behavior-y: contain;
+  }
+
+  #app {
+    @apply h-full;
+  }
+
+  /* Safe area insets for mobile devices */
+  @supports (padding: env(safe-area-inset-top)) {
+    body {
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+    }
+  }
+}
+
+@layer components {
+  /* Button styles */
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
+    @apply active:scale-95;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-white;
+    @apply hover:opacity-90 active:opacity-80;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-200 text-gray-800;
+    @apply hover:bg-gray-300 active:bg-gray-400;
+    @apply dark:bg-gray-700 dark:text-gray-100;
+  }
+
+  .btn-ghost {
+    @apply bg-transparent text-primary;
+    @apply hover:bg-primary/10 active:bg-primary/20;
+  }
+
+  /* Card styles */
+  .card {
+    @apply bg-white rounded-lg shadow-md;
+    @apply dark:bg-neutral-800;
+  }
+
+  /* Input styles */
+  .input {
+    @apply w-full px-4 py-3 rounded-lg border border-neutral-300;
+    @apply bg-white text-neutral-800;
+    @apply focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+    @apply dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-100;
+  }
+
+  /* Skeleton loading */
+  .skeleton {
+    @apply bg-neutral-200 rounded animate-skeleton;
+    @apply dark:bg-neutral-700;
+  }
+
+  /* Bottom sheet */
+  .bottom-sheet {
+    @apply fixed inset-x-0 bottom-0 bg-white rounded-t-2xl shadow-lg;
+    @apply transform transition-transform duration-300;
+    @apply dark:bg-neutral-800;
+  }
+
+  .bottom-sheet.closed {
+    @apply translate-y-full;
+  }
+
+  /* Pull to refresh indicator */
+  .pull-refresh {
+    @apply absolute top-0 left-0 right-0;
+    @apply flex items-center justify-center;
+    @apply h-16 -translate-y-16;
+    @apply transition-transform duration-200;
+  }
+
+  .pull-refresh.active {
+    @apply translate-y-0;
+  }
+}
+
+@layer utilities {
+  /* Touch optimizations */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* No scrollbar */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Safe area utilities */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  /* Prevent text selection */
+  .no-select {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  /* Smooth scroll */
+  .smooth-scroll {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+

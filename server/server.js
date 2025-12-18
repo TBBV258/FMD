@@ -2,18 +2,37 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
+const fs = require('fs');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
-const { securityMiddleware, limiter } = require('./middleware/securityHeaders');
 const https = require('https');
-const { errorHandler, notFoundHandler, asyncHandler } = require('./middleware/errorHandler');
-const { authValidators, documentValidators } = require('./middleware/validators');
+const { securityMiddleware } = require('./middleware/securityHeaders');
+const { 
+  authLimiter, 
+  apiLimiter, 
+  uploadLimiter,
+  documentCreationLimiter,
+  searchLimiter 
+} = require('./middleware/rateLimiters');
+const AuditLogger = require('./utils/audit-logger');
+const { refreshTokenMiddleware } = require('./middleware/jwtRefresh');
+const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const authRoutes = require('./routes/authRoutes');
 const documentRoutes = require('./routes/documentRoutes');
 
 // Initialize Express app
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Validate critical environment variables in production
+const requiredEnvVars = ['JWT_SECRET', 'JWT_REFRESH_SECRET'];
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+if (missingEnvVars.length > 0 && process.env.NODE_ENV === 'production') {
+  console.error('⚠️  CRITICAL: Missing required environment variables:', missingEnvVars.join(', '));
+  console.error('Please set these variables in your .env file');
+  process.exit(1);
+}
 
 // Apply security middleware
 app.use(securityMiddleware);
@@ -22,12 +41,31 @@ app.use(securityMiddleware);
 app.use(cors({
   origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Refresh-Token'],
   credentials: true
 }));
 
-// Apply rate limiting to all API routes
-app.use('/api', limiter);
+// Apply general rate limiting to all API routes
+app.use('/api', apiLimiter);
+
+// Audit logging middleware
+app.use((req, res, next) => {
+  const originalSend = res.send;
+  res.send = function(data) {
+    if (req.user && req.method !== 'GET') {
+      AuditLogger.logDataAccess(
+        req.user.userId || req.user.id,
+        req.path,
+        req.ip,
+        req.get('user-agent'),
+        true,
+        { statusCode: res.statusCode }
+      );
+    }
+    originalSend.call(this, data);
+  };
+  next();
+});
 
 // Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, '../public')));
@@ -49,7 +87,10 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// API Routes
+// JWT Refresh Token endpoint
+app.post('/api/v1/auth/refresh', authLimiter, refreshTokenMiddleware);
+
+// API Routes with specific rate limiters
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/documents', documentRoutes);
 
@@ -134,19 +175,81 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
 // 404 Handler
 app.use(notFoundHandler);
 
-// Global Error Handler
-app.use(errorHandler);
-
-// Start the server
-const server = app.listen(PORT, () => {
-  console.log(`Server is running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-  console.log(`API Documentation: http://localhost:${PORT}/api-docs`);
+// Global Error Handler with audit logging
+app.use((err, req, res, next) => {
+  // Log error
+  if (err) {
+    AuditLogger.logSecurity(
+      req.user?.userId || req.user?.id || 'anonymous',
+      'error',
+      req.ip,
+      req.get('user-agent'),
+      { 
+        error: err.message,
+        stack: err.stack,
+        path: req.path
+      }
+    );
+  }
+  
+  // Call original error handler
+  errorHandler(err, req, res, next);
 });
+
+// Start the server (with HTTPS support if enabled)
+let server;
+
+if (process.env.ENABLE_HTTPS === 'true') {
+  try {
+    const privateKey = fs.readFileSync(process.env.SSL_KEY_PATH || './ssl/key.pem', 'utf8');
+    const certificate = fs.readFileSync(process.env.SSL_CERT_PATH || './ssl/cert.pem', 'utf8');
+    const credentials = { key: privateKey, cert: certificate };
+
+    server = https.createServer(credentials, app);
+    server.listen(PORT, () => {
+      console.log(`🔒 HTTPS Server is running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+      console.log(`📚 API Documentation: https://localhost:${PORT}/api-docs`);
+      AuditLogger.log({
+        action: 'server.start',
+        resource: 'server',
+        success: true,
+        metadata: { port: PORT, protocol: 'https' }
+      });
+    });
+  } catch (error) {
+    console.error('Failed to start HTTPS server:', error.message);
+    console.log('Falling back to HTTP...');
+    server = app.listen(PORT, () => {
+      console.log(`⚠️  HTTP Server is running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+      console.log(`📚 API Documentation: http://localhost:${PORT}/api-docs`);
+    });
+  }
+} else {
+  server = app.listen(PORT, () => {
+    console.log(`🚀 Server is running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+    console.log(`📚 API Documentation: http://localhost:${PORT}/api-docs`);
+    AuditLogger.log({
+      action: 'server.start',
+      resource: 'server',
+      success: true,
+      metadata: { port: PORT, protocol: 'http' }
+    });
+  });
+}
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
   console.error('UNHANDLED REJECTION! 💥 Shutting down...');
   console.error(err.name, err.message);
+  
+  AuditLogger.log({
+    action: 'server.unhandled_rejection',
+    resource: 'server',
+    success: false,
+    severity: 'critical',
+    metadata: { error: err.message, stack: err.stack }
+  });
+  
   server.close(() => {
     process.exit(1);
   });
@@ -156,8 +259,34 @@ process.on('unhandledRejection', (err) => {
 process.on('uncaughtException', (err) => {
   console.error('UNCAUGHT EXCEPTION! 💥 Shutting down...');
   console.error(err.name, err.message);
+  
+  AuditLogger.log({
+    action: 'server.uncaught_exception',
+    resource: 'server',
+    success: false,
+    severity: 'critical',
+    metadata: { error: err.message, stack: err.stack }
+  });
+  
   server.close(() => {
     process.exit(1);
+  });
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received. Shutting down gracefully...');
+  
+  AuditLogger.log({
+    action: 'server.shutdown',
+    resource: 'server',
+    success: true,
+    metadata: { signal: 'SIGTERM' }
+  });
+  
+  server.close(() => {
+    console.log('Process terminated');
+    process.exit(0);
   });
 });
 

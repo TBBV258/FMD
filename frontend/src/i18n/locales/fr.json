@@ -1,0 +1,146 @@
+{
+  "common": {
+    "yes": "Oui",
+    "no": "Non",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès",
+    "close": "Fermer",
+    "back": "Retour",
+    "next": "Suivant",
+    "submit": "Soumettre",
+    "logout": "Déconnexion"
+  },
+  "nav": {
+    "home": "Accueil",
+    "map": "Carte",
+    "report": "Signaler",
+    "notifications": "Notifications",
+    "profile": "Profil"
+  },
+  "auth": {
+    "login": "Connexion",
+    "register": "S'inscrire",
+    "email": "Email",
+    "password": "Mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "fullName": "Nom complet",
+    "phoneNumber": "Numéro de téléphone",
+    "country": "Pays",
+    "loginTitle": "Bon retour!",
+    "registerTitle": "Créer un compte",
+    "forgotPassword": "Mot de passe oublié?",
+    "noAccount": "Pas de compte?",
+    "hasAccount": "Vous avez déjà un compte?",
+    "loginSuccess": "Connexion réussie!",
+    "registerSuccess": "Compte créé avec succès!",
+    "logoutSuccess": "Déconnexion réussie!",
+    "loginError": "Erreur de connexion",
+    "registerError": "Erreur d'inscription"
+  },
+  "feed": {
+    "title": "Documents",
+    "filters": {
+      "all": "Tous",
+      "lost": "Perdus",
+      "found": "Trouvés"
+    },
+    "empty": "Aucun document trouvé",
+    "loadMore": "Charger plus",
+    "refreshed": "Flux actualisé!",
+    "searchPlaceholder": "Rechercher des documents..."
+  },
+  "document": {
+    "types": {
+      "bi": "Carte d'identité (BI)",
+      "passport": "Passeport",
+      "driver_license": "Permis de conduire",
+      "dire": "DIRE",
+      "nuit": "NUIT",
+      "work_card": "Carte de travail",
+      "student_card": "Carte d'étudiant",
+      "voter_card": "Carte d'électeur",
+      "birth_certificate": "Acte de naissance",
+      "title_deed": "Titre de propriété",
+      "other": "Autre"
+    },
+    "status": {
+      "lost": "Perdu",
+      "found": "Trouvé",
+      "matched": "Correspondance",
+      "returned": "Rendu"
+    },
+    "title": "Titre",
+    "type": "Type de document",
+    "description": "Description",
+    "location": "Emplacement",
+    "documentNumber": "Numéro de document",
+    "details": "Détails",
+    "contact": "Contact",
+    "interested": "Je suis intéressé",
+    "reportLost": "Signaler perdu",
+    "reportFound": "Signaler trouvé"
+  },
+  "profile": {
+    "title": "Profil",
+    "points": "Points",
+    "documents": "Documents",
+    "plan": "Plan",
+    "ranking": "Classement",
+    "menu": {
+      "editProfile": "Modifier le profil",
+      "myDocuments": "Mes documents",
+      "notifications": "Notifications",
+      "privacy": "Confidentialité et sécurité",
+      "help": "Aide et support",
+      "settings": "Paramètres",
+      "logout": "Déconnexion"
+    },
+    "plans": {
+      "free": "Gratuit",
+      "premium": "Premium"
+    },
+    "ranks": {
+      "bronze": "Bronze",
+      "silver": "Argent",
+      "gold": "Or",
+      "platinum": "Platine"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "tabs": {
+      "all": "Toutes",
+      "chats": "Chats"
+    },
+    "empty": "Aucune notification",
+    "types": {
+      "match": "Correspondance trouvée",
+      "message": "Nouveau message",
+      "system": "Système",
+      "verification": "Vérification"
+    }
+  },
+  "settings": {
+    "title": "Paramètres",
+    "privacy": "Confidentialité",
+    "suggestions": "Suggestions",
+    "backup": "Sauvegarde",
+    "language": "Langue"
+  },
+  "map": {
+    "title": "Carte",
+    "loading": "Chargement de la carte...",
+    "myLocation": "Vous êtes ici"
+  },
+  "footer": {
+    "copyright": "© 2025 FindMyDocs. Tous droits réservés."
+  }
+}
+
