@@ -31,6 +31,8 @@ export function useChat(initialUserId: string) {
     loading.value = true
     error.value = null
 
+    console.log('[useChat] Loading chat history for user:', currentUserId.value)
+
     // Primary query: chats table
     let messages: any[] | null = null
     let err: any = null
@@ -40,6 +42,8 @@ export function useChat(initialUserId: string) {
         .select('*')
         .or(`sender_id.eq.${currentUserId.value},receiver_id.eq.${currentUserId.value}`)
         .order('created_at', { ascending: false })
+      
+      console.log('[useChat] Chats query result:', { data: res.data, error: res.error })
       messages = res.data
       err = res.error
     }

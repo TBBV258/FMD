@@ -10,7 +10,7 @@
 
         <!-- Name and Email -->
         <h2 class="text-xl font-bold text-gray-900 dark:text-dark-text mb-1">
-          {{ profile?.full_name || 'Usuário' }}
+          {{ profile?.full_name || $t('profile.user') }}
         </h2>
         <p class="text-gray-600 dark:text-gray-400 mb-4">
           {{ user?.email }}
@@ -20,7 +20,7 @@
         <div class="grid grid-cols-3 gap-4 pt-4 border-t border-gray-200 dark:border-dark-border">
           <div>
             <p class="text-2xl font-bold text-primary">{{ profile?.document_count || 0 }}</p>
-            <p class="text-xs text-gray-500">Documentos</p>
+            <p class="text-xs text-gray-500">{{ $t('profile.documents') }}</p>
           </div>
           <div 
             class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg p-2 -m-2 transition-colors"
@@ -28,7 +28,7 @@
           >
             <p class="text-2xl font-bold text-success">{{ profile?.points || 0 }}</p>
             <p class="text-xs text-gray-500">
-              Pontos
+              {{ $t('profile.points') }}
               <i class="fas fa-chevron-down ml-1 text-xs" :class="{ 'rotate-180': showRankings }"></i>
             </p>
           </div>
@@ -36,7 +36,7 @@
             <p class="text-2xl font-bold text-warning-dark">
               <i class="fas fa-crown"></i>
             </p>
-            <p class="text-xs text-gray-500 capitalize">{{ profile?.plan || 'Free' }}</p>
+            <p class="text-xs text-gray-500 capitalize">{{ profile?.plan || $t('profile.plans.free') }}</p>
           </div>
         </div>
       </div>
@@ -76,12 +76,12 @@
         :loading="isLoggingOut"
       >
         <i class="fas fa-sign-out-alt mr-2"></i>
-        Sair
+        {{ $t('profile.menu.logout') }}
       </BaseButton>
       
       <!-- Version -->
       <p class="text-center text-sm text-gray-500">
-        Versão 2.0.0
+        {{ $t('profile.version') }} 2.0.0
       </p>
     </div>
 
@@ -94,16 +94,16 @@
     <!-- Meus documentos (lista compacta) -->
     <div class="card mt-6">
       <div class="flex items-center justify-between mb-3">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-dark-text">Meus documentos</h3>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-dark-text">{{ $t('profile.myDocs') }}</h3>
         <button class="text-primary text-sm" @click="router.push('/documents')">
-          Ver todos
+          {{ $t('profile.viewAll') }}
         </button>
       </div>
 
-      <div v-if="docsLoading" class="text-gray-500">Carregando documentos...</div>
+      <div v-if="docsLoading" class="text-gray-500">{{ $t('profile.loading') }}</div>
       <div v-else-if="docsError" class="text-red-500">{{ docsError }}</div>
       <div v-else-if="myDocuments.length === 0" class="text-gray-500">
-        Nenhum documento cadastrado.
+        {{ $t('profile.noDocs') }}
       </div>
 
       <ul v-else class="space-y-3">
@@ -130,9 +130,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { useDocuments } from '@/composables/useDocuments'
+import { useBackup } from '@/composables/useBackup'
 import MainLayout from '@/components/layout/MainLayout.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
 import ToastContainer from '@/components/common/ToastContainer.vue'
@@ -143,8 +145,10 @@ import ProfileEditModal from '@/components/profile/ProfileEditModal.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
-const { success } = useToast()
+const { t } = useI18n()
+const { success, error: showError } = useToast()
 const { items: myDocuments, loading: docsLoading, error: docsError, fetchMyDocuments } = useDocuments()
+const { isBackingUp, backupAllDocuments } = useBackup()
 
 const isLoggingOut = ref(false)
 const showPlansModal = ref(false)
@@ -156,6 +160,17 @@ const profile = computed(() => authStore.profile)
 
 const toggleRankings = () => {
   showRankings.value = !showRankings.value
+}
+
+const handleBackup = async () => {
+  if (!authStore.userId) return
+  
+  const result = await backupAllDocuments(authStore.userId)
+  if (result.success) {
+    success(result.message || 'Backup concluído com sucesso!')
+  } else {
+    showError(result.error || 'Erro ao fazer backup')
+  }
 }
 
 // Define handleLogout BEFORE menuItems
@@ -208,6 +223,11 @@ const menuItems = [
       // TODO: Criar view de ajuda
       success('Funcionalidade em breve!')
     }
+  },
+  {
+    icon: 'fas fa-download',
+    label: 'Backup de Documentos',
+    action: handleBackup
   },
   {
     icon: 'fas fa-cog',

@@ -96,7 +96,9 @@
     "menu": {
       "editProfile": "Editar Perfil",
       "myDocuments": "Meus Documentos",
+      "subscriptionPlans": "Planos de Subscrição",
       "notifications": "Notificações",
+      "backup": "Backup de Documentos",
       "privacy": "Privacidade e Segurança",
       "help": "Ajuda e Suporte",
       "settings": "Configurações",
@@ -111,7 +113,13 @@
       "silver": "Prata",
       "gold": "Ouro",
       "platinum": "Platina"
-    }
+    },
+    "myDocs": "Meus documentos",
+    "viewAll": "Ver todos",
+    "noDocs": "Nenhum documento cadastrado.",
+    "loading": "Carregando documentos...",
+    "user": "Usuário",
+    "version": "Versão"
   },
   "notifications": {
     "title": "Notificações",
@@ -120,12 +128,24 @@
       "chats": "Chats"
     },
     "empty": "Sem notificações",
+    "emptySubtitle": "Você está em dia!",
     "types": {
       "match": "Match Encontrado",
       "message": "Nova Mensagem",
       "system": "Sistema",
       "verification": "Verificação"
-    }
+    },
+    "loadingError": "Erro ao carregar notificações"
+  },
+  "chat": {
+    "title": "Conversas",
+    "unread": "não lidas",
+    "loading": "Carregando conversas...",
+    "error": "Erro ao carregar conversas",
+    "empty": "Nenhuma conversa",
+    "emptyDescription": "Inicie uma nova conversa a partir de um documento.",
+    "noMessages": "Sem mensagens",
+    "contact": "Contato"
   },
   "settings": {
     "title": "Configurações",
