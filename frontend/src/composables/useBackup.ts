@@ -58,17 +58,49 @@ export function useBackup() {
         throw new Error('Nenhum documento encontrado para backup')
       }
 
-      // Download each document
-      const results = await Promise.allSettled(
-        documents.map(doc => downloadDocument(doc as Document))
-      )
+      // Criar backup JSON com metadados dos documentos
+      const backupData = {
+        backup_date: new Date().toISOString(),
+        user_id: userId,
+        total_documents: documents.length,
+        documents: documents.map(doc => ({
+          id: doc.id,
+          title: doc.title,
+          type: doc.type,
+          status: doc.status,
+          document_number: doc.document_number,
+          issue_date: doc.issue_date,
+          expiry_date: doc.expiry_date,
+          issue_place: doc.issue_place,
+          issuing_authority: doc.issuing_authority,
+          country_of_issue: doc.country_of_issue,
+          description: doc.description,
+          location: doc.location,
+          is_verified: doc.is_verified,
+          verification_status: doc.verification_status,
+          created_at: doc.created_at,
+          updated_at: doc.updated_at,
+          file_name: doc.file_name,
+          file_type: doc.file_type,
+          file_size: doc.file_size
+        }))
+      }
 
-      const successful = results.filter(r => r.status === 'fulfilled').length
-      const failed = results.length - successful
+      // Criar e baixar arquivo JSON
+      const jsonString = JSON.stringify(backupData, null, 2)
+      const blob = new Blob([jsonString], { type: 'application/json' })
+      const downloadUrl = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.download = `FMD_Backup_${new Date().toISOString().split('T')[0]}.json`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(downloadUrl)
 
       return {
         success: true,
-        message: `Backup concluído: ${successful} documentos baixados${failed > 0 ? `, ${failed} falharam` : ''}`
+        message: `Backup concluído: ${documents.length} documentos salvos em JSON`
       }
     } catch (err: any) {
       error.value = err.message
