@@ -251,11 +251,24 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS trg_match_maker_badge ON public.document_matches;
-CREATE TRIGGER trg_match_maker_badge
-AFTER UPDATE OF status ON public.document_matches
-FOR EACH ROW
-EXECUTE FUNCTION public.check_match_maker_badge();
+-- Criar trigger apenas se a tabela document_matches existir
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables 
+    WHERE table_schema = 'public' AND table_name = 'document_matches'
+  ) THEN
+    DROP TRIGGER IF EXISTS trg_match_maker_badge ON public.document_matches;
+    CREATE TRIGGER trg_match_maker_badge
+    AFTER UPDATE OF status ON public.document_matches
+    FOR EACH ROW
+    EXECUTE FUNCTION public.check_match_maker_badge();
+    
+    RAISE NOTICE '✅ Trigger match_maker_badge criado';
+  ELSE
+    RAISE NOTICE '⚠️  Tabela document_matches não existe. Execute document_matching_system.sql primeiro.';
+  END IF;
+END $$;
 
 -- 9. Trigger: Badge "Diamante" (atingiu rank Diamond)
 CREATE OR REPLACE FUNCTION public.check_diamond_badge()
