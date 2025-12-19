@@ -1,5 +1,7 @@
 # FindMyDocs 2.0 - Sistema de Gestão de Documentos Perdidos
 
+**App em desenvolvimento** - Find My Docs
+
 Sistema completo de gestão de documentos perdidos e encontrados em Maputo, Moçambique. Versão 2.0 com frontend Vue.js moderno e backend Supabase.
 
 ## 🎉 Novidades da Versão 2.0
@@ -412,10 +414,16 @@ MIT © 2024 FindMyDocs Team
 
 ---
 
-## 👥 Autores
+## 👥 Equipe
 
-* **Ivan Paulo Cossa** - Desenvolvimento Full-stack
-* **Kevin Zacarias Paulo Cossa** - Desenvolvimento Full-stack
+### Desenvolvimento
+* **Ivan Paulo Cossa** - Desenvolvedor Full-stack
+* **Kevin Zacarias Paulo Cossa** - Desenvolvedor Full-stack
+
+### Gestão
+* **Kevin Cossa** - Gestor de Projeto
+* **Tiago Boca Rude** - Gestor de Projeto
+* **Pedro Simbine** - Gestor de Projeto
 
 ---
 
