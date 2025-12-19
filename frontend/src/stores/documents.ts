@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Document, DocumentFormData } from '@/types'
-import { supabase } from '@/utils/supabase'
+import { supabase } from '@/api/supabase'
 
 export const useDocumentsStore = defineStore('documents', () => {
   // State

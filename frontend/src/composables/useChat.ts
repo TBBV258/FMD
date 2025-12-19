@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue'
-import { supabase } from '@/utils/supabase'
+import { supabase } from '@/api/supabase'
 import type { ChatMessage } from '@/types'
 
 export interface ChatPreview {

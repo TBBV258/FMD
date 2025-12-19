@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { supabase } from '@/utils/supabase'
+import { supabase } from '@/api/supabase'
 import type { Document } from '@/types'
 
 export function useBackup() {
