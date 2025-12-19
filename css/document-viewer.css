@@ -1,0 +1,70 @@
+/* Document Preview Modal Styles */
+.document-preview {
+    margin-top: 1.5rem;
+}
+
+.document-preview.image {
+    text-align: center;
+}
+
+.document-preview.image .preview-image {
+    max-width: 100%;
+    max-height: 70vh;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.document-preview.pdf {
+    height: 70vh;
+    min-height: 500px;
+}
+
+.document-preview.pdf iframe {
+    width: 100%;
+    height: 100%;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+.document-preview.fallback {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-muted);
+}
+
+.document-preview.fallback i {
+    margin-bottom: 1rem;
+}
+
+.document-preview.fallback .btn {
+    margin-top: 1rem;
+}
+
+.document-info {
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.info-item {
+    font-size: 0.9rem;
+}
+
+.info-item strong {
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.document-notes {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+    white-space: pre-line;
+}

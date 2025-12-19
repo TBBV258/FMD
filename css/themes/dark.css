@@ -1,0 +1,9 @@
+body.dark {
+  background: #18181b;
+  color: #f3f4f6;
+}
+
+nav, .card, .modal {
+  background: #23232a !important;
+  color: #f3f4f6 !important;
+}

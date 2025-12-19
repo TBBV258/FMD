@@ -1,0 +1,158 @@
+.chat-box-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 320px;
+    max-height: 500px;
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    transition: var(--transition-base);
+}
+
+
+.
+
+.chat-box-toggle {
+    background: none;
+    border: none;
+    color: var(--white);
+    cursor: pointer;
+    padding: var(--spacing-xs);
+}
+
+.chat-list {
+    overflow-y: auto;
+    max-height: 400px;
+    padding: var(--spacing-sm);
+}
+
+.chat-item {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-sm);
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: var(--transition-base);
+}
+
+.chat-item:hover {
+    background: var(--bg-color);
+}
+
+.chat-item-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: var(--spacing-sm);
+    background: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.chat-item-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.chat-item-avatar .avatar-initial {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.chat-item-content {
+    flex: 1;
+}
+
+.chat-item-name {
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.chat-item-preview {
+    font-size: 0.875rem;
+    color: var(--text-light);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chat-box-minimized {
+    max-height: 60px;
+    overflow: hidden;
+}
+
+.unread-badge {
+    background: var(--error-color);
+    color: var(--white);
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    margin-left: var(--spacing-sm);
+}
+
+@media (max-width: 768px) {
+    /* Keep a bubble style on mobile (visible but not full-screen). The
+       container will be a small bubble in the bottom-right that expands
+       when the .chat-box-minimized class is removed. */
+    .chat-box-container {
+        width: calc(100% - 40px);
+        max-width: 420px;
+        bottom: 12px;
+        right: 12px;
+        height: auto;
+        max-height: 60vh;
+        border-radius: 12px;
+        transform: none;
+    }
+
+    /* Bubble-specific compact state */
+    .chat-box-container.chat-box-minimized {
+        width: 64px;
+        height: 64px;
+        padding: 0;
+        overflow: visible;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .chat-box-container.chat-box-minimized .chat-list {
+        display: none;
+    }
+
+    .chat-box-container.chat-box-minimized .chat-box-header h3 {
+        display: none;
+    }
+
+    /* Expanded bubble state */
+    .chat-box-container:not(.chat-box-minimized) {
+        width: calc(100% - 40px);
+        max-width: 420px;
+        height: auto;
+        max-height: 60vh;
+    }
+
+    .chat-box-header {
+        border-radius: 0;
+    }
+
+    .chat-list {
+        max-height: calc(100vh - 60px);
+    }
+}

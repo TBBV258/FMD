@@ -1,0 +1,146 @@
+{
+  "common": {
+    "yes": "Ina",
+    "no": "Awa",
+    "cancel": "Tlhela",
+    "save": "Hlayisa",
+    "delete": "Susa",
+    "edit": "Hlela",
+    "search": "Lava",
+    "filter": "Hlawula",
+    "loading": "Ya layitxa...",
+    "error": "Xihoxo",
+    "success": "Ku humelelile",
+    "close": "Pfala",
+    "back": "Vuya",
+    "next": "Endlakeke",
+    "submit": "Rhumela",
+    "logout": "Huma"
+  },
+  "nav": {
+    "home": "Kaya",
+    "map": "Mapa",
+    "report": "Bika",
+    "notifications": "Switiviso",
+    "profile": "Profayela"
+  },
+  "auth": {
+    "login": "Nghena",
+    "register": "Tsarela",
+    "email": "Email",
+    "password": "Phasiwedi",
+    "confirmPassword": "Tiyisisa Phasiwedi",
+    "fullName": "Vito hinkwaro",
+    "phoneNumber": "Nomboro ya Riqingho",
+    "country": "Tiko",
+    "loginTitle": "Amukelile hi ku tsakisa!",
+    "registerTitle": "Endla Akhawnte",
+    "forgotPassword": "U rivalisile phasiwedi?",
+    "noAccount": "A wu na akhawnte?",
+    "hasAccount": "U nga ni akhawnte?",
+    "loginSuccess": "Ku nghena ku humelelile!",
+    "registerSuccess": "Akhawnte yi endliwile!",
+    "logoutSuccess": "Ku huma ku humelelile!",
+    "loginError": "Xihoxo xa ku nghena",
+    "registerError": "Xihoxo xa ku tsarela"
+  },
+  "feed": {
+    "title": "Timanuskiripti",
+    "filters": {
+      "all": "Hinkwaswo",
+      "lost": "Swi lahleke",
+      "found": "Swi kumeka"
+    },
+    "empty": "A ku na timanuskiripti",
+    "loadMore": "Layitxa swin'wana",
+    "refreshed": "Feed yi pfuxetiwile!",
+    "searchPlaceholder": "Lava timanuskiripti..."
+  },
+  "document": {
+    "types": {
+      "bi": "BI (Bilhete ya Vutivi)",
+      "passport": "Phasipoto",
+      "driver_license": "Xitifiketi xa ku chayela",
+      "dire": "DIRE",
+      "nuit": "NUIT",
+      "work_card": "Khadi ya ntirho",
+      "student_card": "Khadi ya muchavi",
+      "voter_card": "Khadi ya voti",
+      "birth_certificate": "Xitifiketi xa ku velekiwa",
+      "title_deed": "Xitifiketi xa miri",
+      "other": "Xin'wana"
+    },
+    "status": {
+      "lost": "Yi lahleke",
+      "found": "Yi kumeka",
+      "matched": "Yi faneke",
+      "returned": "Yi vuyisiwile"
+    },
+    "title": "Nhlokomhaka",
+    "type": "Muxaka wa manuskiripti",
+    "description": "Nhlamuselo",
+    "location": "Ndzhawu",
+    "documentNumber": "Nomboro ya manuskiripti",
+    "details": "Vuxokoxoko",
+    "contact": "Khoma",
+    "interested": "Ndzi tsakile",
+    "reportLost": "Bika leswi lahleke",
+    "reportFound": "Bika leswi kumeka"
+  },
+  "profile": {
+    "title": "Profayela",
+    "points": "Tipoyinti",
+    "documents": "Timanuskiripti",
+    "plan": "Pulani",
+    "ranking": "Mpimo",
+    "menu": {
+      "editProfile": "Hlela profayela",
+      "myDocuments": "Timanuskiripti ta mina",
+      "notifications": "Switiviso",
+      "privacy": "Ku hlayiseka & Vuhlayiseki",
+      "help": "Mpfuno",
+      "settings": "Matsettingi",
+      "logout": "Huma"
+    },
+    "plans": {
+      "free": "Mahala",
+      "premium": "Premium"
+    },
+    "ranks": {
+      "bronze": "Bronze",
+      "silver": "Xiliva",
+      "gold": "Nsuku",
+      "platinum": "Platinum"
+    }
+  },
+  "notifications": {
+    "title": "Switiviso",
+    "tabs": {
+      "all": "Hinkwaswo",
+      "chats": "Tichati"
+    },
+    "empty": "A ku na switiviso",
+    "types": {
+      "match": "Ku faneriwa ku kumeka",
+      "message": "Rungula lerintshwa",
+      "system": "Sisiteme",
+      "verification": "Ntirhiso"
+    }
+  },
+  "settings": {
+    "title": "Matsettingi",
+    "privacy": "Ku hlayiseka",
+    "suggestions": "Swileriso",
+    "backup": "Backup",
+    "language": "Ririmi"
+  },
+  "map": {
+    "title": "Mapa",
+    "loading": "Ya layitxa mapa...",
+    "myLocation": "U ala"
+  },
+  "footer": {
+    "copyright": "© 2025 FindMyDocs. Timfanelo hinkwato."
+  }
+}
+

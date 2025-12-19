@@ -1,0 +1,43 @@
+name: Deploy Vue App to GitHub Pages
+
+on:
+  # Triggers the workflow on pushes to the main branch
+  push:
+    branches:
+      - main
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Use a modern, stable Node.js version
+
+      - name: Install Dependencies
+        run: |
+          cd frontend
+          npm install
+
+      - name: Build Vue Project
+        run: |
+          cd frontend
+          npm run build:ci
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          # Your GitHub token is automatically available
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # The branch the deployment files (the 'dist' folder content) will be pushed to
+          publish_branch: gh-pages
+          # The directory that contains the compiled, deployable files
+          publish_dir: ./frontend/dist
+
