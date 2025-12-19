@@ -2,7 +2,7 @@
   "name": "find-my-docs",
   "version": "1.0.0",
   "description": "Find My Document (FMD) - A progressive web app for managing lost and found documents in Maputo, Mozambique",
-  "main": "index.js",
+  "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",
     "dev": "nodemon server/server.js",
@@ -11,8 +11,7 @@
     "format": "prettier --write .",
     "prepare": "husky install",
     "test": "jest",
-    "security-check": "npm audit --production",
-    "build": "webpack --mode production"
+    "security-check": "npm audit --production"
   },
   "engines": {
     "node": ">=14.0.0"
@@ -26,11 +25,6 @@
   ],
   "author": "Ivan Paulo Cossa + Kevin Zacarias Paulo Cossa",
   "license": "MIT",
-  "browserslist": [
-    "last 2 versions",
-    "not dead",
-    "> 0.2%"
-  ],
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.46.1",
     "@typescript-eslint/parser": "^8.46.1",

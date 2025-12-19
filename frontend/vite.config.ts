@@ -4,9 +4,9 @@ import { VitePWA } from 'vite-plugin-pwa'
 import { fileURLToPath, URL } from 'node:url'
 
 // https://vitejs.dev/config/
-export default defineConfig({
-  // Uncomment the line below and set repository name when deploying to GitHub Pages
-  base: '/FMD/',
+export default defineConfig(({ mode }) => ({
+  // Use '/' for local development, '/FMD/' for GitHub Pages deployment
+  base: mode === 'production' ? '/FMD/' : '/',
   plugins: [
     vue(),
     VitePWA({
@@ -96,4 +96,4 @@ export default defineConfig({
   optimizeDeps: {
     include: ['vue', 'vue-router', 'pinia', '@supabase/supabase-js']
   }
-})
+}))
