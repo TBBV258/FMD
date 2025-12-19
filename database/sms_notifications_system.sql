@@ -299,14 +299,17 @@ COMMENT ON FUNCTION public.send_sms IS 'Cria e envia SMS para usuário';
 -- FIM DO SCRIPT
 -- ============================================
 
-RAISE NOTICE '✅ Sistema de SMS instalado com sucesso!';
-RAISE NOTICE '📱 Suporte para Movitel, Vodacom, TMcel';
-RAISE NOTICE '🔔 SMS automático para matches >= 70%';
-RAISE NOTICE '⚙️  Preferências de usuário configuráveis';
-RAISE NOTICE '📊 View de estatísticas criada';
-RAISE NOTICE '';
-RAISE NOTICE '⚠️  PRÓXIMO PASSO: Integrar APIs reais dos provedores';
-RAISE NOTICE '   - Movitel API: Contactar departamento comercial';
-RAISE NOTICE '   - Vodacom API: https://developer.vodacom.co.mz';
-RAISE NOTICE '   - Africa''s Talking: https://africastalking.com (recomendado)';
+DO $$
+BEGIN
+  RAISE NOTICE '✅ Sistema de SMS instalado com sucesso!';
+  RAISE NOTICE '📱 Suporte para Movitel, Vodacom, TMcel';
+  RAISE NOTICE '🔔 SMS automático para matches >= 70%%';
+  RAISE NOTICE '⚙️  Preferências de usuário configuráveis';
+  RAISE NOTICE '📊 View de estatísticas criada';
+  RAISE NOTICE '';
+  RAISE NOTICE '⚠️  PRÓXIMO PASSO: Integrar APIs reais dos provedores';
+  RAISE NOTICE '   - Movitel API: Contactar departamento comercial';
+  RAISE NOTICE '   - Vodacom API: https://developer.vodacom.co.mz';
+  RAISE NOTICE '   - Africa''s Talking: https://africastalking.com (recomendado)';
+END $$;
 

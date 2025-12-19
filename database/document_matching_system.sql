@@ -403,9 +403,12 @@ COMMENT ON FUNCTION public.calculate_distance IS 'Calcula distância em km entre
 -- FIM DO SCRIPT
 -- ============================================
 
-RAISE NOTICE '✅ Sistema de Match Automático instalado com sucesso!';
-RAISE NOTICE '📊 Tabela document_matches criada';
-RAISE NOTICE '🤖 Funções de IA e matching configuradas';
-RAISE NOTICE '🔔 Notificações automáticas habilitadas';
-RAISE NOTICE '🎯 Trigger de auto-matching ativo';
+DO $$
+BEGIN
+  RAISE NOTICE '✅ Sistema de Match Automático instalado com sucesso!';
+  RAISE NOTICE '📊 Tabela document_matches criada';
+  RAISE NOTICE '🤖 Funções de IA e matching configuradas';
+  RAISE NOTICE '🔔 Notificações automáticas habilitadas';
+  RAISE NOTICE '🎯 Trigger de auto-matching ativo';
+END $$;
 

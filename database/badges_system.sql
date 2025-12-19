@@ -348,10 +348,13 @@ COMMENT ON FUNCTION public.get_badge_definition IS 'Retorna definição de um ba
 -- FIM DO SCRIPT
 -- ============================================
 
-RAISE NOTICE '✅ Sistema de Badges instalado com sucesso!';
-RAISE NOTICE '🏆 18 badges diferentes disponíveis';
-RAISE NOTICE '🎨 4 raridades: common, rare, epic, legendary';
-RAISE NOTICE '🔔 Notificações automáticas ao ganhar badges';
-RAISE NOTICE '⚡ Triggers automáticos para 8 tipos de badges';
-RAISE NOTICE '📊 View de estatísticas criada';
+DO $$
+BEGIN
+  RAISE NOTICE '✅ Sistema de Badges instalado com sucesso!';
+  RAISE NOTICE '🏆 18 badges diferentes disponíveis';
+  RAISE NOTICE '🎨 4 raridades: common, rare, epic, legendary';
+  RAISE NOTICE '🔔 Notificações automáticas ao ganhar badges';
+  RAISE NOTICE '⚡ Triggers automáticos para 8 tipos de badges';
+  RAISE NOTICE '📊 View de estatísticas criada';
+END $$;
 
