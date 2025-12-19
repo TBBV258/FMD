@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/FMD-main/sw.js', { scope: '/FMD-main/' })})}
