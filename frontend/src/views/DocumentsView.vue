@@ -68,12 +68,11 @@
         <div
           v-for="document in filteredDocuments"
           :key="document.id"
-          class="card card-hover cursor-pointer"
-          @click="router.push(`/document/${document.id}`)"
+          class="card card-hover relative group"
         >
-          <div class="flex items-start space-x-3">
+          <div class="flex items-start space-x-3" @click="router.push(`/document/${document.id}`)">
             <!-- Thumbnail -->
-            <div class="w-16 h-16 rounded-lg bg-gray-200 dark:bg-gray-700 flex-shrink-0 overflow-hidden">
+            <div class="w-16 h-16 rounded-lg bg-gray-200 dark:bg-gray-700 flex-shrink-0 overflow-hidden cursor-pointer">
               <img
                 v-if="document.thumbnail_url || document.file_url"
                 :src="document.thumbnail_url || document.file_url"
@@ -86,7 +85,7 @@
             </div>
 
             <!-- Content -->
-            <div class="flex-1 min-w-0">
+            <div class="flex-1 min-w-0 cursor-pointer">
               <div class="flex items-start justify-between mb-1">
                 <h3 class="font-semibold text-gray-900 dark:text-dark-text truncate">
                   {{ document.title }}
@@ -109,9 +108,60 @@
                 </span>
               </div>
             </div>
+
+            <!-- Actions Menu -->
+            <div class="relative flex-shrink-0" @click.stop>
+              <button
+                @click="toggleMenu(document.id)"
+                class="btn-icon opacity-0 group-hover:opacity-100 transition-opacity"
+                title="Opções"
+              >
+                <i class="fas fa-ellipsis-v"></i>
+              </button>
+
+              <!-- Dropdown Menu -->
+              <div
+                v-if="openMenuId === document.id"
+                class="absolute right-0 mt-2 w-56 bg-white dark:bg-dark-card rounded-lg shadow-lg border border-gray-200 dark:border-dark-border z-10"
+              >
+                <div class="py-2">
+                  <button
+                    v-if="document.status !== 'lost'"
+                    @click="changeStatus(document, 'lost')"
+                    class="w-full flex items-center space-x-3 px-4 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    <i class="fas fa-exclamation-triangle text-danger w-5"></i>
+                    <span>Marcar como Perdido</span>
+                  </button>
+                  <button
+                    v-if="document.status !== 'found'"
+                    @click="changeStatus(document, 'found')"
+                    class="w-full flex items-center space-x-3 px-4 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    <i class="fas fa-check-circle text-success w-5"></i>
+                    <span>Marcar como Encontrado</span>
+                  </button>
+                  <button
+                    v-if="document.status !== 'normal'"
+                    @click="changeStatus(document, 'normal')"
+                    class="w-full flex items-center space-x-3 px-4 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    <i class="fas fa-lock text-primary w-5"></i>
+                    <span>Marcar como Normal (Privado)</span>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
+      <!-- Backdrop para fechar menu -->
+      <div
+        v-if="openMenuId"
+        class="fixed inset-0 z-0"
+        @click="openMenuId = null"
+      ></div>
     </div>
 
     <ToastContainer />
@@ -124,6 +174,7 @@ import { useRouter } from 'vue-router'
 import { useDocumentsStore } from '@/stores/documents'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
+import { supabase } from '@/api/supabase'
 import type { Document } from '@/types'
 import MainLayout from '@/components/layout/MainLayout.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
@@ -139,6 +190,7 @@ const { success, error: showError } = useToast()
 const activeFilter = ref<'all' | 'lost' | 'found' | 'matched' | 'returned'>('all')
 const isLoading = ref(false)
 const isDownloading = ref(false)
+const openMenuId = ref<string | null>(null)
 
 const filters = [
   { label: 'Todos', value: 'all' },
@@ -208,6 +260,47 @@ const formatDate = (dateString: string) => {
     month: 'short',
     year: 'numeric'
   })
+}
+
+const toggleMenu = (docId: string) => {
+  openMenuId.value = openMenuId.value === docId ? null : docId
+}
+
+const changeStatus = async (document: Document, newStatus: string) => {
+  openMenuId.value = null
+
+  const statusLabels = {
+    lost: 'perdido',
+    found: 'encontrado',
+    normal: 'normal (privado)'
+  }
+
+  if (!confirm(`Tem certeza que deseja marcar "${document.title}" como ${statusLabels[newStatus as keyof typeof statusLabels]}?`)) {
+    return
+  }
+
+  try {
+    const isPublic = newStatus === 'lost' || newStatus === 'found'
+    
+    const { error } = await supabase
+      .from('documents')
+      .update({ 
+        status: newStatus,
+        is_public: isPublic
+      })
+      .eq('id', document.id)
+
+    if (error) throw error
+
+    success(`Documento marcado como ${statusLabels[newStatus as keyof typeof statusLabels]}!`)
+    
+    // Recarregar documentos
+    if (authStore.userId) {
+      await documentsStore.fetchUserDocuments(authStore.userId)
+    }
+  } catch (err: any) {
+    showError(err.message || 'Erro ao atualizar status')
+  }
 }
 
 const handleDownloadBackup = async () => {
