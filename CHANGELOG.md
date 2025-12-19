@@ -1,5 +1,50 @@
 # 📋 Changelog - FMD (FindMyDocs)
 
+## [0.4.0] - 2025-01-19
+
+### 🏆 Sistema de Pontos e Ranking
+- ✅ Tabela `points_history` com histórico completo
+- ✅ Função `add_points()` automática
+- ✅ Triggers para todas as atividades (+10 a +100 pontos)
+- ✅ Ranks: Bronze, Silver, Gold, Platinum, Diamond
+- ✅ Ranking global com posições
+- ✅ API e Composable `usePoints`
+- ✅ Pontos retroativos para documentos existentes
+
+### 🗺️ MapLibre Melhorado
+- ✅ Clustering de marcadores
+- ✅ Heatmap opcional
+- ✅ Controles aprimorados
+- ✅ Estatísticas em tempo real
+- ✅ Otimizado para África (baixa conectividade)
+
+### 📍 Sistema de Localização
+- ✅ LocationPicker component
+- ✅ Marcar onde perdeu/encontrou
+- ✅ Ponto de encontro opcional
+- ✅ Integrado em ReportLost e ReportFound
+- ✅ Drag and drop de marcadores
+
+### 💾 Backup Corrigido
+- ✅ Baixa arquivos originais (imagens/PDFs)
+- ✅ NÃO baixa JSON
+- ✅ Nomes descritivos
+- ✅ Download múltiplo
+
+### 💬 Chats e Notificações
+- ✅ Tabelas corrigidas e funcionais
+- ✅ Row Level Security configurado
+- ✅ Realtime habilitado
+- ✅ Notificações de teste
+
+### 🗄️ Banco de Dados
+- ✅ `points_system.sql` - Sistema completo
+- ✅ `fix_chats_notifications.sql` - Corrigido e testado
+- ✅ `add_meeting_point.sql` - Ponto de encontro
+- ✅ `auto_normalize_found_trigger.sql` - Auto privacidade
+
+---
+
 ## [0.3.0] - 2025-01-19
 
 ### 🔐 Sistema de Permissões
@@ -219,6 +264,6 @@
 
 ---
 
-**Versão Atual: 0.3.0** 🎉  
+**Versão Atual: 0.4.0** 🎉  
 **Status: ✅ Pronto para Produção (1000+ usuários)**
 
