@@ -84,9 +84,15 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
   
-  // Check session on first load
-  if (!authStore.user && !authStore.isLoading) {
-    await authStore.checkSession()
+  try {
+    // Check session on first load
+    if (!authStore.user && !authStore.isLoading) {
+      await authStore.checkSession()
+    }
+  } catch (error) {
+    // If checkSession fails due to invalid refresh token, it's already handled
+    // Continue with navigation - user will be redirected to login if needed
+    console.error('Error checking session in router:', error)
   }
 
   const requiresAuth = to.meta.requiresAuth !== false

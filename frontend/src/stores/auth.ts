@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { User, UserProfile, AuthSession } from '@/types'
-import { supabase } from '@/utils/supabase'
+import { supabase, clearInvalidSessions, isRefreshTokenError } from '@/utils/supabase'
 import { calculateRank } from '@/utils/pointsSystem'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -22,12 +22,21 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
     
     try {
+      // Clear any invalid sessions before signing in
+      clearInvalidSessions()
+      
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password
       })
       
-      if (signInError) throw signInError
+      if (signInError) {
+        // Check if it's a refresh token error (shouldn't happen on sign in, but handle it)
+        if (isRefreshTokenError(signInError)) {
+          await clearInvalidSession()
+        }
+        throw signInError
+      }
       
       if (data.user && data.session) {
         user.value = {
@@ -63,28 +72,63 @@ export const useAuthStore = defineStore('auth', () => {
     isLoading.value = true
     error.value = null
     
+    console.log('signUp called with:', { email, password: '***', userData })
+    
     try {
+      // Clear any invalid sessions before signing up
+      clearInvalidSessions()
+      
+      console.log('Calling supabase.auth.signUp...')
       const { data, error: signUpError } = await supabase.auth.signUp({
-        email,
+        email: email.trim().toLowerCase(),
         password,
         options: {
           data: {
             full_name: userData.fullName,
-            phone_number: userData.phoneNumber,
+            phone_number: userData.phoneNumber || '',
             country: userData.country || 'MZ'
           }
         }
       })
       
-      if (signUpError) throw signUpError
+      console.log('supabase.auth.signUp response:', { 
+        hasData: !!data, 
+        hasUser: !!data?.user, 
+        hasSession: !!data?.session,
+        error: signUpError 
+      })
+      
+      if (signUpError) {
+        console.error('SignUp error:', signUpError)
+        throw signUpError
+      }
+      
+      // Check if it's a refresh token error (shouldn't happen on signup, but handle it)
+      if (isRefreshTokenError(signUpError)) {
+        await clearInvalidSession()
+      }
       
       // Profile will be created automatically by the trigger
       // No manual profile creation needed
       
-      return { success: true }
+      console.log('SignUp successful')
+      return { success: true, data }
     } catch (err: any) {
-      error.value = err.message || 'Erro ao criar conta'
-      return { success: false, error: error.value }
+      console.error('SignUp exception:', err)
+      const errorMessage = err.message || 'Erro ao criar conta'
+      error.value = errorMessage
+      
+      // Provide user-friendly error messages
+      let userFriendlyMessage = errorMessage
+      if (errorMessage.includes('already registered') || errorMessage.includes('already exists')) {
+        userFriendlyMessage = 'Este email já está registrado. Tente fazer login.'
+      } else if (errorMessage.includes('invalid email')) {
+        userFriendlyMessage = 'Email inválido. Por favor, verifique o email.'
+      } else if (errorMessage.includes('password')) {
+        userFriendlyMessage = 'A senha não atende aos requisitos mínimos.'
+      }
+      
+      return { success: false, error: userFriendlyMessage }
     } finally {
       isLoading.value = false
     }
@@ -162,39 +206,93 @@ export const useAuthStore = defineStore('auth', () => {
     isLoading.value = true
     
     try {
-      const { data } = await supabase.auth.getSession()
+      // First, try to get session from Supabase (this handles refresh automatically)
+      const { data, error: sessionError } = await supabase.auth.getSession()
+      
+      // If there's an error related to refresh token, clear everything
+      if (sessionError && isRefreshTokenError(sessionError)) {
+        await clearInvalidSession()
+        return
+      }
       
       if (data.session) {
-        user.value = {
-          id: data.session.user.id,
-          email: data.session.user.email!,
-          created_at: data.session.user.created_at || new Date().toISOString()
-        }
+        // Verify session is not expired
+        const expiresAt = data.session.expires_at
+        const isExpired = expiresAt && expiresAt * 1000 < Date.now()
         
-        session.value = {
-          user: user.value,
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token,
-          expires_at: data.session.expires_at || 0
+        if (isExpired) {
+          // Session expired, try to refresh
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
+          
+          if (refreshError) {
+            if (isRefreshTokenError(refreshError)) {
+              await clearInvalidSession()
+              return
+            }
+            // Other refresh errors, still try to use current session if valid
+          }
+          
+          // Use refreshed session if available, otherwise use current
+          const validSession = refreshData?.session || data.session
+          
+          user.value = {
+            id: validSession.user.id,
+            email: validSession.user.email!,
+            created_at: validSession.user.created_at || new Date().toISOString()
+          }
+          
+          session.value = {
+            user: user.value,
+            access_token: validSession.access_token,
+            refresh_token: validSession.refresh_token,
+            expires_at: validSession.expires_at || 0
+          }
+        } else {
+          // Session is valid
+          user.value = {
+            id: data.session.user.id,
+            email: data.session.user.email!,
+            created_at: data.session.user.created_at || new Date().toISOString()
+          }
+          
+          session.value = {
+            user: user.value,
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token,
+            expires_at: data.session.expires_at || 0
+          }
         }
         
         await loadProfile()
         
-        localStorage.setItem('fmd_session', JSON.stringify(session.value))
-      } else {
-        // Try to load from localStorage
-        const savedSession = localStorage.getItem('fmd_session')
-        if (savedSession) {
-          session.value = JSON.parse(savedSession)
-          user.value = session.value!.user
-          await loadProfile()
+        // Save to localStorage only if session is valid
+        if (session.value) {
+          localStorage.setItem('fmd_session', JSON.stringify(session.value))
         }
+      } else {
+        // No session from Supabase, clear any stale localStorage data
+        await clearInvalidSession()
       }
     } catch (err: any) {
       console.error('Error checking session:', err)
-      localStorage.removeItem('fmd_session')
+      if (isRefreshTokenError(err)) {
+        await clearInvalidSession()
+      }
     } finally {
       isLoading.value = false
+    }
+  }
+
+  async function clearInvalidSession() {
+    user.value = null
+    profile.value = null
+    session.value = null
+    clearInvalidSessions()
+    // Also clear Supabase's internal storage
+    try {
+      await supabase.auth.signOut()
+    } catch (e) {
+      // Ignore errors during cleanup - session might already be cleared
     }
   }
 
@@ -273,6 +371,7 @@ export const useAuthStore = defineStore('auth', () => {
     signOut,
     loadProfile,
     checkSession,
+    clearInvalidSession,
     updateProfile,
     updatePoints
   }

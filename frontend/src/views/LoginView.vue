@@ -120,6 +120,16 @@
             required
           />
           
+          <BaseInput
+            v-model="registerForm.confirmPassword"
+            label="Confirm password"
+            type="password"
+            placeholder="Confirm your password"
+            icon="fas fa-lock"
+            :error="errors.confirmPassword"
+            required
+          />
+          
           <button
             type="submit"
             :disabled="isLoading"
@@ -230,51 +240,88 @@ const handleLogin = async () => {
   }
 }
 
-const handleRegister = async () => {
+const handleRegister = async (e?: Event) => {
+  if (e) {
+    e.preventDefault()
+    e.stopPropagation()
+  }
+  
   clearErrors()
+  
+  console.log('handleRegister called', { 
+    fullName: registerForm.fullName,
+    email: registerForm.email,
+    passwordLength: registerForm.password.length,
+    confirmPasswordLength: registerForm.confirmPassword.length
+  })
   
   // Validation
   if (!registerForm.fullName.trim()) {
     errors.fullName = 'Nome é obrigatório'
-    return
+    console.log('Validation failed: fullName is empty')
+    showError('Nome é obrigatório')
+    return false
   }
   
   if (!validateEmail(registerForm.email)) {
     errors.email = 'Email inválido'
-    return
+    console.log('Validation failed: invalid email')
+    showError('Email inválido')
+    return false
   }
   
   if (registerForm.password.length < 6) {
     errors.password = 'Senha deve ter no mínimo 6 caracteres'
-    return
+    console.log('Validation failed: password too short')
+    showError('Senha deve ter no mínimo 6 caracteres')
+    return false
   }
   
   if (registerForm.password !== registerForm.confirmPassword) {
     errors.confirmPassword = 'Senhas não conferem'
-    return
+    console.log('Validation failed: passwords do not match')
+    showError('Senhas não conferem')
+    return false
   }
   
+  console.log('Validation passed, calling signUp...')
   isLoading.value = true
   
-  const result = await authStore.signUp(
-    registerForm.email,
-    registerForm.password,
+  try {
+    const result = await authStore.signUp(
+      registerForm.email,
+      registerForm.password,
       {
-      fullName: registerForm.fullName,
-      phoneNumber: registerForm.phoneNumber,
-      country: registerForm.country
+        fullName: registerForm.fullName,
+        phoneNumber: registerForm.phoneNumber,
+        country: registerForm.country
       }
     )
     
-  isLoading.value = false
-  
-  if (result.success) {
-    success('Conta criada com sucesso! Verifique seu email.')
-    currentTab.value = 'login'
-    loginForm.email = registerForm.email
-  } else {
-    showError(result.error || 'Erro ao criar conta')
+    console.log('signUp result:', result)
+    
+    if (result.success) {
+      success('Conta criada com sucesso! Verifique seu email.')
+      currentTab.value = 'login'
+      loginForm.email = registerForm.email
+      // Clear register form
+      registerForm.fullName = ''
+      registerForm.email = ''
+      registerForm.password = ''
+      registerForm.confirmPassword = ''
+      registerForm.phoneNumber = ''
+    } else {
+      showError(result.error || 'Erro ao criar conta')
+      console.error('SignUp error:', result.error)
+    }
+  } catch (error) {
+    console.error('Unexpected error in handleRegister:', error)
+    showError('Erro inesperado ao criar conta. Tente novamente.')
+  } finally {
+    isLoading.value = false
   }
+  
+  return false
 }
 </script>
 

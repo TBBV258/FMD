@@ -26,8 +26,14 @@ import ToastContainer from '@/components/common/ToastContainer.vue'
 const authStore = useAuthStore()
 
 onMounted(async () => {
-  // Check for existing session on app mount
-  await authStore.checkSession()
+  try {
+    // Check for existing session on app mount
+    await authStore.checkSession()
+  } catch (error) {
+    // If checkSession fails due to invalid refresh token, it's already handled
+    // Just log for debugging
+    console.error('Error during session check on mount:', error)
+  }
   
   // Apply dark mode if previously set
   const darkMode = localStorage.getItem('fmd_dark_mode')

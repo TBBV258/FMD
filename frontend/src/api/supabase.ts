@@ -9,7 +9,9 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    storage: localStorage
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+    storageKey: 'sb-agqpfpzsxqbrqyjiqtiy-auth-token',
+    flowType: 'pkce'
   },
   realtime: {
     params: {
@@ -17,6 +19,60 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     }
   }
 })
+
+// Helper function to clear invalid sessions
+export function clearInvalidSessions() {
+  if (typeof window === 'undefined') return
+  
+  const sessionKeys = [
+    'fmd_session',
+    'sb-agqpfpzsxqbrqyjiqtiy-auth-token'
+  ]
+  
+  sessionKeys.forEach(key => {
+    try {
+      localStorage.removeItem(key)
+    } catch (e) {
+      // Ignore errors
+    }
+  })
+}
+
+// Helper function to check if error is related to refresh token
+export function isRefreshTokenError(error: any): boolean {
+  if (!error) return false
+  
+  const errorMessage = (error.message || error.toString() || '').toLowerCase()
+  return errorMessage.includes('invalid refresh token') || 
+         errorMessage.includes('refresh token not found') ||
+         errorMessage.includes('jwt') ||
+         (error.status === 400 && errorMessage.includes('refresh'))
+}
+
+// Listen for auth state changes and handle refresh token errors
+if (typeof window !== 'undefined') {
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_OUT') {
+      clearInvalidSessions()
+    }
+    
+    // Handle token refresh errors
+    if (event === 'TOKEN_REFRESHED' && !session) {
+      // Token refresh failed, clear everything
+      clearInvalidSessions()
+    }
+  })
+
+  // Global error handler for unhandled auth errors
+  window.addEventListener('unhandledrejection', (event) => {
+    const error = event.reason
+    if (isRefreshTokenError(error)) {
+      clearInvalidSessions()
+      // Prevent the error from being logged to console
+      event.preventDefault()
+    }
+  })
+}
 
 // Auth helpers
 export const auth = {
