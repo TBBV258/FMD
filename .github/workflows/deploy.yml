@@ -60,11 +60,19 @@ jobs:
           # Create .nojekyll to disable Jekyll processing
           touch docs/.nojekyll
           echo "✓ Files copied to docs/ directory"
+          echo "Contents of docs/:"
+          ls -la docs/
+          echo "Checking index.html:"
+          test -f docs/index.html && echo "✓ index.html exists" || echo "✗ index.html missing"
 
       - name: Commit and push to main branch
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add docs/
-          git diff --staged --quiet || git commit -m "Deploy: Update frontend build [skip ci]"
-          git push origin main
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Deploy: Update frontend build"
+            git push origin main
+          fi
