@@ -7,6 +7,15 @@
       />
     </div>
     
+    <!-- Location Permission Modal -->
+    <LocationPermissionModal
+      v-model="showLocationModal"
+      title="Ver Documentos no Mapa"
+      message="Precisamos da sua localização para mostrar documentos perdidos próximos a você."
+      @allow="handleLocationAllowed"
+      @deny="handleLocationDenied"
+    />
+    
     <!-- Document preview modal -->
     <BaseModal
       v-model="showDocumentModal"
@@ -73,18 +82,22 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useDocumentsStore } from '@/stores/documents'
+import { usePermissions } from '@/composables/usePermissions'
 import { formatRelativeTime } from '@/utils/formatters'
 import type { Document } from '@/types'
 import MainLayout from '@/components/layout/MainLayout.vue'
 import MapComponent from '@/components/map/MapComponent.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
+import LocationPermissionModal from '@/components/permissions/LocationPermissionModal.vue'
 
 const router = useRouter()
 const documentsStore = useDocumentsStore()
+const { checkLocationPermission, locationPermission } = usePermissions()
 
 const selectedDocument = ref<Document | null>(null)
 const showDocumentModal = ref(false)
+const showLocationModal = ref(false)
 
 const documents = computed(() => documentsStore.documents)
 
@@ -150,10 +163,29 @@ const viewDetails = () => {
   }
 }
 
+const handleLocationAllowed = () => {
+  console.log('Location permission granted')
+  // Permissão concedida, o mapa já vai funcionar normalmente
+}
+
+const handleLocationDenied = () => {
+  console.log('Location permission denied')
+  // Usuário negou, mas ainda pode ver o mapa sem sua localização
+}
+
 onMounted(async () => {
   // Load documents if not already loaded
   if (documents.value.length === 0) {
     await documentsStore.fetchDocuments()
+  }
+
+  // Check location permission and show modal if needed
+  const hasPermission = await checkLocationPermission()
+  if (!hasPermission && locationPermission.value.prompt) {
+    // Show modal after a short delay for better UX
+    setTimeout(() => {
+      showLocationModal.value = true
+    }, 1000)
   }
 })
 </script>

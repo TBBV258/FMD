@@ -72,7 +72,7 @@
             <label class="form-label">Foto do Documento (opcional)</label>
             <div
               class="border-2 border-dashed border-gray-300 dark:border-dark-border rounded-lg p-6 text-center cursor-pointer hover:border-primary transition-colors"
-              @click="triggerFileInput"
+              @click="handleUploadClick"
             >
               <div v-if="!formData.file">
                 <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
@@ -96,6 +96,12 @@
               @change="handleFileChange"
             />
           </div>
+
+          <!-- Photo Picker Modal -->
+          <PhotoPickerModal
+            v-model="showPhotoPicker"
+            @file-selected="handlePhotoSelected"
+          />
           
           <!-- Submit Button -->
           <BaseButton
@@ -118,7 +124,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useDocumentsStore } from '@/stores/documents'
@@ -128,6 +134,7 @@ import MainLayout from '@/components/layout/MainLayout.vue'
 import BaseInput from '@/components/common/BaseInput.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
 import ToastContainer from '@/components/common/ToastContainer.vue'
+import PhotoPickerModal from '@/components/permissions/PhotoPickerModal.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -136,6 +143,11 @@ const { success, error: showError } = useToast()
 
 const isSubmitting = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
+const showPhotoPicker = ref(false)
+
+const isMobile = computed(() => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+})
 
 const formData = reactive<DocumentFormData>({
   title: '',
@@ -169,8 +181,12 @@ const typeButtonClass = (value: string) => {
   return `${base} hover:border-primary`
 }
 
-const triggerFileInput = () => {
-  fileInputRef.value?.click()
+const handleUploadClick = () => {
+  if (isMobile.value) {
+    showPhotoPicker.value = true
+  } else {
+    fileInputRef.value?.click()
+  }
 }
 
 const handleFileChange = (event: Event) => {
@@ -179,6 +195,10 @@ const handleFileChange = (event: Event) => {
   if (file) {
     formData.file = file
   }
+}
+
+const handlePhotoSelected = (file: File) => {
+  formData.file = file
 }
 
 const handleSubmit = async () => {

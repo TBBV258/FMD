@@ -1,5 +1,76 @@
 # 📋 Changelog - FMD (FindMyDocs)
 
+## [0.3.0] - 2025-01-19
+
+### 🔐 Sistema de Permissões
+- ✅ Modal de permissão de localização
+  - Explicação clara do uso
+  - Instruções por dispositivo (Android, iOS, Desktop)
+  - Tratamento de permissão negada
+  - Detecção automática de dispositivo
+- ✅ Photo Picker para Mobile
+  - Escolha entre Câmera ou Galeria
+  - UI moderna e intuitiva
+  - Suporte para todos dispositivos
+- ✅ Composable `usePermissions`
+  - Gerenciamento centralizado de permissões
+  - Localização, Câmera, Notificações
+  - Estados de permissão (granted, denied, prompt)
+  - Detecção de tipo de dispositivo
+
+### 📄 Gerenciamento de Documentos
+- ✅ Menu de opções em cada documento
+  - Marcar como Perdido
+  - Marcar como Encontrado
+  - Marcar como Normal (Privado)
+- ✅ Confirmação antes de mudar status
+- ✅ Atualização automática de `is_public`
+  - `lost`/`found` → público (aparece no feed)
+  - `normal` → privado (apenas no perfil)
+- ✅ Feedback visual ao passar mouse
+- ✅ Recarregamento automático após mudança
+
+### 🗄️ Banco de Dados
+- ✅ Trigger SQL `auto_normalize_found_documents`
+  - Quando dono marca seu documento como "found"
+  - Automaticamente vira "normal" (privado)
+  - Previne documentos encontrados ficarem públicos
+  - Script: `database/auto_normalize_found_trigger.sql`
+
+### 💾 Sistema de Backup
+- ✅ Backup agora gera arquivo JSON
+- ✅ Contém todos os metadados dos documentos
+- ✅ Nome: `FMD_Backup_YYYY-MM-DD.json`
+- ✅ Mais leve e fácil de importar
+
+### 🎨 UI/UX
+- ✅ Modais de permissão com design moderno
+- ✅ Instruções contextuais por dispositivo
+- ✅ Ícones e cores consistentes
+- ✅ Animações suaves
+- ✅ Dropdown menu em documentos
+
+### 📱 Mobile-First
+- ✅ Photo picker otimizado para mobile
+- ✅ Detecção automática de dispositivo
+- ✅ Instruções específicas por plataforma
+- ✅ Suporte para câmera e galeria
+
+### 🔧 Melhorias Técnicas
+- ✅ Novo composable `usePermissions.ts`
+- ✅ Componentes reutilizáveis:
+  - `LocationPermissionModal.vue`
+  - `PhotoPickerModal.vue`
+- ✅ TypeScript sem erros
+- ✅ Código modular e manutenível
+
+### 📚 Documentação
+- ✅ `TODO_FEATURES.md` - Features pendentes detalhadas
+- ✅ `database/auto_normalize_found_trigger.sql` - Documentado
+- ✅ Instruções de teste para triggers
+
+---
+
 ## [0.2.1] - 2025-01-19
 
 ### 🌍 Internacionalização (i18n)
@@ -88,7 +159,7 @@
 
 ## 🚀 Próximas Features (Roadmap)
 
-### v0.3.0 (Planejado)
+### v0.4.0 (Planejado)
 - [ ] Tradução completa para Francês
 - [ ] Tradução para Changana (língua local)
 - [ ] Tradução para Ronga (língua local)
@@ -148,6 +219,6 @@
 
 ---
 
-**Versão Atual: 0.2.1** 🎉  
+**Versão Atual: 0.3.0** 🎉  
 **Status: ✅ Pronto para Produção (1000+ usuários)**
 

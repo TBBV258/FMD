@@ -100,7 +100,7 @@
           </label>
           <div 
             class="border-2 border-dashed border-gray-300 dark:border-dark-border rounded-lg p-6 text-center hover:border-primary transition-colors cursor-pointer"
-            @click="$refs.fileInput.click()"
+            @click="handleUploadClick"
             @dragover.prevent="isDragging = true"
             @dragleave.prevent="isDragging = false"
             @drop.prevent="handleFileDrop"
@@ -139,6 +139,12 @@
           </div>
         </div>
 
+        <!-- Photo Picker Modal (Mobile) -->
+        <PhotoPickerModal
+          v-model="showPhotoPicker"
+          @file-selected="handlePhotoSelected"
+        />
+
         <!-- Error Message -->
         <div v-if="errorMessage" class="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
           <p class="text-sm text-red-600 dark:text-red-400">
@@ -175,7 +181,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
@@ -183,6 +189,7 @@ import { supabase } from '@/api/supabase'
 import MainLayout from '@/components/layout/MainLayout.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
 import ToastContainer from '@/components/common/ToastContainer.vue'
+import PhotoPickerModal from '@/components/permissions/PhotoPickerModal.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -193,6 +200,11 @@ const selectedFile = ref<File | null>(null)
 const isDragging = ref(false)
 const isUploading = ref(false)
 const errorMessage = ref('')
+const showPhotoPicker = ref(false)
+
+const isMobile = computed(() => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+})
 
 const form = reactive({
   type: '',
@@ -200,6 +212,14 @@ const form = reactive({
   document_number: '',
   description: ''
 })
+
+const handleUploadClick = () => {
+  if (isMobile.value) {
+    showPhotoPicker.value = true
+  } else {
+    fileInput.value?.click()
+  }
+}
 
 const handleFileSelect = (event: Event) => {
   const target = event.target as HTMLInputElement
@@ -212,6 +232,15 @@ const handleFileSelect = (event: Event) => {
     selectedFile.value = file
     errorMessage.value = ''
   }
+}
+
+const handlePhotoSelected = (file: File) => {
+  if (file.size > 10 * 1024 * 1024) {
+    errorMessage.value = 'Arquivo muito grande. Máximo 10MB.'
+    return
+  }
+  selectedFile.value = file
+  errorMessage.value = ''
 }
 
 const handleFileDrop = (event: DragEvent) => {
