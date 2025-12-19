@@ -188,10 +188,15 @@ const handleSubmit = async () => {
   isSaving.value = true
   
   try {
-    const updates = {
+    // Primeiro tenta atualizar com todos os campos
+    let updates: any = {
       full_name: formData.value.full_name,
-      phone_number: `+258${formData.value.phone_number}`,
-      delivery_address: formData.value.delivery_address || null
+      phone_number: `+258${formData.value.phone_number}`
+    }
+    
+    // Só adiciona delivery_address se o campo foi preenchido
+    if (formData.value.delivery_address) {
+      updates.delivery_address = formData.value.delivery_address
     }
     
     const result = await authStore.updateProfile(updates)
@@ -202,7 +207,27 @@ const handleSubmit = async () => {
         isOpen.value = false
       }, 1500)
     } else {
-      errorMessage.value = result.error || 'Erro ao atualizar perfil'
+      // Se erro for sobre delivery_address, tenta sem esse campo
+      if (result.error?.includes('delivery_address') || result.error?.includes('column')) {
+        console.warn('Campo delivery_address não existe, tentando sem ele...')
+        const updatesWithoutAddress = {
+          full_name: formData.value.full_name,
+          phone_number: `+258${formData.value.phone_number}`
+        }
+        
+        const retryResult = await authStore.updateProfile(updatesWithoutAddress)
+        
+        if (retryResult.success) {
+          successMessage.value = 'Perfil atualizado! (Endereço não salvo - execute a migração do banco)'
+          setTimeout(() => {
+            isOpen.value = false
+          }, 2000)
+        } else {
+          errorMessage.value = retryResult.error || 'Erro ao atualizar perfil'
+        }
+      } else {
+        errorMessage.value = result.error || 'Erro ao atualizar perfil'
+      }
     }
   } catch (error: any) {
     errorMessage.value = error.message || 'Erro inesperado ao atualizar perfil'
