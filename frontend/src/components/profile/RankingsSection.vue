@@ -105,7 +105,7 @@
               <span v-if="user.id === currentUserId" class="text-xs text-primary ml-1">(Você)</span>
             </p>
             <p class="text-xs text-gray-500">
-              {{ getRankInfo(user.points || 0).name }}
+              {{ getUserRankName(user.points || 0) }}
             </p>
           </div>
           
@@ -182,6 +182,12 @@ const getCurrentThreshold = (rank: string): number => {
     platinum: 1000
   }
   return thresholds[rank] || 0
+}
+
+const getUserRankName = (points: number): string => {
+  const rank = calculateRank(points)
+  const rankInfo = getRankInfo(rank)
+  return rankInfo?.name || 'Bronze'
 }
 
 const refreshLeaderboard = async () => {

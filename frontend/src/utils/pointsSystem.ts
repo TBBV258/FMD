@@ -43,28 +43,32 @@ export function getRankInfo(rank: UserRank) {
       name: 'Bronze',
       icon: '🥉',
       color: '#CD7F32',
+      description: 'Iniciante na comunidade',
       benefits: ['Acesso básico', 'Upload de 10 documentos/mês']
     },
     silver: {
       name: 'Prata',
       icon: '🥈',
       color: '#C0C0C0',
+      description: 'Membro ativo',
       benefits: ['Upload de 25 documentos/mês', 'Suporte prioritário']
     },
     gold: {
       name: 'Ouro',
       icon: '🥇',
       color: '#FFD700',
+      description: 'Colaborador experiente',
       benefits: ['Upload de 50 documentos/mês', 'Notificações avançadas', 'Badge especial']
     },
     platinum: {
       name: 'Platina',
       icon: '💎',
       color: '#E5E4E2',
+      description: 'Elite da comunidade',
       benefits: ['Uploads ilimitados', 'Suporte VIP', 'Todas as features premium']
     }
   }
   
-  return info[rank]
+  return info[rank] || info.bronze // Fallback para bronze se rank inválido
 }
 
