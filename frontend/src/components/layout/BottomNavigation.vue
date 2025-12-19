@@ -55,16 +55,16 @@ const navItems = computed<NavItem[]>(() => [
     to: '/'
   },
   {
+    name: 'matches',
+    label: t('nav.matches'),
+    icon: 'fas fa-puzzle-piece',
+    to: '/matches'
+  },
+  {
     name: 'map',
     label: t('nav.map'),
     icon: 'fas fa-map',
     to: '/map'
-  },
-  {
-    name: 'report-found',
-    label: t('nav.report'),
-    icon: 'fas fa-plus-circle',
-    to: '/report-found'
   },
   {
     name: 'notifications',

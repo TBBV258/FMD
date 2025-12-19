@@ -1,53 +1,28 @@
-// Document Types
-export interface Document {
+import type { UserRank } from '@/utils/pointsSystem'
+
+// User types
+export interface User {
   id: string
-  user_id: string
-  title: string
-  type: DocumentType
-  status: DocumentStatus
-  location: string
-  file_url?: string
-  file_name?: string
-  file_path?: string
-  file_size?: number
-  file_type?: string
-  hash_local?: string
-  document_number?: string
-  issue_date?: string
-  expiry_date?: string
-  issue_place?: string
-  issuing_authority?: string
-  country_of_issue?: string
-  thumbnail_url?: string
-  location_lost_found?: string | null
-  last_known_location?: string | null
-  location_metadata?: LocationMetadata | null
-  meeting_point_metadata?: MeetingPointMetadata | null
-  is_verified: boolean
-  verification_status: VerificationStatus
-  verification_notes?: string
-  description?: string
-  tags?: string[]
-  is_public: boolean
-  is_archived: boolean
+  email: string
+  created_at: string
+}
+
+export interface UserProfile {
+  id: string
+  email: string
+  full_name: string
+  phone?: string | null
+  avatar_url?: string | null
+  bio?: string | null
+  points: number
+  rank: UserRank
   created_at: string
   updated_at: string
 }
 
-export type DocumentType = 
-  | 'bi' // Bilhete de Identidade
-  | 'passport' // Passaporte
-  | 'driver_license' // Carta de Condução
-  | 'dire' // DIRE - Documento de Identificação de Residentes Estrangeiros
-  | 'nuit' // NUIT - Número Único de Identificação Tributária
-  | 'work_card' // Cartão de Trabalho
-  | 'student_card' // Cartão de Estudante
-  | 'voter_card' // Cartão de Eleitor
-  | 'birth_certificate' // Certidão de Nascimento
-  | 'title_deed' // Título de Propriedade
-  | 'other' // Outro
-export type DocumentStatus = 'lost' | 'found' | 'normal' | 'matched' | 'returned'
-export type VerificationStatus = 'pending' | 'verified' | 'rejected'
+// Document types
+export type DocumentType = 'BI' | 'Passport' | 'Driver_License' | 'Birth_Certificate' | 'Other'
+export type DocumentStatus = 'lost' | 'found' | 'normal'
 
 export interface LocationMetadata {
   lat?: number
@@ -57,71 +32,68 @@ export interface LocationMetadata {
   country?: string
 }
 
-export interface MeetingPointMetadata {
-  lat: number
-  lng: number
-  address?: string
-  description?: string
-}
-
-// User Types
-export interface UserProfile {
+export interface Document {
   id: string
-  full_name: string
-  phone_number?: string
-  country: string
-  avatar_url?: string
-  points: number
-  rank: UserRank
-  document_count: number
-  plan: UserPlan
-  subscription_expires_at?: string
-  privacy_settings?: PrivacySettings
-  backup_settings?: BackupSettings
+  user_id: string
+  title: string
+  description: string
+  document_type: DocumentType
+  status: DocumentStatus
+  location: string
+  location_metadata?: LocationMetadata | null
+  file_url?: string | null
+  file_name?: string | null
+  file_type?: string | null
+  is_public: boolean
   created_at: string
   updated_at: string
+  user_profiles?: UserProfile
 }
 
-export type UserPlan = 'free' | 'premium' | 'enterprise'
-export type UserRank = 'bronze' | 'silver' | 'gold' | 'platinum'
-
-export interface PrivacySettings {
-  showExactLocation: boolean
-  allowContact: boolean
+// Match types
+export interface MatchReason {
+  reason: string
+  points: number
+  description: string
 }
 
-export interface BackupSettings {
-  autoBackup: boolean
-  frequency: 'daily' | 'weekly' | 'monthly'
-  lastBackup?: string
-}
-
-// Auth Types
-export interface User {
+export interface DocumentMatch {
   id: string
-  email: string
+  lost_document_id: string
+  found_document_id: string
+  match_score: number
+  match_reasons: MatchReason[]
+  status: 'pending' | 'confirmed' | 'rejected'
   created_at: string
+  updated_at: string
+  lost_document?: Document
+  found_document?: Document
 }
 
-export interface AuthSession {
-  user: User
-  access_token: string
-  refresh_token: string
-  expires_at: number
-}
-
-// Chat Types
-export interface ChatMessage {
+// Chat types
+export interface Chat {
   id: string
   document_id: string
   sender_id: string
   receiver_id: string
   message: string
-  created_at: string
   read: boolean
+  created_at: string
+  documents?: Document
+  sender?: UserProfile
+  receiver?: UserProfile
 }
 
-// Notification Types
+// Notification types
+export type NotificationType = 
+  | 'document_match' 
+  | 'document_found' 
+  | 'message' 
+  | 'verification' 
+  | 'status_change' 
+  | 'points_milestone'
+  | 'system'
+
 export interface Notification {
   id: string
   user_id: string
@@ -133,46 +105,117 @@ export interface Notification {
   created_at: string
 }
 
-export type NotificationType = 'message' | 'document_match' | 'document_found' | 'document_status_change' | 'points_milestone' | 'system' | 'verification'
-
-// API Response Types
-export interface ApiResponse<T> {
-  data?: T
-  error?: {
-    message: string
-    code?: string
-  }
-  success: boolean
+// Meeting Point types
+export interface MeetingPoint {
+  id: string
+  user_id: string
+  document_id?: string | null
+  name: string
+  description?: string | null
+  location_metadata: LocationMetadata
+  created_at: string
 }
 
-// Form Types
+// Points & Ranking types
+export type PointActivityType = 
+  | 'document_upload' 
+  | 'document_found' 
+  | 'document_returned' 
+  | 'message_sent' 
+  | 'profile_update' 
+  | 'login' 
+  | 'daily_bonus' 
+  | 'referral' 
+  | 'admin_award'
+
+export interface PointActivity {
+  id: string
+  user_id: string
+  activity_type: PointActivityType
+  points_awarded: number
+  created_at: string
+}
+
+// Badge types
+export type BadgeType = 
+  | 'good_samaritan' 
+  | 'lucky_finder' 
+  | 'early_bird' 
+  | 'night_owl'
+  | 'social_butterfly'
+  | 'speed_demon'
+  | 'helper'
+  | 'veteran'
+  | 'pioneer'
+  | 'match_maker'
+
+export type BadgeRarity = 'common' | 'rare' | 'epic' | 'legendary'
+
+export interface Badge {
+  id: string
+  user_id: string
+  badge_type: BadgeType
+  badge_name: string
+  badge_description: string
+  badge_icon: string
+  badge_rarity: BadgeRarity
+  earned_at: string
+  progress?: number // 0-100 for progress-based badges
+}
+
+export interface BadgeDefinition {
+  type: BadgeType
+  name: string
+  description: string
+  icon: string
+  rarity: BadgeRarity
+  requirement: string
+  color: string
+}
+
+// SMS Notification types
+export interface SMSNotification {
+  id: string
+  user_id: string
+  phone: string
+  message: string
+  status: 'pending' | 'sent' | 'failed'
+  provider: 'twilio' | 'vonage' | 'movitel' | 'vodacom'
+  created_at: string
+  sent_at?: string | null
+}
+
+// API Response types
+export interface ApiResponse<T = any> {
+  data?: T
+  error?: string
+  message?: string
+}
+
+// Pagination types
+export interface PaginatedResponse<T> {
+  data: T[]
+  total: number
+  page: number
+  per_page: number
+  total_pages: number
+}
+
+// Form types
 export interface DocumentFormData {
   title: string
-  type: DocumentType
+  description: string
+  document_type: DocumentType
   status: DocumentStatus
-  description?: string
-  location?: string
-  locationMetadata?: LocationMetadata | null
-  meetingPointMetadata?: MeetingPointMetadata | null
-  documentNumber?: string
-  issueDate?: string
-  expiryDate?: string
-  issuePlace?: string
-  issuingAuthority?: string
-  countryOfIssue?: string
-  file?: File
+  location: string
+  location_metadata?: LocationMetadata | null
+  file?: File | null
+  is_public: boolean
 }
 
-export interface LoginFormData {
-  email: string
-  password: string
-}
-
-export interface RegisterFormData {
-  email: string
-  password: string
-  confirmPassword: string
-  fullName: string
-  phoneNumber?: string
-  country: string
+export interface ProfileFormData {
+  full_name: string
+  phone?: string | null
+  bio?: string | null
+  avatar?: File | null
 }
