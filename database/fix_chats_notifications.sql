@@ -1,30 +1,143 @@
 -- ============================================
 -- CORREÇÃO PARA CHATS E NOTIFICAÇÕES
+-- VERSÃO CORRIGIDA - Adiciona colunas antes de usar
 -- Execute no Supabase SQL Editor
 -- ============================================
 
--- 1. VERIFICAR SE AS TABELAS EXISTEM
-SELECT table_name 
-FROM information_schema.tables 
-WHERE table_schema = 'public' 
-  AND table_name IN ('chats', 'notifications');
+-- ============================================
+-- PARTE 1: TABELA DE CHATS
+-- ============================================
 
--- 2. CRIAR TABELA DE CHATS (se não existir)
+-- 1. CRIAR TABELA DE CHATS (se não existir)
 CREATE TABLE IF NOT EXISTS public.chats (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  document_id UUID NOT NULL REFERENCES public.documents(id) ON DELETE CASCADE,
-  sender_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  receiver_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  document_id UUID NOT NULL,
+  sender_id UUID NOT NULL,
+  receiver_id UUID NOT NULL,
   message TEXT NOT NULL,
-  read BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. CRIAR TABELA DE NOTIFICAÇÕES (se não existir)
+-- 2. ADICIONAR COLUNA 'read' SE NÃO EXISTIR
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' 
+    AND table_name = 'chats' 
+    AND column_name = 'read'
+  ) THEN
+    ALTER TABLE public.chats ADD COLUMN read BOOLEAN DEFAULT FALSE;
+    RAISE NOTICE 'Coluna read adicionada em chats';
+  ELSE
+    RAISE NOTICE 'Coluna read já existe em chats';
+  END IF;
+END $$;
+
+-- 3. ADICIONAR FOREIGN KEYS SE NÃO EXISTIREM
+DO $$
+BEGIN
+  -- FK para documents
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints 
+    WHERE constraint_name = 'chats_document_id_fkey'
+  ) THEN
+    ALTER TABLE public.chats 
+    ADD CONSTRAINT chats_document_id_fkey 
+    FOREIGN KEY (document_id) REFERENCES public.documents(id) ON DELETE CASCADE;
+    RAISE NOTICE 'FK chats_document_id_fkey adicionada';
+  END IF;
+
+  -- FK para sender
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints 
+    WHERE constraint_name = 'chats_sender_id_fkey'
+  ) THEN
+    ALTER TABLE public.chats 
+    ADD CONSTRAINT chats_sender_id_fkey 
+    FOREIGN KEY (sender_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+    RAISE NOTICE 'FK chats_sender_id_fkey adicionada';
+  END IF;
+
+  -- FK para receiver
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints 
+    WHERE constraint_name = 'chats_receiver_id_fkey'
+  ) THEN
+    ALTER TABLE public.chats 
+    ADD CONSTRAINT chats_receiver_id_fkey 
+    FOREIGN KEY (receiver_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+    RAISE NOTICE 'FK chats_receiver_id_fkey adicionada';
+  END IF;
+END $$;
+
+-- ============================================
+-- PARTE 2: TABELA DE NOTIFICAÇÕES
+-- ============================================
+
+-- 4. CRIAR TABELA DE NOTIFICAÇÕES (se não existir)
 CREATE TABLE IF NOT EXISTS public.notifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  type TEXT NOT NULL CHECK (type IN (
+  user_id UUID NOT NULL,
+  type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 5. ADICIONAR COLUNAS QUE PODEM NÃO EXISTIR
+DO $$ 
+BEGIN
+  -- Coluna 'read'
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' 
+    AND table_name = 'notifications' 
+    AND column_name = 'read'
+  ) THEN
+    ALTER TABLE public.notifications ADD COLUMN read BOOLEAN DEFAULT FALSE;
+    RAISE NOTICE 'Coluna read adicionada em notifications';
+  ELSE
+    RAISE NOTICE 'Coluna read já existe em notifications';
+  END IF;
+
+  -- Coluna 'data'
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' 
+    AND table_name = 'notifications' 
+    AND column_name = 'data'
+  ) THEN
+    ALTER TABLE public.notifications ADD COLUMN data JSONB;
+    RAISE NOTICE 'Coluna data adicionada em notifications';
+  ELSE
+    RAISE NOTICE 'Coluna data já existe em notifications';
+  END IF;
+
+  -- Coluna 'read_at'
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' 
+    AND table_name = 'notifications' 
+    AND column_name = 'read_at'
+  ) THEN
+    ALTER TABLE public.notifications ADD COLUMN read_at TIMESTAMPTZ;
+    RAISE NOTICE 'Coluna read_at adicionada em notifications';
+  ELSE
+    RAISE NOTICE 'Coluna read_at já existe em notifications';
+  END IF;
+END $$;
+
+-- 6. ADICIONAR/ATUALIZAR CONSTRAINT DE TIPO
+DO $$
+BEGIN
+  -- Drop constraint antiga se existir
+  ALTER TABLE public.notifications DROP CONSTRAINT IF EXISTS notifications_type_check;
+  
+  -- Adicionar constraint nova
+  ALTER TABLE public.notifications
+  ADD CONSTRAINT notifications_type_check
+  CHECK (type IN (
     'message',
     'document_match',
     'document_found',
@@ -32,37 +145,56 @@ CREATE TABLE IF NOT EXISTS public.notifications (
     'points_milestone',
     'system',
     'verification'
-  )),
-  title TEXT NOT NULL,
-  message TEXT NOT NULL,
-  data JSONB,
-  read BOOLEAN DEFAULT FALSE,
-  read_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
+  ));
+  
+  RAISE NOTICE 'Constraint notifications_type_check adicionada/atualizada';
+END $$;
 
--- 4. CRIAR ÍNDICES PARA PERFORMANCE
+-- 7. ADICIONAR FK para user_id SE NÃO EXISTIR
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints 
+    WHERE constraint_name = 'notifications_user_id_fkey'
+  ) THEN
+    ALTER TABLE public.notifications 
+    ADD CONSTRAINT notifications_user_id_fkey 
+    FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+    RAISE NOTICE 'FK notifications_user_id_fkey adicionada';
+  END IF;
+END $$;
+
+-- ============================================
+-- PARTE 3: ÍNDICES PARA PERFORMANCE
+-- ============================================
+
+-- 8. CRIAR ÍNDICES PARA CHATS
 CREATE INDEX IF NOT EXISTS idx_chats_document_id ON public.chats(document_id);
 CREATE INDEX IF NOT EXISTS idx_chats_sender_id ON public.chats(sender_id);
 CREATE INDEX IF NOT EXISTS idx_chats_receiver_id ON public.chats(receiver_id);
 CREATE INDEX IF NOT EXISTS idx_chats_created_at ON public.chats(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_chats_read ON public.chats(read);
 
+-- 9. CRIAR ÍNDICES PARA NOTIFICAÇÕES
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON public.notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_read ON public.notifications(read);
 CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON public.notifications(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_notifications_type ON public.notifications(type);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON public.notifications(user_id, read);
 
--- 5. HABILITAR ROW LEVEL SECURITY (RLS)
+-- ============================================
+-- PARTE 4: ROW LEVEL SECURITY (RLS)
+-- ============================================
+
+-- 10. HABILITAR RLS
 ALTER TABLE public.chats ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
--- 6. POLÍTICAS DE SEGURANÇA PARA CHATS
--- Drop existing policies
+-- 11. POLÍTICAS DE SEGURANÇA PARA CHATS
 DROP POLICY IF EXISTS "Users can view their own chats" ON public.chats;
 DROP POLICY IF EXISTS "Users can insert chats" ON public.chats;
 DROP POLICY IF EXISTS "Users can update their received chats" ON public.chats;
 
--- Create new policies
 CREATE POLICY "Users can view their own chats"
 ON public.chats FOR SELECT
 TO authenticated
@@ -79,13 +211,11 @@ TO authenticated
 USING (auth.uid() = receiver_id)
 WITH CHECK (auth.uid() = receiver_id);
 
--- 7. POLÍTICAS DE SEGURANÇA PARA NOTIFICAÇÕES
--- Drop existing policies
+-- 12. POLÍTICAS DE SEGURANÇA PARA NOTIFICAÇÕES
 DROP POLICY IF EXISTS "Users can view their own notifications" ON public.notifications;
 DROP POLICY IF EXISTS "Users can update their own notifications" ON public.notifications;
 DROP POLICY IF EXISTS "System can insert notifications" ON public.notifications;
 
--- Create new policies
 CREATE POLICY "Users can view their own notifications"
 ON public.notifications FOR SELECT
 TO authenticated
@@ -100,69 +230,96 @@ WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "System can insert notifications"
 ON public.notifications FOR INSERT
 TO authenticated
-WITH CHECK (true); -- Permite inserção por triggers
+WITH CHECK (true);
 
--- 8. HABILITAR REALTIME
--- No Supabase Dashboard:
--- 1. Vá em Database > Replication
--- 2. Ative as tabelas: chats, notifications
--- 3. Ou execute via SQL:
+-- ============================================
+-- PARTE 5: HABILITAR REALTIME
+-- ============================================
 
--- Habilitar publicação realtime para chats
-ALTER PUBLICATION supabase_realtime ADD TABLE public.chats;
+-- 13. Habilitar publicação realtime (não gera erro se já existir)
+DO $$
+BEGIN
+  -- Para chats
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.chats;
+    RAISE NOTICE 'Tabela chats adicionada ao Realtime';
+  EXCEPTION
+    WHEN duplicate_object THEN 
+      RAISE NOTICE 'Tabela chats já está no Realtime';
+    WHEN undefined_object THEN
+      RAISE NOTICE 'Publication supabase_realtime não existe. Configure no Dashboard do Supabase.';
+  END;
 
--- Habilitar publicação realtime para notifications  
-ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
+  -- Para notifications
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
+    RAISE NOTICE 'Tabela notifications adicionada ao Realtime';
+  EXCEPTION
+    WHEN duplicate_object THEN 
+      RAISE NOTICE 'Tabela notifications já está no Realtime';
+    WHEN undefined_object THEN
+      RAISE NOTICE 'Publication supabase_realtime não existe. Configure no Dashboard do Supabase.';
+  END;
+END $$;
 
--- 9. INSERIR NOTIFICAÇÕES DE TESTE
--- Insira algumas notificações de teste para o usuário logado
-INSERT INTO public.notifications (user_id, type, title, message, data, read)
-VALUES 
-(
-  auth.uid(), -- substitua pelo ID do usuário se necessário
-  'system',
-  'Bem-vindo ao FMD!',
-  'Sistema de notificações está funcionando corretamente.',
-  '{"test": true}',
-  false
-),
-(
-  auth.uid(),
-  'system',
-  'Teste de Notificação',
-  'Esta é uma notificação de teste. Você está recebendo notificações!',
-  '{"test": true, "timestamp": "' || NOW()::text || '"}',
-  false
-);
+-- ============================================
+-- PARTE 6: INSERIR NOTIFICAÇÕES DE TESTE
+-- ============================================
 
--- 10. INSERIR CHAT DE TESTE (substitua os IDs)
--- Primeiro, encontre um documento para testar:
--- SELECT id, title, user_id FROM public.documents LIMIT 1;
--- 
--- Depois insira:
--- INSERT INTO public.chats (document_id, sender_id, receiver_id, message)
--- VALUES (
---   'DOCUMENT_ID_AQUI',
---   'USER_1_ID_AQUI',
---   'USER_2_ID_AQUI',
---   'Olá! Esta é uma mensagem de teste.'
--- );
+-- 14. Inserir notificação de teste (somente se necessário)
+DO $$
+DECLARE
+  v_user_id UUID;
+BEGIN
+  -- Pegar o primeiro usuário para teste
+  SELECT id INTO v_user_id
+  FROM auth.users
+  LIMIT 1;
+
+  IF v_user_id IS NOT NULL THEN
+    -- Verificar se já tem notificações de teste
+    IF NOT EXISTS (
+      SELECT 1 FROM public.notifications 
+      WHERE user_id = v_user_id 
+      AND type = 'system'
+      AND title = 'Sistema Configurado!'
+    ) THEN
+      -- Inserir notificação de teste
+      INSERT INTO public.notifications (user_id, type, title, message, data, read)
+      VALUES (
+        v_user_id,
+        'system',
+        'Sistema Configurado!',
+        'Chats e notificações estão funcionando corretamente. ✅',
+        '{"test": true, "configured_at": "' || NOW()::text || '"}'::jsonb,
+        false
+      );
+      RAISE NOTICE 'Notificação de teste criada para usuário %', v_user_id;
+    ELSE
+      RAISE NOTICE 'Notificação de teste já existe';
+    END IF;
+  END IF;
+END $$;
 
 -- ============================================
 -- VERIFICAÇÃO FINAL
 -- ============================================
 
--- Verificar se os índices foram criados
-SELECT
-  tablename,
-  indexname,
-  indexdef
-FROM pg_indexes
-WHERE schemaname = 'public'
-  AND tablename IN ('chats', 'notifications')
-ORDER BY tablename, indexname;
+-- 15. Verificar estrutura das tabelas
+\echo '\n=== ESTRUTURA DAS TABELAS ==='
+SELECT 
+  table_name,
+  column_name,
+  data_type,
+  is_nullable,
+  column_default
+FROM information_schema.columns
+WHERE table_schema = 'public'
+  AND table_name IN ('chats', 'notifications')
+ORDER BY table_name, ordinal_position;
 
--- Verificar se RLS está ativado
+-- 16. Verificar se RLS está ativado
+\echo '\n=== ROW LEVEL SECURITY ==='
 SELECT
   schemaname,
   tablename,
@@ -171,45 +328,58 @@ FROM pg_tables
 WHERE schemaname = 'public'
   AND tablename IN ('chats', 'notifications');
 
--- Verificar políticas
+-- 17. Verificar políticas
+\echo '\n=== POLÍTICAS DE SEGURANÇA ==='
 SELECT
-  schemaname,
   tablename,
   policyname,
-  permissive,
-  roles,
-  cmd
+  cmd,
+  roles
 FROM pg_policies
 WHERE schemaname = 'public'
   AND tablename IN ('chats', 'notifications')
 ORDER BY tablename, policyname;
 
--- Contar notificações existentes
-SELECT
-  type,
-  read,
-  COUNT(*) as count
-FROM public.notifications
-GROUP BY type, read
-ORDER BY type, read;
-
--- Contar chats existentes
-SELECT
-  document_id,
-  COUNT(*) as message_count,
-  MAX(created_at) as last_message
+-- 18. Contar registros
+\echo '\n=== CONTAGEM DE REGISTROS ==='
+SELECT 
+  'chats' as table_name,
+  COUNT(*) as record_count
 FROM public.chats
-GROUP BY document_id
-ORDER BY last_message DESC
-LIMIT 10;
+UNION ALL
+SELECT 
+  'notifications' as table_name,
+  COUNT(*) as record_count
+FROM public.notifications;
 
 -- ============================================
--- SUCESSO!
--- Chats e Notificações devem estar funcionando agora
+-- MENSAGEM DE SUCESSO
 -- ============================================
 
--- NOTAS IMPORTANTES:
--- 1. Certifique-se de que Realtime está habilitado no Dashboard
--- 2. Verifique se as credenciais do Supabase estão corretas no .env
--- 3. Teste criando uma notificação/chat e veja se aparece em tempo real
-
+DO $$
+BEGIN
+  RAISE NOTICE '';
+  RAISE NOTICE '██████████████████████████████████████████████████';
+  RAISE NOTICE '█                                                █';
+  RAISE NOTICE '█  ✅ SCRIPT EXECUTADO COM SUCESSO!             █';
+  RAISE NOTICE '█                                                █';
+  RAISE NOTICE '█  Chats e Notificações configurados            █';
+  RAISE NOTICE '█                                                █';
+  RAISE NOTICE '██████████████████████████████████████████████████';
+  RAISE NOTICE '';
+  RAISE NOTICE '📋 PRÓXIMOS PASSOS:';
+  RAISE NOTICE '';
+  RAISE NOTICE '1. HABILITAR REALTIME NO DASHBOARD:';
+  RAISE NOTICE '   → Database > Replication';
+  RAISE NOTICE '   → Ativar: chats, notifications';
+  RAISE NOTICE '';
+  RAISE NOTICE '2. TESTAR NO FRONTEND:';
+  RAISE NOTICE '   → Enviar mensagem de chat';
+  RAISE NOTICE '   → Verificar notificações em tempo real';
+  RAISE NOTICE '';
+  RAISE NOTICE '3. SE PROBLEMAS PERSISTIREM:';
+  RAISE NOTICE '   → Verificar credenciais Supabase (.env)';
+  RAISE NOTICE '   → Confirmar Replication no Dashboard';
+  RAISE NOTICE '   → Verificar console do browser (F12)';
+  RAISE NOTICE '';
+END $$;
