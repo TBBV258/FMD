@@ -28,7 +28,7 @@
           </div>
           <div class="text-center">
             <p class="text-2xl font-bold text-success">{{ foundDocuments }}</p>
-            <p class="text-xs text-gray-500">Encontrados</p>
+            <p class="text-xs text-gray-500">Recuperados</p>
           </div>
         </div>
       </div>
@@ -143,7 +143,7 @@ const isDownloading = ref(false)
 const filters = [
   { label: 'Todos', value: 'all' },
   { label: 'Perdidos', value: 'lost' },
-  { label: 'Encontrados', value: 'found' },
+  { label: 'Recuperados', value: 'found' },
   { label: 'Matches', value: 'matched' },
   { label: 'Devolvidos', value: 'returned' }
 ]

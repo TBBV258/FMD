@@ -13,7 +13,7 @@
         >
           <div class="text-center mb-4">
             <h3 class="text-xl font-bold text-gray-900 dark:text-dark-text">Mensal</h3>
-            <p class="text-3xl font-bold text-gray-900 dark:text-dark-text mt-2">500 MT</p>
+            <p class="text-3xl font-bold text-gray-900 dark:text-dark-text mt-2">10 MZN</p>
             <p class="text-sm text-gray-500">por mês</p>
           </div>
           
@@ -67,7 +67,7 @@
           
           <div class="text-center mb-4">
             <h3 class="text-xl font-bold text-primary">Trimestral</h3>
-            <p class="text-3xl font-bold text-gray-900 dark:text-dark-text mt-2">1.350 MT</p>
+            <p class="text-3xl font-bold text-gray-900 dark:text-dark-text mt-2">27 MZN</p>
             <p class="text-sm text-gray-500">a cada 3 meses</p>
             <p class="text-xs text-success font-semibold mt-1">Economize 10%</p>
           </div>
@@ -122,7 +122,7 @@
           
           <div class="text-center mb-4 mt-2">
             <h3 class="text-xl font-bold text-success">Anual</h3>
-            <p class="text-3xl font-bold text-gray-900 dark:text-dark-text mt-2">4.800 MT</p>
+            <p class="text-3xl font-bold text-gray-900 dark:text-dark-text mt-2">96 MZN</p>
             <p class="text-sm text-gray-500">por ano</p>
             <p class="text-xs text-success font-semibold mt-1">Economize 20%</p>
           </div>

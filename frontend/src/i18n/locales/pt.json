@@ -49,7 +49,7 @@
     "filters": {
       "all": "Todos",
       "lost": "Perdidos",
-      "found": "Encontrados"
+      "found": "Recuperados"
     },
     "empty": "Nenhum documento encontrado",
     "loadMore": "Carregar mais",
@@ -72,7 +72,7 @@
     },
     "status": {
       "lost": "Perdido",
-      "found": "Encontrado",
+      "found": "Recuperado",
       "matched": "Match",
       "returned": "Devolvido"
     },
@@ -85,7 +85,7 @@
     "contact": "Contactar",
     "interested": "Tenho Interesse",
     "reportLost": "Relatar Perdido",
-    "reportFound": "Relatar Encontrado"
+    "reportFound": "Relatar Recuperado"
   },
   "profile": {
     "title": "Perfil",

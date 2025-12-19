@@ -1,252 +1,423 @@
 # FindMyDocs 2.0 - Sistema de Gestão de Documentos Perdidos
 
-Sistema completo de gestão de documentos perdidos e encontrados em Maputo, Moçambique. Versão 2.0 com frontend Vue.js moderno e backend Node.js seguro.
+Sistema completo de gestão de documentos perdidos e encontrados em Maputo, Moçambique. Versão 2.0 com frontend Vue.js moderno e backend Supabase.
+
+## 🎉 Novidades da Versão 2.0
+
+### ✨ Implementações Recentes
+
+#### 🗺️ Sistema de Mapas com MapLibre
+- Substituição completa do Leaflet por MapLibre GL
+- Marcação interativa de localizações no mapa
+- Navegação externa para Google Maps/Apple Maps
+- Visualização de documentos perdidos e recuperados
+
+#### 🔔 Sistema de Notificações Automáticas
+- Triggers de banco de dados para notificações em tempo real
+- Notificações de match de documentos
+- Alertas de mudança de status
+- Notificações de verificação de documentos
+- Marcos de pontos (Bronze, Silver, Gold, Platinum)
+
+#### 🏆 Sistema de Rankings
+- Leaderboard com top 10 usuários
+- Progressão de níveis visual
+- Sistema de pontos por atividades:
+  - Match de documento: +50 pontos
+  - Reportar documento: +10 pontos
+  - Verificar documento: +20 pontos
+  - Ajudar outros: +15 pontos
+  - Completar perfil: +25 pontos
+  - Login diário: +5 pontos
+
+#### 👤 Edição de Perfil Expandida
+- Editar nome completo
+- Atualizar telefone celular (+258)
+- Adicionar endereço para entrega de documentos
+- Validações robustas de formulário
+
+#### 🌐 Melhorias de Tradução
+- Renomeado "Encontrados" para "Recuperados" em PT/EN/FR
+- Consistência em todos os idiomas (PT, EN, FR, TS, RO)
+
+#### 💰 Preços Atualizados
+- **Mensal**: 10 MZN/mês
+- **Trimestral**: 27 MZN (economize 10%)
+- **Anual**: 96 MZN (economize 20%, 2 meses grátis)
+
+#### 🐛 Correções
+- Corrigido carregamento de conversas (profiles → user_profiles)
+- Limpeza de arquivos desnecessários
+- Otimização da estrutura do projeto
+
+---
 
 ## 📱 Características Principais
 
-### Frontend (Vue.js 3)
-- ✅ **Mobile-First Design** - Interface otimizada para smartphones
-- ✅ **Design Moderno** - Inspirado em Instagram/TikTok/Facebook
-- ✅ **PWA** - Funciona offline, instalável no smartphone
-- ✅ **Infinite Scroll** - Carregamento contínuo do feed
-- ✅ **Swipe Gestures** - Gestos touch para interação rápida
-- ✅ **Pull-to-Refresh** - Atualizar puxando para baixo
-- ✅ **Dark Mode** - Tema escuro automático
-- ✅ **Skeleton Loading** - Loading states elegantes
-- ✅ **Real-time Chat** - Comunicação entre usuários
-- ✅ **Notificações** - Sistema de alertas em tempo real
+### Frontend (Vue.js 3 + TypeScript)
 
-### Backend (Node.js + Express)
-- ✅ **Segurança Avançada** - JWT refresh tokens, rate limiting
-- ✅ **Audit Logging** - Registro de todas operações críticas
-- ✅ **HTTPS Support** - Suporte para SSL/TLS
-- ✅ **API RESTful** - Endpoints bem documentados
-- ✅ **Validação** - Validação robusta de inputs
-- ✅ **CORS** - Configuração segura de CORS
-- ✅ **Rate Limiting** - Proteção contra abuso
+* ✅ **Mobile-First Design** - Interface otimizada para smartphones
+* ✅ **Design Moderno** - Inspirado em Instagram/TikTok/Facebook
+* ✅ **PWA** - Funciona offline, instalável no smartphone
+* ✅ **Infinite Scroll** - Carregamento contínuo do feed
+* ✅ **Swipe Gestures** - Gestos touch para interação rápida
+* ✅ **Pull-to-Refresh** - Atualizar puxando para baixo
+* ✅ **Dark Mode** - Tema escuro automático
+* ✅ **Real-time Chat** - Comunicação entre usuários
+* ✅ **Sistema de Rankings** - Gamificação com pontos e níveis
+* ✅ **MapLibre Integration** - Mapas modernos e rápidos
+* ✅ **Notificações em Tempo Real** - Sistema de alertas automático
+
+### Backend (Supabase)
+
+* ✅ **Autenticação JWT** - Sistema seguro de autenticação
+* ✅ **Database Triggers** - Notificações automáticas
+* ✅ **Row Level Security** - Segurança a nível de linha
+* ✅ **Storage** - Armazenamento de imagens
+* ✅ **Real-time** - Atualizações em tempo real
+* ✅ **Validação** - Validação robusta de dados
+
+---
 
 ## 🚀 Início Rápido
 
 ### Pré-requisitos
-- Node.js >= 14.0.0
-- npm ou yarn
-- Conta Supabase (gratuita)
+
+* Node.js >= 18.0.0
+* npm ou yarn
+* Conta Supabase (gratuita)
 
 ### 1. Clone o Repositório
+
 ```bash
-git clone <repository-url>
-cd "FMD Dezembro"
+git clone https://github.com/TBBV258/FMD.git
+cd FMD-main
 ```
 
-### 2. Configurar Backend
-```bash
-# Copiar arquivo de ambiente
-cp .env.example .env
+### 2. Configurar Database
 
-# Editar .env com suas configurações
-nano .env
-
-# Instalar dependências do backend
-npm install
-
-# Iniciar servidor backend
-npm run dev
-```
-
-O backend estará rodando em `http://localhost:3000`
+1. Acesse seu projeto no Supabase
+2. Vá para SQL Editor
+3. Execute os scripts na ordem:
+   - `database/migrations.sql` - Migrações de esquema
+   - `database/notification_triggers.sql` - Triggers de notificações
 
 ### 3. Configurar Frontend
+
 ```bash
 cd frontend
 
 # Instalar dependências
 npm install
 
-# Iniciar servidor de desenvolvimento
+# Copiar arquivo de ambiente
+cp .env.example .env
+
+# Editar .env com suas configurações do Supabase
+nano .env
+```
+
+**.env do Frontend:**
+
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+```
+
+### 4. Iniciar Aplicação
+
+```bash
+# Desenvolvimento
 npm run dev
+
+# Build para produção
+npm run build
+
+# Preview do build
+npm run preview
 ```
 
 O frontend estará rodando em `http://localhost:5173`
 
+---
+
 ## 📂 Estrutura do Projeto
 
 ```
-FMD Dezembro/
+FMD-main/
 ├── frontend/                 # Aplicação Vue.js
 │   ├── src/
+│   │   ├── api/             # APIs do Supabase
 │   │   ├── components/      # Componentes Vue
-│   │   ├── views/           # Páginas
-│   │   ├── stores/          # Pinia stores
+│   │   │   ├── common/      # Componentes reutilizáveis
+│   │   │   ├── feed/        # Componentes do feed
+│   │   │   ├── layout/      # Layout components
+│   │   │   ├── map/         # Componente de mapa (MapLibre)
+│   │   │   └── profile/     # Componentes de perfil
+│   │   ├── views/           # Páginas/Views
+│   │   ├── stores/          # Pinia stores (state management)
 │   │   ├── router/          # Vue Router
-│   │   └── assets/          # Assets (CSS, imagens)
+│   │   ├── composables/     # Composables reutilizáveis
+│   │   ├── i18n/            # Internacionalização (PT, EN, FR, TS, RO)
+│   │   ├── types/           # TypeScript types
+│   │   └── utils/           # Utilitários
 │   ├── public/              # Arquivos públicos
 │   └── package.json
 │
-├── server/                  # Backend Node.js
-│   ├── controllers/         # Controladores
-│   ├── middleware/          # Middlewares
-│   │   ├── auth.js
-│   │   ├── rateLimiters.js
-│   │   ├── jwtRefresh.js
-│   │   └── securityHeaders.js
-│   ├── routes/             # Rotas da API
-│   ├── utils/              # Utilit ários
-│   │   └── audit-logger.js
-│   └── server.js           # Entry point
+├── database/                # Scripts SQL
+│   ├── migrations.sql       # Migrações de esquema
+│   └── notification_triggers.sql  # Triggers automáticos
 │
-├── logs/                   # Logs do sistema
-├── .env.example           # Exemplo de variáveis de ambiente
-├── package.json
+├── .gitignore
+├── QUICK_START.md
 └── README.md
 ```
 
-## 🔧 Configuração
+---
 
-### Variáveis de Ambiente (.env)
+## 🔧 Funcionalidades Detalhadas
 
-```env
-# Server
-NODE_ENV=development
-PORT=3000
+### 🗺️ Sistema de Mapas
 
-# JWT
-JWT_SECRET=your-super-secret-jwt-key
-JWT_REFRESH_SECRET=your-super-secret-refresh-key
-JWT_EXPIRES_IN=15m
-JWT_REFRESH_EXPIRES_IN=7d
+**MapLibre GL** - Biblioteca de mapas open-source moderna
 
-# Supabase
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_KEY=your-service-key
+- **Visualização**: Documentos perdidos (vermelho) e recuperados (verde)
+- **Marcação**: Clique no mapa para marcar localização ao reportar documento
+- **Navegação**: Abra Google Maps/Apple Maps para direções
+- **Controles**: Zoom, centralizar na localização do usuário
+- **Performance**: Renderização GPU, suporta milhares de marcadores
 
-# CORS
-ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+### 🔔 Notificações Automáticas
 
-# Rate Limiting
-RATE_LIMIT_WINDOW_MS=900000
-RATE_LIMIT_MAX_REQUESTS=100
+Triggers do Supabase criam notificações automaticamente:
 
-# HTTPS (opcional)
-ENABLE_HTTPS=false
-SSL_KEY_PATH=./ssl/key.pem
-SSL_CERT_PATH=./ssl/cert.pem
+1. **Nova Mensagem** - Quando alguém envia mensagem
+2. **Match de Documento** - Quando sistema encontra possível match
+3. **Mudança de Status** - Quando documento muda de perdido para recuperado
+4. **Verificação** - Quando documento é verificado/rejeitado
+5. **Marco de Pontos** - Ao atingir Bronze (0), Silver (100), Gold (500), Platinum (1000)
 
-# Logging
-ENABLE_AUDIT_LOGGING=true
-```
+### 🏆 Sistema de Rankings
 
-## 🔐 Segurança
+**Níveis de Usuário:**
 
-### Implementadas
-- ✅ JWT Access + Refresh Tokens
-- ✅ Token Rotation automático
-- ✅ Rate Limiting por rota
-- ✅ Audit Logging completo
-- ✅ Input sanitization (XSS, SQL injection)
-- ✅ HTTPS support
-- ✅ CORS configurável
-- ✅ Helmet security headers
-- ✅ Request signing (anti-replay)
+| Nível | Pontos | Ícone | Descrição |
+|-------|--------|-------|-----------|
+| 🥉 Bronze | 0-99 | 🥉 | Iniciante |
+| 🥈 Silver | 100-499 | 🥈 | Usuário ativo |
+| 🥇 Gold | 500-999 | 🥇 | Membro valioso |
+| 💎 Platinum | 1000+ | 💎 | Lenda da comunidade |
 
-### Backend Endpoints Principais
+**Como Ganhar Pontos:**
 
-#### Autenticação
-```
-POST /api/v1/auth/login       - Login
-POST /api/v1/auth/register    - Registro
-POST /api/v1/auth/refresh     - Refresh token
-POST /api/v1/auth/logout      - Logout
-```
+- Match de documento: +50 pontos
+- Reportar documento: +10 pontos
+- Verificar documento: +20 pontos
+- Ajudar outros usuários: +15 pontos
+- Completar perfil: +25 pontos
+- Login diário: +5 pontos
 
-#### Documentos
-```
-GET    /api/v1/documents           - Listar documentos
-GET    /api/v1/documents/:id       - Detalhes
-POST   /api/v1/documents           - Criar documento
-PUT    /api/v1/documents/:id       - Atualizar
-DELETE /api/v1/documents/:id       - Deletar
-```
+### 💬 Sistema de Chat
 
-## 📱 Progressive Web App (PWA)
+- Chat em tempo real via Supabase Realtime
+- Suporte para mensagens de texto, imagens, arquivos
+- Status de leitura (lido/não lido)
+- Histórico de conversas
+- Notificações de novas mensagens
 
-A aplicação funciona como PWA, permitindo:
-- Instalação no smartphone
-- Funcionalidade offline
-- Notificações push (futuro)
-- Ícone na tela inicial
-- Experiência nativa
+### 👤 Perfil de Usuário
 
-### Instalar PWA
-1. Abra o site no Chrome/Safari mobile
-2. Toque no menu
-3. "Adicionar à tela inicial"
-4. Use como app nativo!
+**Informações Editáveis:**
+
+- Nome completo (mínimo 3 caracteres)
+- Telefone celular (+258 XX XXX XXXX)
+- Endereço para entrega de documentos
+- Foto de perfil
+
+**Estatísticas:**
+
+- Total de documentos reportados
+- Pontos acumulados
+- Ranking atual
+- Plano de subscrição
+
+---
+
+## 💳 Planos de Subscrição
+
+### Grátis
+- Upload básico de documentos
+- Acesso ao feed
+- Chat com limitações
+
+### Premium
+
+#### Mensal - 10 MZN/mês
+- Uploads ilimitados
+- Sem anúncios
+- Busca avançada
+- Notificações push
+- Suporte prioritário
+- Backup automático
+
+#### Trimestral - 27 MZN (economize 10%)
+- Todos os benefícios do mensal
+- 10% de desconto
+
+#### Anual - 96 MZN (economize 20%)
+- Todos os benefícios do mensal
+- 20% de desconto
+- 2 meses grátis
+
+---
+
+## 🌐 Internacionalização (i18n)
+
+Idiomas suportados:
+
+- 🇲🇿 **Português** (pt) - Padrão
+- 🇬🇧 **English** (en)
+- 🇫🇷 **Français** (fr)
+- 🇲🇿 **Xitsonga** (ts)
+- 🇲🇿 **Ronga** (ro)
+
+O idioma é salvo localmente e persiste entre sessões.
+
+---
 
 ## 🎨 Design System
 
 ### Cores
-- **Primary**: #007BFF (Azul)
-- **Success**: #28A745 (Verde)
-- **Danger**: #DC3545 (Vermelho)
-- **Warning**: #FFC107 (Amarelo)
+
+```css
+--color-primary: #007BFF;      /* Azul */
+--color-success: #28A745;      /* Verde */
+--color-danger: #DC3545;       /* Vermelho */
+--color-warning: #FFC107;      /* Amarelo */
+--color-dark-bg: #1a1a1a;      /* Fundo escuro */
+--color-dark-card: #2d2d2d;    /* Card escuro */
+```
 
 ### Breakpoints
+
 - **Mobile**: 320px - 767px (foco principal)
 - **Tablet**: 768px - 1023px
 - **Desktop**: 1024px+
 
+---
+
+## 🔐 Segurança
+
+### Implementadas
+
+- ✅ JWT Authentication (Supabase Auth)
+- ✅ Row Level Security (RLS)
+- ✅ Input sanitization
+- ✅ HTTPS only (produção)
+- ✅ CORS configurado
+- ✅ XSS protection
+- ✅ SQL injection prevention
+- ✅ Rate limiting (Supabase)
+
+---
+
 ## 🚀 Deploy
 
-### Frontend (Vercel)
+### Frontend (Vercel/Netlify)
+
 ```bash
 cd frontend
 npm run build
-vercel --prod
-```
 
-### Backend (Railway/Render)
-```bash
-# Push para GitHub
+# Deploy automático via Git
 git push origin main
-
-# Conectar no Railway/Render
-# Configurar variáveis de ambiente
-# Deploy automático!
 ```
+
+**Variáveis de Ambiente (Vercel/Netlify):**
+
+```
+VITE_SUPABASE_URL=your-supabase-url
+VITE_SUPABASE_ANON_KEY=your-anon-key
+```
+
+### Backend (Supabase)
+
+1. Criar projeto no Supabase
+2. Executar scripts SQL em ordem
+3. Configurar Storage buckets
+4. Configurar Authentication providers
+
+---
 
 ## 📊 Performance
 
 ### Métricas Alvo
-- Bundle size: < 200KB
-- First Contentful Paint: < 1.5s
-- Time to Interactive: < 3s
-- Lighthouse Score: > 90
 
-## 🐛 Debug
+- **Bundle size**: < 250KB (gzipped)
+- **First Contentful Paint**: < 1.5s
+- **Time to Interactive**: < 3s
+- **Lighthouse Score**: > 90
 
-### Logs
+### Otimizações
+
+- Code splitting automático
+- Lazy loading de rotas
+- Image optimization
+- MapLibre (mais leve que Leaflet)
+- Tree shaking
+- Minification
+
+---
+
+## 🐛 Debugging
+
+### Logs do Frontend
+
 ```bash
-# Ver logs do backend
-tail -f logs/audit.log
-
-# Ver logs do servidor
-npm run dev
+# Console do navegador (F12)
+# Vue DevTools extension
 ```
 
-### Ferramentas
-- Vue DevTools (Chrome/Firefox extension)
-- Network tab (inspecionar requests)
-- Supabase Dashboard (dados em tempo real)
+### Logs do Supabase
+
+```bash
+# Supabase Dashboard > Logs
+# Real-time logs
+# Database logs
+# Storage logs
+```
+
+---
+
+## 🧪 Testes
+
+```bash
+cd frontend
+
+# Rodar testes unitários
+npm run test
+
+# Rodar testes com UI
+npm run test:ui
+
+# Coverage
+npm run test:coverage
+```
+
+---
 
 ## 📄 Licença
 
 MIT © 2024 FindMyDocs Team
 
+---
+
 ## 👥 Autores
 
-- Ivan Paulo Cossa
-- Kevin Zacarias Paulo Cossa
+* **Ivan Paulo Cossa** - Desenvolvimento Full-stack
+* **Kevin Zacarias Paulo Cossa** - Desenvolvimento Full-stack
+
+---
 
 ## 🤝 Contribuindo
 
@@ -256,13 +427,24 @@ MIT © 2024 FindMyDocs Team
 4. Push para a branch (`git push origin feature/AmazingFeature`)
 5. Abra um Pull Request
 
+---
+
 ## 📞 Suporte
 
-- Email: support@findmydoc.co.mz
-- Website: https://findmydocs.co.mz
-- GitHub Issues: [Report Bug](issues)
+* **Email**: support@findmydocs.co.mz
+* **Website**: [https://findmydocs.co.mz](https://findmydocs.co.mz)
+* **GitHub Issues**: [Report Bug](https://github.com/TBBV258/FMD/issues)
+
+---
+
+## 🙏 Agradecimentos
+
+- [Vue.js](https://vuejs.org/) - Framework frontend
+- [Supabase](https://supabase.com/) - Backend as a Service
+- [MapLibre GL](https://maplibre.org/) - Biblioteca de mapas
+- [Tailwind CSS](https://tailwindcss.com/) - Framework CSS
+- Comunidade open-source de Moçambique
 
 ---
 
 **FindMyDocs 2.0** - Ajudando a reunir pessoas com seus documentos! 🎉
-

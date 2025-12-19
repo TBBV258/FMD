@@ -72,7 +72,7 @@
     },
     "status": {
       "lost": "Lost",
-      "found": "Found",
+      "found": "Recovered",
       "matched": "Matched",
       "returned": "Returned"
     },
@@ -85,7 +85,7 @@
     "contact": "Contact",
     "interested": "I'm Interested",
     "reportLost": "Report Lost",
-    "reportFound": "Report Found"
+    "reportFound": "Report Recovered"
   },
   "profile": {
     "title": "Profile",

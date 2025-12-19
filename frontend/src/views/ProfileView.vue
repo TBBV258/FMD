@@ -22,9 +22,15 @@
             <p class="text-2xl font-bold text-primary">{{ profile?.document_count || 0 }}</p>
             <p class="text-xs text-gray-500">Documentos</p>
           </div>
-          <div>
+          <div 
+            class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg p-2 -m-2 transition-colors"
+            @click="toggleRankings"
+          >
             <p class="text-2xl font-bold text-success">{{ profile?.points || 0 }}</p>
-            <p class="text-xs text-gray-500">Pontos</p>
+            <p class="text-xs text-gray-500">
+              Pontos
+              <i class="fas fa-chevron-down ml-1 text-xs" :class="{ 'rotate-180': showRankings }"></i>
+            </p>
           </div>
           <div>
             <p class="text-2xl font-bold text-warning-dark">
@@ -33,7 +39,17 @@
             <p class="text-xs text-gray-500 capitalize">{{ profile?.plan || 'Free' }}</p>
           </div>
         </div>
-          </div>
+      </div>
+      
+      <!-- Rankings Section (Collapsible) -->
+      <transition name="slide-fade">
+        <div v-if="showRankings" class="mt-6">
+          <RankingsSection
+            :user-points="profile?.points || 0"
+            :current-user-id="user?.id || ''"
+          />
+        </div>
+      </transition>
 
       <!-- Menu Items -->
       <div class="card divide-y divide-gray-200 dark:divide-dark-border">
@@ -71,6 +87,9 @@
 
     <!-- Subscription Plans Modal -->
     <SubscriptionPlansModal v-model="showPlansModal" />
+    
+    <!-- Profile Edit Modal -->
+    <ProfileEditModal v-model="showEditModal" />
 
     <!-- Meus documentos (lista compacta) -->
     <div class="card mt-6">
@@ -119,6 +138,8 @@ import BaseButton from '@/components/common/BaseButton.vue'
 import ToastContainer from '@/components/common/ToastContainer.vue'
 import ProfilePhotoUpload from '@/components/profile/ProfilePhotoUpload.vue'
 import SubscriptionPlansModal from '@/components/profile/SubscriptionPlansModal.vue'
+import RankingsSection from '@/components/profile/RankingsSection.vue'
+import ProfileEditModal from '@/components/profile/ProfileEditModal.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -127,9 +148,15 @@ const { items: myDocuments, loading: docsLoading, error: docsError, fetchMyDocum
 
 const isLoggingOut = ref(false)
 const showPlansModal = ref(false)
+const showRankings = ref(false)
+const showEditModal = ref(false)
 
 const user = computed(() => authStore.user)
 const profile = computed(() => authStore.profile)
+
+const toggleRankings = () => {
+  showRankings.value = !showRankings.value
+}
 
 // Define handleLogout BEFORE menuItems
 const handleLogout = async () => {
@@ -149,10 +176,7 @@ const menuItems = [
   {
     icon: 'fas fa-user-edit',
     label: 'Editar Perfil',
-    action: () => {
-      // TODO: Implementar edição de perfil
-      success('Funcionalidade em breve!')
-    }
+    action: () => showEditModal.value = true
   },
   {
     icon: 'fas fa-file-alt',
@@ -206,3 +230,24 @@ onMounted(async () => {
   }
 })
 </script>
+
+<style scoped>
+.slide-fade-enter-active {
+  transition: all 0.3s ease-out;
+}
+
+.slide-fade-leave-active {
+  transition: all 0.2s cubic-bezier(1, 0.5, 0.8, 1);
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  transform: translateY(-10px);
+  opacity: 0;
+}
+
+.rotate-180 {
+  transform: rotate(180deg);
+  transition: transform 0.3s ease;
+}
+</style>

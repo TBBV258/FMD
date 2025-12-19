@@ -99,7 +99,7 @@ export function useChat(initialUserId: string) {
     const uniqueUserIds = [...new Set(previews.value.map((p) => p.other_user_id))]
     if (uniqueUserIds.length) {
       const { data: profiles, error: profileError } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .select('id, avatar_url, full_name')
         .in('id', uniqueUserIds)
 
