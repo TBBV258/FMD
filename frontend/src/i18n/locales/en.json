@@ -15,7 +15,9 @@
     "back": "Back",
     "next": "Next",
     "submit": "Submit",
-    "logout": "Logout"
+    "logout": "Logout",
+    "toggleTheme": "Toggle theme",
+    "confirm": "Confirm"
   },
   "nav": {
     "home": "Home",
@@ -52,9 +54,10 @@
       "found": "Found"
     },
     "empty": "No documents found",
+    "emptySubtitle": "Be the first to report a document!",
     "loadMore": "Load more",
     "refreshed": "Feed refreshed!",
-    "searchPlaceholder": "Search documents..."
+    "searchPlaceholder": "Search by title, description or type"
   },
   "document": {
     "types": {
@@ -96,7 +99,9 @@
     "menu": {
       "editProfile": "Edit Profile",
       "myDocuments": "My Documents",
+      "subscriptionPlans": "Subscription Plans",
       "notifications": "Notifications",
+      "backup": "Document Backup",
       "privacy": "Privacy & Security",
       "help": "Help & Support",
       "settings": "Settings",
@@ -111,20 +116,51 @@
       "silver": "Silver",
       "gold": "Gold",
       "platinum": "Platinum"
-    }
+    },
+    "myDocs": "My Documents",
+    "viewAll": "View All",
+    "addDocument": "Save",
+    "noDocs": "No documents saved yet",
+    "loading": "Loading...",
+    "user": "User",
+    "version": "Version",
+    "markAsLost": "Mark as lost",
+    "confirmMarkAsLost": "Are you sure you want to mark \"{title}\" as lost?",
+    "markedAsLost": "Document marked as lost!",
+    "errorMarkingAsLost": "Error marking document as lost",
+    "backupSuccess": "Backup completed successfully!",
+    "backupError": "Error creating backup",
+    "featureSoon": "Feature coming soon!"
   },
   "notifications": {
     "title": "Notifications",
     "tabs": {
-      "all": "All",
+      "all": "Notifications",
       "chats": "Chats"
     },
+    "markAllRead": "Mark all as read",
+    "marking": "Marking...",
     "empty": "No notifications",
+    "emptySubtitle": "You're all caught up!",
+    "emptyChats": "No chats",
+    "emptyChatsSubtitle": "When someone sends you a message, it will appear here.",
     "types": {
-      "match": "Match Found",
+      "document_match": "Match Found",
+      "document_found": "Document Found",
       "message": "New Message",
       "system": "System",
-      "verification": "Verification"
+      "verification": "Verification",
+      "document_status_change": "Status Changed",
+      "points_milestone": "Points Milestone"
+    },
+    "loadingError": "Error loading notifications",
+    "updateError": "Error updating notification",
+    "markAllError": "Error marking all as read",
+    "timeAgo": {
+      "now": "Now",
+      "minutes": "{n}m ago",
+      "hours": "{n}h ago",
+      "days": "{n}d ago"
     }
   },
   "settings": {

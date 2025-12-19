@@ -120,10 +120,8 @@ export interface Notification {
   type: NotificationType
   title: string
   message: string
-  is_read: boolean
-  read_at?: string | null
-  action_url?: string | null
-  metadata?: Record<string, any>
+  read: boolean
+  data?: Record<string, any> | null
   created_at: string
 }
 

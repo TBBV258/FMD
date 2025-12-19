@@ -15,7 +15,9 @@
     "back": "Voltar",
     "next": "Seguinte",
     "submit": "Enviar",
-    "logout": "Sair"
+    "logout": "Sair",
+    "toggleTheme": "Alternar tema",
+    "confirm": "Confirmar"
   },
   "nav": {
     "home": "Início",
@@ -52,9 +54,10 @@
       "found": "Recuperados"
     },
     "empty": "Nenhum documento encontrado",
+    "emptySubtitle": "Seja o primeiro a reportar um documento!",
     "loadMore": "Carregar mais",
     "refreshed": "Feed atualizado!",
-    "searchPlaceholder": "Pesquisar documentos..."
+    "searchPlaceholder": "Buscar por título, descrição ou tipo"
   },
   "document": {
     "types": {
@@ -114,28 +117,51 @@
       "gold": "Ouro",
       "platinum": "Platina"
     },
-    "myDocs": "Meus documentos",
-    "viewAll": "Ver todos",
-    "noDocs": "Nenhum documento cadastrado.",
-    "loading": "Carregando documentos...",
+    "myDocs": "Meus Documentos",
+    "viewAll": "Ver Todos",
+    "addDocument": "Guardar",
+    "noDocs": "Nenhum documento salvo ainda",
+    "loading": "Carregando...",
     "user": "Usuário",
-    "version": "Versão"
+    "version": "Versão",
+    "markAsLost": "Marcar como perdido",
+    "confirmMarkAsLost": "Tem certeza que deseja marcar \"{title}\" como perdido?",
+    "markedAsLost": "Documento marcado como perdido!",
+    "errorMarkingAsLost": "Erro ao marcar documento como perdido",
+    "backupSuccess": "Backup concluído com sucesso!",
+    "backupError": "Erro ao fazer backup",
+    "featureSoon": "Funcionalidade em breve!"
   },
   "notifications": {
     "title": "Notificações",
     "tabs": {
-      "all": "Todas",
-      "chats": "Chats"
+      "all": "Notificações",
+      "chats": "Conversas"
     },
+    "markAllRead": "Marcar todas como lidas",
+    "marking": "Marcando...",
     "empty": "Sem notificações",
     "emptySubtitle": "Você está em dia!",
+    "emptyChats": "Sem conversas",
+    "emptyChatsSubtitle": "Quando alguém enviar uma mensagem, ela aparecerá aqui.",
     "types": {
-      "match": "Match Encontrado",
+      "document_match": "Match Encontrado",
+      "document_found": "Documento Encontrado",
       "message": "Nova Mensagem",
       "system": "Sistema",
-      "verification": "Verificação"
+      "verification": "Verificação",
+      "document_status_change": "Status Alterado",
+      "points_milestone": "Marco de Pontos"
     },
-    "loadingError": "Erro ao carregar notificações"
+    "loadingError": "Erro ao carregar notificações",
+    "updateError": "Erro ao atualizar notificação",
+    "markAllError": "Erro ao marcar todas como lidas",
+    "timeAgo": {
+      "now": "Agora",
+      "minutes": "{n}m atrás",
+      "hours": "{n}h atrás",
+      "days": "{n}d atrás"
+    }
   },
   "chat": {
     "title": "Conversas",

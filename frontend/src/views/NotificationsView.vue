@@ -1,19 +1,39 @@
 <template>
   <MainLayout>
     <div class="px-4 py-6 space-y-6">
+      <!-- Header with Mark All Read Button -->
+      <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-dark-text">{{ $t('notifications.title') }}</h1>
+        <button
+          v-if="unreadCount > 0"
+          @click="markAllAsRead"
+          class="text-sm text-primary hover:text-primary-dark font-medium transition-colors"
+          :disabled="isMarkingAll"
+        >
+          <i class="fas fa-check-double mr-1"></i>
+          {{ isMarkingAll ? $t('notifications.marking') : $t('notifications.markAllRead') }}
+        </button>
+      </div>
+
       <!-- Tabs -->
       <div class="flex rounded-full bg-gray-100 dark:bg-dark-card p-1">
         <button
           :class="tabClass('all')"
           @click="activeTab = 'all'"
         >
-          Notificações
+          {{ $t('notifications.tabs.all') }}
+          <span v-if="unreadCount > 0" class="ml-2 px-2 py-0.5 text-xs bg-primary text-white rounded-full">
+            {{ unreadCount }}
+          </span>
         </button>
         <button
           :class="tabClass('chats')"
           @click="activeTab = 'chats'"
         >
-          Conversas
+          {{ $t('notifications.tabs.chats') }}
+          <span v-if="unreadChatsCount > 0" class="ml-2 px-2 py-0.5 text-xs bg-primary text-white rounded-full">
+            {{ unreadChatsCount }}
+          </span>
         </button>
       </div>
 
@@ -31,7 +51,7 @@
         <div
           v-for="notification in displayedNotifications"
           :key="notification.id"
-          :class="notificationClass(notification.is_read)"
+          :class="notificationClass(notification.read)"
           class="card card-hover"
           @click="handleNotificationClick(notification)"
         >
@@ -51,7 +71,7 @@
               </p>
             </div>
             <button
-              v-if="!notification.is_read"
+              v-if="!notification.read"
               class="w-2 h-2 rounded-full bg-primary"
               @click.stop="markAsRead(notification.id)"
             ></button>
@@ -65,6 +85,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { notificationsApi } from '@/api/notifications'
 import { useToast } from '@/composables/useToast'
@@ -73,11 +94,13 @@ import MainLayout from '@/components/layout/MainLayout.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const { t } = useI18n()
 const { error: showError } = useToast()
 
 const activeTab = ref<'all' | 'chats'>('all')
 const notifications = ref<Notification[]>([])
 const isLoading = ref(false)
+const isMarkingAll = ref(false)
 let unsubscribe: (() => void) | null = null
 
 const allNotifications = computed(() => notifications.value)
@@ -90,21 +113,29 @@ const displayedNotifications = computed(() =>
   activeTab.value === 'all' ? allNotifications.value : chatNotifications.value
 )
 
+const unreadCount = computed(() => 
+  notifications.value.filter(n => !n.read).length
+)
+
+const unreadChatsCount = computed(() => 
+  chatNotifications.value.filter(n => !n.read).length
+)
+
 const emptyState = computed(() => {
   if (activeTab.value === 'chats') {
     return {
-      title: 'Sem conversas',
-      subtitle: 'Quando alguém enviar uma mensagem, ela aparecerá aqui.'
+      title: t('notifications.emptyChats'),
+      subtitle: t('notifications.emptyChatsSubtitle')
     }
   }
   return {
-    title: 'Sem notificações',
-    subtitle: 'Você está em dia!'
+    title: t('notifications.empty'),
+    subtitle: t('notifications.emptySubtitle')
   }
 })
 
 const notificationClass = (isRead: boolean) => {
-  return isRead ? 'opacity-60' : ''
+  return isRead ? 'opacity-60' : 'bg-primary/5'
 }
 
 const tabClass = (tab: 'all' | 'chats') => {
@@ -145,10 +176,10 @@ const formatTime = (dateString: string) => {
   const diffHours = Math.floor(diffMins / 60)
   const diffDays = Math.floor(diffHours / 24)
   
-  if (diffMins < 1) return 'Agora'
-  if (diffMins < 60) return `${diffMins}m atrás`
-  if (diffHours < 24) return `${diffHours}h atrás`
-  if (diffDays < 7) return `${diffDays}d atrás`
+  if (diffMins < 1) return t('notifications.timeAgo.now')
+  if (diffMins < 60) return t('notifications.timeAgo.minutes', { n: diffMins })
+  if (diffHours < 24) return t('notifications.timeAgo.hours', { n: diffHours })
+  if (diffDays < 7) return t('notifications.timeAgo.days', { n: diffDays })
   
   return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
 }
@@ -163,7 +194,7 @@ const loadNotifications = async () => {
   try {
     notifications.value = await notificationsApi.fetch(authStore.userId)
   } catch (err: any) {
-    showError(err.message || 'Erro ao carregar notificações')
+    showError(err.message || t('notifications.loadingError'))
   } finally {
     isLoading.value = false
   }
@@ -179,28 +210,42 @@ const startRealtime = () => {
 const handleNotificationClick = async (notification: Notification) => {
   await markAsRead(notification.id)
   
-  // Navigate based on notification type and action_url
-  if (notification.action_url) {
-    router.push(notification.action_url)
-  } else if ((notification.type === 'document_match' || notification.type === 'document_found') && notification.metadata && 'documentId' in notification.metadata) {
-    router.push(`/document/${notification.metadata.documentId}`)
-  } else if (notification.type === 'message' && notification.metadata && 'documentId' in notification.metadata) {
-    router.push(`/chat/${notification.metadata.documentId}`)
-  } else if (notification.type === 'verification' && notification.metadata && 'documentId' in notification.metadata) {
-    router.push(`/document/${notification.metadata.documentId}`)
+  // Navigate based on notification type and data
+  if (notification.data) {
+    if ((notification.type === 'document_match' || notification.type === 'document_found') && 'documentId' in notification.data) {
+      router.push(`/document/${notification.data.documentId}`)
+    } else if (notification.type === 'message' && 'document_id' in notification.data) {
+      router.push(`/chat/${notification.data.document_id}`)
+    } else if (notification.type === 'verification' && 'documentId' in notification.data) {
+      router.push(`/document/${notification.data.documentId}`)
+    }
   }
 }
 
 const markAsRead = async (id: string) => {
   const notification = notifications.value.find(n => n.id === id)
-  if (!notification || notification.is_read) return
+  if (!notification || notification.read) return
 
-  notification.is_read = true
+  notification.read = true
   try {
     await notificationsApi.markAsRead(id)
   } catch (err: any) {
-    showError(err.message || 'Erro ao atualizar notificação')
-    notification.is_read = false
+    showError(err.message || t('notifications.updateError'))
+    notification.read = false
+  }
+}
+
+const markAllAsRead = async () => {
+  if (!authStore.userId || isMarkingAll.value) return
+  
+  isMarkingAll.value = true
+  try {
+    await notificationsApi.markAllAsRead(authStore.userId)
+    notifications.value.forEach(n => n.read = true)
+  } catch (err: any) {
+    showError(err.message || t('notifications.markAllError'))
+  } finally {
+    isMarkingAll.value = false
   }
 }
 

@@ -17,7 +17,7 @@
           <button
             class="btn-icon"
             @click="toggleDarkMode"
-            aria-label="Alternar tema"
+            :aria-label="t('common.toggleTheme')"
           >
             <i :class="isDark ? 'fas fa-sun' : 'fas fa-moon'"></i>
           </button>
@@ -32,8 +32,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import LanguageSelector from '@/components/common/LanguageSelector.vue'
 import logoImg from '/logofmd.jpg'
+
+const { t } = useI18n()
 
 interface Props {
   title?: string

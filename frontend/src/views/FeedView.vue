@@ -16,12 +16,12 @@
         </div>
 
         <div class="relative">
-          <label class="sr-only" for="feed-search">Buscar documentos</label>
+          <label class="sr-only" for="feed-search">{{ $t('feed.searchPlaceholder') }}</label>
           <input
             id="feed-search"
             v-model="searchTerm"
             type="search"
-            placeholder="Buscar por título, descrição ou tipo"
+            :placeholder="$t('feed.searchPlaceholder')"
             class="w-full rounded-full border border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-bg px-4 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
           <i class="fas fa-search absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
@@ -34,10 +34,10 @@
         <div v-if="!loading && filteredDocuments.length === 0" class="text-center py-12">
           <i class="fas fa-inbox text-gray-400 text-6xl mb-4"></i>
           <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            Nenhum documento encontrado
+            {{ $t('feed.empty') }}
           </h3>
           <p class="text-gray-500 dark:text-gray-400">
-            Seja o primeiro a reportar um documento!
+            {{ $t('feed.emptySubtitle') }}
           </p>
         </div>
 
@@ -64,6 +64,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useToast } from '@/composables/useToast'
 import { useDocuments } from '@/composables/useDocuments'
 import MainLayout from '@/components/layout/MainLayout.vue'
@@ -73,6 +74,7 @@ import FeedSkeleton from '@/components/feed/FeedSkeleton.vue'
 import ToastContainer from '@/components/common/ToastContainer.vue'
 
 const router = useRouter()
+const { t } = useI18n()
 const { success, error: showError } = useToast()
 const { items, loading, error, fetchPublicFeed } = useDocuments()
 
@@ -80,11 +82,11 @@ const currentFilter = ref<'all' | 'lost' | 'found'>('all')
 const pullToRefreshRef = ref<InstanceType<typeof PullToRefresh> | null>(null)
 const searchTerm = ref('')
 
-const filters = [
-  { label: 'Todos', value: 'all' as const, icon: 'fas fa-th' },
-  { label: 'Perdidos', value: 'lost' as const, icon: 'fas fa-search' },
-  { label: 'Recuperados', value: 'found' as const, icon: 'fas fa-check' }
-]
+const filters = computed(() => [
+  { label: t('feed.filters.all'), value: 'all' as const, icon: 'fas fa-th' },
+  { label: t('feed.filters.lost'), value: 'lost' as const, icon: 'fas fa-search' },
+  { label: t('feed.filters.found'), value: 'found' as const, icon: 'fas fa-check' }
+])
 
 const filteredDocuments = computed(() => {
   const byStatus =

@@ -16,13 +16,24 @@ export const notificationsApi = {
   async markAsRead(id: string) {
     const { data, error } = await supabase
       .from('notifications')
-      .update({ is_read: true, read_at: new Date().toISOString() })
+      .update({ read: true })
       .eq('id', id)
       .select()
       .single()
 
     if (error) throw error
     return data as Notification
+  },
+
+  async markAllAsRead(userId: string) {
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read: true })
+      .eq('user_id', userId)
+      .eq('read', false)
+
+    if (error) throw error
+    return true
   },
 
   subscribeToUser(userId: string, onInsert: (notification: Notification) => void) {
