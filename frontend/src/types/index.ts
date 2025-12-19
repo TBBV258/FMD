@@ -22,6 +22,7 @@ export interface Document {
   location_lost_found?: string | null
   last_known_location?: string | null
   location_metadata?: LocationMetadata | null
+  meeting_point_metadata?: MeetingPointMetadata | null
   is_verified: boolean
   verification_status: VerificationStatus
   verification_notes?: string
@@ -54,6 +55,13 @@ export interface LocationMetadata {
   address?: string
   city?: string
   country?: string
+}
+
+export interface MeetingPointMetadata {
+  lat: number
+  lng: number
+  address?: string
+  description?: string
 }
 
 // User Types
@@ -144,6 +152,8 @@ export interface DocumentFormData {
   status: DocumentStatus
   description?: string
   location?: string
+  locationMetadata?: LocationMetadata | null
+  meetingPointMetadata?: MeetingPointMetadata | null
   documentNumber?: string
   issueDate?: string
   expiryDate?: string

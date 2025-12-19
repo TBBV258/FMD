@@ -172,6 +172,8 @@ export const useDocumentsStore = defineStore('documents', () => {
         status: formData.status,
         description: formData.description || '',
         location: formData.location || '',
+        location_metadata: formData.locationMetadata || null,
+        meeting_point_metadata: formData.meetingPointMetadata || null,
         document_number: formData.documentNumber || '',
         issue_date: formData.issueDate || null,
         expiry_date: formData.expiryDate || null,

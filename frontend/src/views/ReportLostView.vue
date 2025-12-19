@@ -59,13 +59,82 @@
             placeholder="Ex: 110100123456A"
           />
           
-          <!-- Location -->
+          <!-- Location Text -->
           <BaseInput
             v-model="formData.location"
             label="Onde perdeu?"
             placeholder="Ex: Praça da Independência, Maputo"
             icon="fas fa-map-marker-alt"
           />
+
+          <!-- Location on Map -->
+          <div class="space-y-2">
+            <label class="form-label">Localização no Mapa (opcional, mas recomendado)</label>
+            <div class="flex items-center space-x-2">
+              <button
+                type="button"
+                @click="showLocationPicker = true"
+                class="flex-1 btn btn-secondary"
+              >
+                <i class="fas fa-map-marked-alt mr-2"></i>
+                {{ locationMetadata ? 'Atualizar Localização' : 'Marcar no Mapa' }}
+              </button>
+              <button
+                v-if="locationMetadata"
+                type="button"
+                @click="clearLocation"
+                class="btn-icon bg-red-100 text-danger hover:bg-red-200"
+                title="Remover localização"
+              >
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <div v-if="locationMetadata" class="bg-success/10 rounded-lg p-3 text-sm">
+              <p class="text-success-dark dark:text-success font-semibold mb-1">
+                <i class="fas fa-check-circle mr-1"></i>
+                Localização Marcada
+              </p>
+              <p class="text-xs text-gray-600 dark:text-gray-400">
+                Lat: {{ locationMetadata.lat?.toFixed(6) }}, Lng: {{ locationMetadata.lng?.toFixed(6) }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Meeting Point (Optional) -->
+          <div class="space-y-2">
+            <label class="form-label">Ponto de Encontro (opcional)</label>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
+              Se alguém encontrar seu documento, onde vocês podem se encontrar para devolver?
+            </p>
+            <div class="flex items-center space-x-2">
+              <button
+                type="button"
+                @click="showMeetingPointPicker = true"
+                class="flex-1 btn btn-outline"
+              >
+                <i class="fas fa-handshake mr-2"></i>
+                {{ meetingPointMetadata ? 'Atualizar Ponto de Encontro' : 'Marcar Ponto de Encontro' }}
+              </button>
+              <button
+                v-if="meetingPointMetadata"
+                type="button"
+                @click="clearMeetingPoint"
+                class="btn-icon bg-red-100 text-danger hover:bg-red-200"
+                title="Remover ponto de encontro"
+              >
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <div v-if="meetingPointMetadata" class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-sm">
+              <p class="text-blue-900 dark:text-blue-100 font-semibold mb-1">
+                <i class="fas fa-map-pin mr-1"></i>
+                Ponto de Encontro Definido
+              </p>
+              <p class="text-xs text-blue-700 dark:text-blue-300">
+                Lat: {{ meetingPointMetadata.lat.toFixed(6) }}, Lng: {{ meetingPointMetadata.lng.toFixed(6) }}
+              </p>
+            </div>
+          </div>
           
           <!-- Upload Photo -->
           <div class="form-group">
@@ -102,6 +171,24 @@
             v-model="showPhotoPicker"
             @file-selected="handlePhotoSelected"
           />
+
+          <!-- Location Picker Modal -->
+          <LocationPicker
+            v-model="showLocationPicker"
+            title="Onde você perdeu o documento?"
+            message="Marque no mapa o local aproximado onde perdeu o documento. Isso ajuda outras pessoas a encontrá-lo."
+            :initial-location="locationMetadata"
+            @location-selected="handleLocationSelected"
+          />
+
+          <!-- Meeting Point Picker Modal -->
+          <LocationPicker
+            v-model="showMeetingPointPicker"
+            title="Ponto de Encontro para Devolução"
+            message="Escolha um local público e seguro onde você pode se encontrar com quem encontrar seu documento."
+            :initial-location="meetingPointMetadata"
+            @location-selected="handleMeetingPointSelected"
+          />
           
           <!-- Submit Button -->
           <BaseButton
@@ -135,6 +222,7 @@ import BaseInput from '@/components/common/BaseInput.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
 import ToastContainer from '@/components/common/ToastContainer.vue'
 import PhotoPickerModal from '@/components/permissions/PhotoPickerModal.vue'
+import LocationPicker from '@/components/map/LocationPicker.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -144,6 +232,10 @@ const { success, error: showError } = useToast()
 const isSubmitting = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const showPhotoPicker = ref(false)
+const showLocationPicker = ref(false)
+const showMeetingPointPicker = ref(false)
+const locationMetadata = ref<{ lat: number; lng: number } | null>(null)
+const meetingPointMetadata = ref<{ lat: number; lng: number; address?: string } | null>(null)
 
 const isMobile = computed(() => {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
@@ -199,6 +291,22 @@ const handleFileChange = (event: Event) => {
 
 const handlePhotoSelected = (file: File) => {
   formData.file = file
+}
+
+const handleLocationSelected = (location: { lat: number; lng: number; address?: string }) => {
+  locationMetadata.value = location
+}
+
+const handleMeetingPointSelected = (location: { lat: number; lng: number; address?: string }) => {
+  meetingPointMetadata.value = location
+}
+
+const clearLocation = () => {
+  locationMetadata.value = null
+}
+
+const clearMeetingPoint = () => {
+  meetingPointMetadata.value = null
 }
 
 const handleSubmit = async () => {

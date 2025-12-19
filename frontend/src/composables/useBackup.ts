@@ -12,23 +12,15 @@ export function useBackup() {
         throw new Error('Documento não possui arquivo')
       }
 
-      // Extract file path from URL
-      const url = new URL(doc.file_url)
-      const filePath = url.pathname.split('/').slice(-1)[0]
+      // Download directly from the file_url
+      const response = await fetch(doc.file_url)
+      if (!response.ok) throw new Error('Erro ao baixar arquivo')
 
-      // Download from Supabase Storage
-      const { data, error: downloadError } = await supabase.storage
-        .from('documents')
-        .download(filePath)
-
-      if (downloadError) throw downloadError
-
-      // Create download link
-      const blob = data as Blob
+      const blob = await response.blob()
       const downloadUrl = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = downloadUrl
-      link.download = doc.file_name || `document_${doc.id}`
+      link.download = doc.file_name || `document_${doc.id}.${getFileExtension(doc.file_type)}`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
@@ -58,49 +50,60 @@ export function useBackup() {
         throw new Error('Nenhum documento encontrado para backup')
       }
 
-      // Criar backup JSON com metadados dos documentos
-      const backupData = {
-        backup_date: new Date().toISOString(),
-        user_id: userId,
-        total_documents: documents.length,
-        documents: documents.map(doc => ({
-          id: doc.id,
-          title: doc.title,
-          type: doc.type,
-          status: doc.status,
-          document_number: doc.document_number,
-          issue_date: doc.issue_date,
-          expiry_date: doc.expiry_date,
-          issue_place: doc.issue_place,
-          issuing_authority: doc.issuing_authority,
-          country_of_issue: doc.country_of_issue,
-          description: doc.description,
-          location: doc.location,
-          is_verified: doc.is_verified,
-          verification_status: doc.verification_status,
-          created_at: doc.created_at,
-          updated_at: doc.updated_at,
-          file_name: doc.file_name,
-          file_type: doc.file_type,
-          file_size: doc.file_size
-        }))
+      // Filter documents that have files
+      const documentsWithFiles = documents.filter((doc: any) => doc.file_url)
+
+      if (documentsWithFiles.length === 0) {
+        throw new Error('Nenhum documento com arquivo encontrado para backup')
       }
 
-      // Criar e baixar arquivo JSON
-      const jsonString = JSON.stringify(backupData, null, 2)
-      const blob = new Blob([jsonString], { type: 'application/json' })
-      const downloadUrl = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = downloadUrl
-      link.download = `FMD_Backup_${new Date().toISOString().split('T')[0]}.json`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(downloadUrl)
+      // Download all files individually
+      let successCount = 0
+      let failCount = 0
+
+      for (const doc of documentsWithFiles) {
+        try {
+          // Small delay between downloads to avoid overwhelming the browser
+          if (successCount > 0) {
+            await new Promise(resolve => setTimeout(resolve, 500))
+          }
+
+          const response = await fetch((doc as any).file_url)
+          if (!response.ok) {
+            failCount++
+            continue
+          }
+
+          const blob = await response.blob()
+          const downloadUrl = window.URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = downloadUrl
+          
+          // Create descriptive filename: title_type_timestamp.extension
+          const extension = getFileExtension((doc as any).file_type || '')
+          const safeTitle = (doc as any).title.replace(/[^a-z0-9]/gi, '_')
+          const timestamp = (doc as any).created_at.split('T')[0]
+          link.download = `${safeTitle}_${(doc as any).type}_${timestamp}.${extension}`
+          
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          window.URL.revokeObjectURL(downloadUrl)
+
+          successCount++
+        } catch (err) {
+          console.error('Error downloading document:', (doc as any).id, err)
+          failCount++
+        }
+      }
+
+      if (successCount === 0) {
+        throw new Error('Nenhum arquivo foi baixado com sucesso')
+      }
 
       return {
         success: true,
-        message: `Backup concluído: ${documents.length} documentos salvos em JSON`
+        message: `Backup concluído: ${successCount} arquivo(s) baixado(s)${failCount > 0 ? `, ${failCount} falhou` : ''}`
       }
     } catch (err: any) {
       error.value = err.message
@@ -110,6 +113,21 @@ export function useBackup() {
     }
   }
 
+  const getFileExtension = (mimeType: string): string => {
+    const extensions: Record<string, string> = {
+      'image/jpeg': 'jpg',
+      'image/jpg': 'jpg',
+      'image/png': 'png',
+      'image/gif': 'gif',
+      'image/webp': 'webp',
+      'application/pdf': 'pdf',
+      'application/msword': 'doc',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx'
+    }
+
+    return extensions[mimeType] || 'file'
+  }
+
   return {
     isBackingUp,
     error,
@@ -117,4 +135,3 @@ export function useBackup() {
     backupAllDocuments
   }
 }
-
