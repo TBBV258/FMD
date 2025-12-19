@@ -2,13 +2,13 @@
   <MainLayout :notification-count="0">
     <section class="max-w-3xl mx-auto px-4 py-6 space-y-4">
       <header class="flex items-center justify-between">
-        <h1 class="text-2xl font-semibold">Conversas</h1>
+        <h1 class="text-2xl font-semibold">{{ $t('chat.title') }}</h1>
         <span v-if="unreadTotal" class="text-sm text-primary">
-          {{ unreadTotal }} não lidas
+          {{ unreadTotal }} {{ $t('chat.unread') }}
         </span>
       </header>
 
-      <div v-if="loading" class="text-gray-500">Carregando conversas...</div>
+      <div v-if="loading" class="text-gray-500">{{ $t('chat.loading') }}</div>
       <div v-else-if="error" class="text-red-500">{{ error }}</div>
 
       <ul class="space-y-3">
@@ -25,10 +25,10 @@
           />
           <div class="flex-1 overflow-hidden">
             <p class="font-semibold truncate">
-              {{ chat.other_user_name || 'Contato' }}
+              {{ chat.other_user_name || $t('chat.contact') }}
             </p>
             <p class="text-sm text-gray-600 dark:text-gray-300 truncate">
-              {{ chat.last_message?.message || 'Sem mensagens' }}
+              {{ chat.last_message?.message || $t('chat.noMessages') }}
             </p>
           </div>
           <div class="text-right shrink-0">
@@ -47,8 +47,8 @@
 
       <EmptyState
         v-if="!loading && !error && previews.length === 0"
-        title="Nenhuma conversa"
-        description="Inicie uma nova conversa a partir de um documento."
+        :title="$t('chat.empty')"
+        :description="$t('chat.emptyDescription')"
       />
     </section>
   </MainLayout>
