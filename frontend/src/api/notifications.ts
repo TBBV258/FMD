@@ -16,7 +16,7 @@ export const notificationsApi = {
   async markAsRead(id: string) {
     const { data, error } = await supabase
       .from('notifications')
-      .update({ read: true })
+      .update({ is_read: true, read_at: new Date().toISOString() })
       .eq('id', id)
       .select()
       .single()

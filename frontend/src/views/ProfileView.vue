@@ -95,9 +95,18 @@
     <div class="card mt-6">
       <div class="flex items-center justify-between mb-3">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-dark-text">{{ $t('profile.myDocs') }}</h3>
-        <button class="text-primary text-sm" @click="router.push('/documents')">
-          {{ $t('profile.viewAll') }}
-        </button>
+        <div class="flex items-center space-x-2">
+          <button 
+            class="text-primary text-sm flex items-center space-x-1 hover:underline"
+            @click="router.push('/save-document')"
+          >
+            <i class="fas fa-plus text-xs"></i>
+            <span>Guardar</span>
+          </button>
+          <button class="text-primary text-sm hover:underline" @click="router.push('/documents')">
+            {{ $t('profile.viewAll') }}
+          </button>
+        </div>
       </div>
 
       <div v-if="docsLoading" class="text-gray-500">{{ $t('profile.loading') }}</div>

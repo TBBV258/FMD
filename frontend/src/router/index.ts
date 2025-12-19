@@ -70,6 +70,12 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/save-document',
+    name: 'SaveDocument',
+    component: () => import('@/views/SaveDocumentView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/'
   }

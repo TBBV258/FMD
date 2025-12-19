@@ -120,12 +120,14 @@ export interface Notification {
   type: NotificationType
   title: string
   message: string
-  data?: Record<string, any>
-  read: boolean
+  is_read: boolean
+  read_at?: string | null
+  action_url?: string | null
+  metadata?: Record<string, any>
   created_at: string
 }
 
-export type NotificationType = 'match' | 'message' | 'system' | 'verification'
+export type NotificationType = 'message' | 'document_match' | 'document_found' | 'document_status_change' | 'points_milestone' | 'system' | 'verification'
 
 // API Response Types
 export interface ApiResponse<T> {

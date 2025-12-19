@@ -31,7 +31,7 @@
         <div
           v-for="notification in displayedNotifications"
           :key="notification.id"
-          :class="notificationClass(notification.read)"
+          :class="notificationClass(notification.is_read)"
           class="card card-hover"
           @click="handleNotificationClick(notification)"
         >
@@ -51,7 +51,7 @@
               </p>
             </div>
             <button
-              v-if="!notification.read"
+              v-if="!notification.is_read"
               class="w-2 h-2 rounded-full bg-primary"
               @click.stop="markAsRead(notification.id)"
             ></button>
@@ -103,8 +103,8 @@ const emptyState = computed(() => {
   }
 })
 
-const notificationClass = (read: boolean) => {
-  return read ? 'opacity-60' : ''
+const notificationClass = (isRead: boolean) => {
+  return isRead ? 'opacity-60' : ''
 }
 
 const tabClass = (tab: 'all' | 'chats') => {
@@ -177,27 +177,28 @@ const startRealtime = () => {
 const handleNotificationClick = async (notification: Notification) => {
   await markAsRead(notification.id)
   
-  // Navigate based on notification type
-  if (notification.type === 'match' && notification.data?.documentId) {
-    router.push(`/document/${notification.data.documentId}`)
-  } else if (notification.type === 'message' && notification.data?.documentId) {
-    router.push(`/chat/${notification.data.documentId}`)
-  } else if (notification.type === 'verification' && notification.data?.documentId) {
-    router.push(`/document/${notification.data.documentId}`)
+  // Navigate based on notification type and action_url
+  if (notification.action_url) {
+    router.push(notification.action_url)
+  } else if (notification.type === 'match' && notification.metadata?.documentId) {
+    router.push(`/document/${notification.metadata.documentId}`)
+  } else if (notification.type === 'message' && notification.metadata?.documentId) {
+    router.push(`/chat/${notification.metadata.documentId}`)
+  } else if (notification.type === 'verification' && notification.metadata?.documentId) {
+    router.push(`/document/${notification.metadata.documentId}`)
   }
-  // System notifications don't navigate anywhere
 }
 
 const markAsRead = async (id: string) => {
   const notification = notifications.value.find(n => n.id === id)
-  if (!notification || notification.read) return
+  if (!notification || notification.is_read) return
 
-  notification.read = true
+  notification.is_read = true
   try {
     await notificationsApi.markAsRead(id)
   } catch (err: any) {
     showError(err.message || 'Erro ao atualizar notificação')
-    notification.read = false
+    notification.is_read = false
   }
 }
 
