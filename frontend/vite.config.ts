@@ -81,10 +81,11 @@ export default defineConfig({
     }
   },
   build: {
-    target: 'es2015',
+    target: 'esnext',
     cssCodeSplit: true,
     rollupOptions: {
       output: {
+        format: 'es',
         manualChunks: {
           'vue-vendor': ['vue', 'vue-router', 'pinia'],
           'supabase': ['@supabase/supabase-js']
