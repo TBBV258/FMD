@@ -4,9 +4,12 @@ import { VitePWA } from 'vite-plugin-pwa'
 import { fileURLToPath, URL } from 'node:url'
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
-  // Use '/' for local development, '/FMD/' for GitHub Pages deployment
-  base: mode === 'production' ? '/FMD/' : '/',
+export default defineConfig({
+  // Base path depends on deployment target
+  // For GitHub Pages: '/FMD/'
+  // For root domain: '/'
+  // For subdirectory: '/your-subdirectory/'
+  base: process.env.VITE_BASE_URL || (process.env.NODE_ENV === 'production' ? '/' : '/'),
   plugins: [
     vue(),
     VitePWA({
@@ -96,4 +99,4 @@ export default defineConfig(({ mode }) => ({
   optimizeDeps: {
     include: ['vue', 'vue-router', 'pinia', '@supabase/supabase-js']
   }
-}))
+})

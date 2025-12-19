@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find My Document - Authentication</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Translations -->
+    <script src="translations.js"></script>
+
+    <!-- Load Supabase library first -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- Initialize our Supabase client and APIs -->
+    <script src="supabaseClient.js"></script>
+    
+    <!-- Load auth manager last -->
+    <script src="auth.js"></script>
+    
+    <!-- Add listener for when everything is loaded -->
+    <script>
+        // Test Supabase connectivity
+        async function testSupabaseConnection() {
+            try {
+                if (!window.supabase) {
+                    return { success: false, error: 'Supabase client não inicializado' };
+                }
+                
+                // Try a simple auth check
+                const { error } = await window.supabase.auth.getSession();
+                if (error && !error.message.includes('session')) {
+                    return { success: false, error: error.message };
+                }
+                return { success: true };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+        
+        window.addEventListener('load', () => {
+            // Wait a bit to ensure Supabase is initialized
+            setTimeout(async () => {
+                if (window.supabase && window.authApi) {
+                    console.log('All dependencies loaded successfully');
+                    
+                    // Test connection
+                    const connectionTest = await testSupabaseConnection();
+                    if (!connectionTest.success) {
+                        console.warn('Supabase connection test failed:', connectionTest.error);
+                        // Show warning to user if offline or connection issues
+                        if (!navigator.onLine) {
+                            const toastContainer = document.getElementById('toast-container');
+                            if (toastContainer) {
+                                const toast = document.createElement('div');
+                                toast.className = 'toast error';
+                                toast.innerHTML = `
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span><i class="fas fa-wifi"></i> Sem conexão com a internet</span>
+                                        <button onclick="this.parentElement.parentElement.remove()" 
+                                                style="background: none; border: none; cursor: pointer; margin-left: 10px; color: inherit;"
+                                                aria-label="Fechar">&times;</button>
+                                    </div>
+                                `;
+                                toastContainer.appendChild(toast);
+                                setTimeout(() => toast.remove(), 10000);
+                            }
+                        }
+                    }
+                } else {
+                    console.error('Dependencies failed to load properly');
+                    console.error('Supabase available:', !!window.supabase);
+                    console.error('Auth API available:', !!window.authApi);
+                }
+            }, 500);
+        });
+        
+        // Add toggle password functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            // Language setup
+            const savedLanguage = localStorage.getItem('findmydocs_language') || 'pt';
+            try { document.documentElement.setAttribute('lang', savedLanguage); } catch (e) {}
+            if (window.translations) applyTranslations(savedLanguage);
+
+            // Initialize auth tabs
+            const authTabs = document.querySelectorAll('.auth-tab');
+            const authForms = document.querySelectorAll('.auth-form');
+            
+            authTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const targetTab = tab.getAttribute('data-tab');
+                    
+                    // Remove active from all tabs and forms
+                    authTabs.forEach(t => t.classList.remove('active'));
+                    authForms.forEach(f => f.classList.remove('active'));
+                    
+                    // Add active to clicked tab and corresponding form
+                    tab.classList.add('active');
+                    document.getElementById(targetTab + '-form').classList.add('active');
+                    if (window.translations) applyTranslations(savedLanguage);
+                });
+            });
+            
+            // Form handling
+            const signinForm = document.getElementById('signin-form');
+            const signupForm = document.getElementById('signup-form');
+            
+            if (signinForm) {
+                signinForm.addEventListener('submit', handleSignIn);
+            }
+            
+            if (signupForm) {
+                signupForm.addEventListener('submit', handleSignUp);
+            }
+            
+            // Input focus handling
+            const inputGroups = document.querySelectorAll('.input-group');
+            inputGroups.forEach(group => {
+                const input = group.querySelector('input');
+                if (input) {
+                    input.addEventListener('focus', () => group.classList.add('focused'));
+                    input.addEventListener('blur', () => {
+                        group.classList.remove('focused');
+                        if (input.value) {
+                            group.classList.add('has-value');
+                        } else {
+                            group.classList.remove('has-value');
+                        }
+                    });
+                    
+                    // Check if input has value on load
+                    if (input.value) {
+                        group.classList.add('has-value');
+                    }
+                }
+            });
+            
+            // Toggle password functionality
+            const toggleButtons = document.querySelectorAll('.toggle-password');
+            toggleButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const input = button.parentElement.querySelector('input[type="password"], input[type="text"]');
+                    const icon = button.querySelector('i');
+                    
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        icon.className = 'fas fa-eye-slash';
+                        button.setAttribute('aria-label', 'Hide password');
+                    } else {
+                        input.type = 'password';
+                        icon.className = 'fas fa-eye';
+                        button.setAttribute('aria-label', 'Show password');
+                    }
+                });
+            });
+        });
+        
+        async function handleSignIn(e) {
+            e.preventDefault();
+            
+            const emailInput = document.getElementById('signin-email');
+            const passwordInput = document.getElementById('signin-password');
+            const submitButton = e.target.querySelector('button[type="submit"]');
+            
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+            
+            // Basic validation
+            if (!email || !password) {
+                showToast('Por favor, preencha todos os campos', 'error');
+                return;
+            }
+            
+            // Disable submit button during request
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Entrando...';
+            }
+            
+            try {
+                if (!window.authApi) {
+                    throw new Error('Sistema de autenticação não disponível. Recarregue a página.');
+                }
+                
+                if (!navigator.onLine) {
+                    throw new Error('Sem conexão com a internet. Verifique sua conexão.');
+                }
+                
+                const result = await window.authApi.signIn(email, password);
+                if (result && result.user) {
+                    showToast('Login realizado com sucesso!', 'success');
+                    
+                    // Small delay before redirect to show success message
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1000);
+                } else {
+                    throw new Error('Erro ao fazer login. Tente novamente.');
+                }
+            } catch (error) {
+                console.error('Sign in error:', error);
+                const errorMessage = error.message || 'Erro ao fazer login. Tente novamente.';
+                showToast(errorMessage, 'error');
+                
+                // Clear password field on error
+                passwordInput.value = '';
+            } finally {
+                // Re-enable submit button
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = '<i class="fas fa-sign-in-alt"></i> <span data-i18n="login.sign_in">Sign In</span>';
+                }
+            }
+        }
+        
+        async function handleSignUp(e) {
+            e.preventDefault();
+            
+            const nameInput = document.getElementById('signup-name');
+            const emailInput = document.getElementById('signup-email');
+            // const phoneInput = document.getElementById('signup-phone'); // Campo removido
+            const passwordInput = document.getElementById('signup-password');
+            const confirmPasswordInput = document.getElementById('signup-confirm-password');
+            const submitButton = e.target.querySelector('button[type="submit"]');
+            
+            const name = nameInput.value.trim();
+            const email = emailInput.value.trim();
+            // const phone = phoneInput.value.trim(); // Campo removido
+            const password = passwordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
+            
+            // Validation - telefone removido
+            if (!name || !email || !password || !confirmPassword) {
+                showToast('Por favor, preencha todos os campos', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showToast('A senha deve ter pelo menos 6 caracteres', 'error');
+                passwordInput.focus();
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showToast('As senhas não coincidem', 'error');
+                confirmPasswordInput.focus();
+                return;
+            }
+            
+            // Basic email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showToast('Por favor, insira um email válido', 'error');
+                emailInput.focus();
+                return;
+            }
+            
+            // Disable submit button during request
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Criando conta...';
+            }
+            
+            try {
+                if (!window.authApi) {
+                    throw new Error('Sistema de autenticação não disponível. Recarregue a página.');
+                }
+                
+                if (!navigator.onLine) {
+                    throw new Error('Sem conexão com a internet. Verifique sua conexão.');
+                }
+                
+                const result = await window.authApi.signUp(email, password, {
+                    fullName: name
+                    // phoneNumber removido - não é mais necessário (não precisa de vírgula)
+                });
+                
+                if (result && result.user) {
+                    showToast('Conta criada com sucesso! Verifique seu email para confirmar.', 'success');
+                    
+                    // Clear form
+                    nameInput.value = '';
+                    emailInput.value = '';
+                    // phoneInput.value = ''; // Campo removido
+                    passwordInput.value = '';
+                    confirmPasswordInput.value = '';
+                    
+                    // Switch to sign in tab after a delay
+                    setTimeout(() => {
+                        document.querySelector('[data-tab="signin"]').click();
+                        emailInput.value = email; // Pre-fill email for convenience
+                    }, 2000);
+                } else {
+                    throw new Error('Erro ao criar conta. Tente novamente.');
+                }
+            } catch (error) {
+                console.error('Sign up error:', error);
+                const errorMessage = error.message || 'Erro ao criar conta. Tente novamente.';
+                showToast(errorMessage, 'error');
+                
+                // Clear password fields on error
+                passwordInput.value = '';
+                confirmPasswordInput.value = '';
+            } finally {
+                // Re-enable submit button
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = '<i class="fas fa-user-plus"></i> <span data-i18n="login.create_account">Create Account</span>';
+                }
+            }
+        }
+        
+        
+        function showToast(message, type = 'info') {
+            const toastContainer = document.getElementById('toast-container');
+            if (!toastContainer) return;
+            
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" 
+                            style="background: none; border: none; cursor: pointer; margin-left: 10px; color: inherit;"
+                            aria-label="Fechar">&times;</button>
+                </div>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.remove();
+                }
+            }, 5000);
+        }
+
+        function applyTranslations(lang) {
+            if (!window.translations || !window.translations[lang]) return;
+            const dict = window.translations[lang];
+            const elements = document.querySelectorAll('[data-i18n]');
+            elements.forEach(el => {
+                const expr = el.dataset.i18n;
+                if (!expr) return;
+                const parts = expr.split(';').map(s => s.trim()).filter(Boolean);
+                parts.forEach(p => {
+                    const match = p.match(/^\[(.+?)\](.+)$/);
+                    if (match) {
+                        const attr = match[1];
+                        const key = match[2];
+                        const val = dict[key];
+                        if (val !== undefined) el.setAttribute(attr, val);
+                    } else {
+                        const key = p;
+                        const val = dict[key];
+                        if (val !== undefined) el.textContent = val;
+                    }
+                });
+            });
+        }
+    </script>
+</head>
+<body>
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Auth Container -->
+    <div class="auth-container">
+        <div class="auth-card">
+            <!-- Logo -->
+            <div class="auth-logo">
+                <img src="logofmd.jpg" alt="Find My Document Logo">
+                <h1 data-i18n="login.title">FindMyDocs</h1>
+            </div>
+
+            <!-- Auth Tabs -->
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-tab="signin" data-i18n="login.sign_in_tab">Sign In</button>
+                <button class="auth-tab" data-tab="signup" data-i18n="login.sign_up_tab">Sign Up</button>
+            </div>
+
+            <!-- Sign In Form -->
+            <form id="signin-form" class="auth-form active">
+                <div class="form-group">
+                    <div class="input-group">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="signin-email" required>
+                        <label for="signin-email" data-i18n="login.email">Email Address</label>
+                    </div>
+                    <span class="error-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="signin-password" required>
+                        <label for="signin-password" data-i18n="login.password">Password</label>
+                        <button type="button" class="toggle-password" data-i18n="[title]login.toggle_password;[aria-label]login.toggle_password" title="Toggle password visibility" aria-label="Toggle password visibility">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <span class="error-message"></span>
+                </div>
+
+                <div class="form-options">
+                    <a href="#" class="forgot-password" onclick="handleForgotPassword(event)" data-i18n="login.forgot_password">Forgot password?</a>
+                </div>
+
+                <button type="submit" class="btn btn-gradient" data-i18n="login.sign_in">Sign In</button>
+                
+
+                <div class="social-login">
+                    <span class="divider" data-i18n="login.or">or</span>
+                    <button type="button" class="btn btn-phone" data-i18n="[title]login.continue_phone;[aria-label]login.continue_phone"> 
+                        <i class="fas fa-phone"></i>
+                        <span data-i18n="login.continue_phone">Continuar com Telefone</span>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Sign Up Form -->
+            <form id="signup-form" class="auth-form">
+                <div class="form-group">
+                    <div class="input-group">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="signup-name" required>
+                        <label for="signup-name" data-i18n="login.full_name">Full Name</label>
+                    </div>
+                    <span class="error-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <div class="input-group">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="signup-email" required>
+                        <label for="signup-email" data-i18n="login.email">Email Address</label>
+                    </div>
+                    <span class="error-message"></span>
+                </div>
+
+                <!-- Campo de telefone removido - apenas nome, email e senha são necessários -->
+                <!--
+                <div class="form-group">
+                    <div class="input-group">
+                        <i class="fas fa-phone"></i>
+                        <input type="tel" id="signup-phone" required>
+                        <label for="signup-phone" data-i18n="login.phone">Phone Number</label>
+                    </div>
+                    <span class="error-message"></span>
+                </div>
+                -->
+
+                <div class="form-group">
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="signup-password" required>
+                        <label for="signup-password" data-i18n="login.password">Password</label>
+                        <button type="button" class="toggle-password" data-i18n="[title]login.toggle_password;[aria-label]login.toggle_password" title="Toggle password visibility" aria-label="Toggle password visibility">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <span class="error-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="signup-confirm-password" required>
+                        <label for="signup-confirm-password" data-i18n="login.confirm_password">Confirm Password</label>
+                        <button type="button" class="toggle-password" data-i18n="[title]login.toggle_password;[aria-label]login.toggle_password" title="Toggle password visibility" aria-label="Toggle password visibility">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <span class="error-message"></span>
+                </div>
+
+                <button type="submit" class="btn btn-gradient" data-i18n="login.create_account">Create Account</button>
+
+                <div class="social-login">
+                    <span class="divider" data-i18n="login.or">or</span>
+                    <!-- Botão de registro com telefone removido -->
+                    <!--
+                    <button type="button" class="btn btn-phone" data-i18n="[title]login.sign_up_phone;[aria-label]login.sign_up_phone">
+                        <i class="fas fa-phone"></i>
+                        <span data-i18n="login.sign_up_phone">Registrar com Telefone</span>
+                    </button>
+                    -->
+                </div>
+            </form>
+        </div>
+        <footer class="auth-footer">
+            <p data-i18n="login.footer">© 2025 Find My Document - Maputo, Mozambique</p>
+        </footer>
+    </div>
+</body>
+</html>

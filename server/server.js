@@ -67,8 +67,11 @@ app.use((req, res, next) => {
   next();
 });
 
-// Serve static files from the 'public' directory
-app.use(express.static(path.join(__dirname, '../public')));
+// Serve static files from the 'public' directory (if exists)
+const publicPath = path.join(__dirname, '../public');
+if (fs.existsSync(publicPath)) {
+  app.use(express.static(publicPath));
+}
 
 // Parse JSON bodies with size limit
 app.use(express.json({ limit: '10kb' }));
@@ -172,7 +175,25 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
   customSiteTitle: 'FMD Windsurf API Documentation',
 }));
 
-// 404 Handler
+// Serve Vue frontend in production (after API routes, before 404)
+if (process.env.NODE_ENV === 'production') {
+  const frontendDistPath = path.join(__dirname, '../frontend/dist');
+  if (fs.existsSync(frontendDistPath)) {
+    // Serve static files from Vue build
+    app.use(express.static(frontendDistPath));
+    
+    // Handle Vue Router - all non-API routes should serve index.html
+    app.get('*', (req, res, next) => {
+      // Don't serve index.html for API routes
+      if (req.path.startsWith('/api') || req.path.startsWith('/api-docs')) {
+        return next();
+      }
+      res.sendFile(path.join(frontendDistPath, 'index.html'));
+    });
+  }
+}
+
+// 404 Handler (for API routes only in production, or all routes in dev)
 app.use(notFoundHandler);
 
 // Global Error Handler with audit logging
