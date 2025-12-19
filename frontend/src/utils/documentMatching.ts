@@ -1,5 +1,5 @@
 import type { Document } from '@/types'
-import { supabase } from '@/utils/supabase'
+import { supabase } from '@/api/supabase'
 
 interface MatchResult {
   document: Document
