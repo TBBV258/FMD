@@ -291,7 +291,10 @@ BEGIN
         'system',
         'Sistema Configurado!',
         'Chats e notificações estão funcionando corretamente. ✅',
-        '{"test": true, "configured_at": "' || NOW()::text || '"}'::jsonb,
+        jsonb_build_object(
+          'test', true,
+          'configured_at', NOW()::text
+        ),
         false
       );
       RAISE NOTICE 'Notificação de teste criada para usuário %', v_user_id;
