@@ -1,4 +1,4 @@
-import { supabase } from '@/config/supabase'
+import { supabase } from './supabase'
 import type { Badge, BadgeDefinition } from '@/types'
 
 export const badgesApi = {

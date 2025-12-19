@@ -1,4 +1,4 @@
-import { supabase } from '@/config/supabase'
+import { supabase } from './supabase'
 import type { DocumentMatch } from '@/types'
 
 export const matchesApi = {
