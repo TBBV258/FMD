@@ -117,7 +117,8 @@ const tabClass = (tab: 'all' | 'chats') => {
 
 const iconClass = (type: string) => {
   const classes = {
-    match: 'w-10 h-10 rounded-full bg-success/10 text-success flex items-center justify-center',
+    document_match: 'w-10 h-10 rounded-full bg-success/10 text-success flex items-center justify-center',
+    document_found: 'w-10 h-10 rounded-full bg-success/10 text-success flex items-center justify-center',
     message: 'w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center',
     system: 'w-10 h-10 rounded-full bg-gray-100 dark:bg-dark-card text-gray-600 dark:text-gray-400 flex items-center justify-center',
     verification: 'w-10 h-10 rounded-full bg-warning/10 text-warning-dark flex items-center justify-center'
@@ -127,7 +128,8 @@ const iconClass = (type: string) => {
 
 const iconName = (type: string) => {
   const icons = {
-    match: 'fas fa-check-double',
+    document_match: 'fas fa-check-double',
+    document_found: 'fas fa-search',
     message: 'fas fa-envelope',
     system: 'fas fa-info-circle',
     verification: 'fas fa-shield-alt'
@@ -180,11 +182,11 @@ const handleNotificationClick = async (notification: Notification) => {
   // Navigate based on notification type and action_url
   if (notification.action_url) {
     router.push(notification.action_url)
-  } else if (notification.type === 'match' && notification.metadata?.documentId) {
+  } else if ((notification.type === 'document_match' || notification.type === 'document_found') && notification.metadata && 'documentId' in notification.metadata) {
     router.push(`/document/${notification.metadata.documentId}`)
-  } else if (notification.type === 'message' && notification.metadata?.documentId) {
+  } else if (notification.type === 'message' && notification.metadata && 'documentId' in notification.metadata) {
     router.push(`/chat/${notification.metadata.documentId}`)
-  } else if (notification.type === 'verification' && notification.metadata?.documentId) {
+  } else if (notification.type === 'verification' && notification.metadata && 'documentId' in notification.metadata) {
     router.push(`/document/${notification.metadata.documentId}`)
   }
 }
