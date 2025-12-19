@@ -40,4 +40,8 @@ jobs:
           publish_branch: gh-pages
           # The directory that contains the compiled, deployable files
           publish_dir: ./frontend/dist
+          # Prevent Jekyll processing
+          enable_jekyll: false
+          # Add .nojekyll file
+          cname: false
 

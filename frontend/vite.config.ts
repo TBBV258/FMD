@@ -83,16 +83,19 @@ export default defineConfig({
   build: {
     target: 'esnext',
     cssCodeSplit: true,
+    assetsInlineLimit: 0,
     rollupOptions: {
       output: {
         format: 'es',
         manualChunks: {
           'vue-vendor': ['vue', 'vue-router', 'pinia'],
-          'supabase': ['@supabase/supabase-js']
+          'supabase': ['@supabase/supabase-js'],
+          'maplibre': ['maplibre-gl']
         }
       }
     },
-    chunkSizeWarningLimit: 600
+    chunkSizeWarningLimit: 600,
+    sourcemap: false
   },
   optimizeDeps: {
     include: ['vue', 'vue-router', 'pinia', '@supabase/supabase-js']

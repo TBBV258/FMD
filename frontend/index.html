@@ -42,5 +42,16 @@
 <body>
   <div id="app"></div>
   <script type="module" src="/src/main.ts"></script>
+  
+  <!-- SPA redirect handler for GitHub Pages -->
+  <script>
+    (function() {
+      var redirect = sessionStorage.redirect;
+      delete sessionStorage.redirect;
+      if (redirect && redirect !== location.pathname) {
+        history.replaceState(null, null, redirect);
+      }
+    })();
+  </script>
 </body>
 </html>
