@@ -305,21 +305,34 @@ END $$;
 -- VERIFICAÇÃO FINAL
 -- ============================================
 
+-- ============================================
+-- VERIFICAÇÕES FINAIS
+-- ============================================
+
 -- 15. Verificar estrutura das tabelas
-\echo '\n=== ESTRUTURA DAS TABELAS ==='
+DO $$
+BEGIN
+  RAISE NOTICE '';
+  RAISE NOTICE '=== ESTRUTURA DAS TABELAS ===';
+END $$;
+
 SELECT 
   table_name,
   column_name,
   data_type,
-  is_nullable,
-  column_default
+  is_nullable
 FROM information_schema.columns
 WHERE table_schema = 'public'
   AND table_name IN ('chats', 'notifications')
 ORDER BY table_name, ordinal_position;
 
 -- 16. Verificar se RLS está ativado
-\echo '\n=== ROW LEVEL SECURITY ==='
+DO $$
+BEGIN
+  RAISE NOTICE '';
+  RAISE NOTICE '=== ROW LEVEL SECURITY ===';
+END $$;
+
 SELECT
   schemaname,
   tablename,
@@ -329,7 +342,12 @@ WHERE schemaname = 'public'
   AND tablename IN ('chats', 'notifications');
 
 -- 17. Verificar políticas
-\echo '\n=== POLÍTICAS DE SEGURANÇA ==='
+DO $$
+BEGIN
+  RAISE NOTICE '';
+  RAISE NOTICE '=== POLÍTICAS DE SEGURANÇA ===';
+END $$;
+
 SELECT
   tablename,
   policyname,
@@ -341,7 +359,12 @@ WHERE schemaname = 'public'
 ORDER BY tablename, policyname;
 
 -- 18. Contar registros
-\echo '\n=== CONTAGEM DE REGISTROS ==='
+DO $$
+BEGIN
+  RAISE NOTICE '';
+  RAISE NOTICE '=== CONTAGEM DE REGISTROS ===';
+END $$;
+
 SELECT 
   'chats' as table_name,
   COUNT(*) as record_count
