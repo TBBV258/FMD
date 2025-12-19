@@ -20,7 +20,7 @@ export function useBackup() {
       const downloadUrl = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = downloadUrl
-      link.download = doc.file_name || `document_${doc.id}.${getFileExtension(doc.file_type)}`
+      link.download = doc.file_name || `document_${doc.id}.${getFileExtension(doc.file_type || '')}`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
