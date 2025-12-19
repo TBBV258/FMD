@@ -34,6 +34,12 @@ jobs:
           npm run build:ci
         env:
           NODE_ENV: production
+          VITE_BASE_URL: /FMD-main/
+
+      - name: Create .nojekyll file
+        run: |
+          touch frontend/dist/.nojekyll
+          echo "Disabling Jekyll processing for GitHub Pages"
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
@@ -43,3 +49,5 @@ jobs:
           publish_dir: ./frontend/dist
           # Keep files from previous deployments
           keep_files: false
+          # Disable Jekyll processing
+          disable_nojekyll: false

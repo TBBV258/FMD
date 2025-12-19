@@ -6,10 +6,10 @@ import { fileURLToPath, URL } from 'node:url'
 // https://vitejs.dev/config/
 export default defineConfig({
   // Base path depends on deployment target
-  // For GitHub Pages: '/FMD/'
+  // For GitHub Pages: '/FMD-main/' (repository name)
   // For root domain: '/'
   // For subdirectory: '/your-subdirectory/'
-  base: process.env.VITE_BASE_URL || (process.env.NODE_ENV === 'production' ? '/' : '/'),
+  base: process.env.VITE_BASE_URL || '/FMD-main/',
   plugins: [
     vue(),
     VitePWA({
