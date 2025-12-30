@@ -5,8 +5,9 @@
   "description": "FindMyDocs - Vue.js Frontend",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc && vite build",
+    "build": "vite build",
     "build:ci": "vite build",
+    "build:check": "vue-tsc && vite build",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
