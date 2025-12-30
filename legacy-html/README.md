@@ -37,3 +37,4 @@ A aplicação agora utiliza o frontend Vue.js localizado em `frontend/` como a U
 
 Estes arquivos são mantidos apenas para referência histórica. Não devem ser usados em produção.
 
+

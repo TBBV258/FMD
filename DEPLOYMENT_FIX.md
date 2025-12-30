@@ -98,3 +98,4 @@ npm run preview
 - O arquivo `.nojekyll` é essencial para desabilitar Jekyll
 - Após mudanças, pode levar alguns minutos para o GitHub Pages atualizar
 
+

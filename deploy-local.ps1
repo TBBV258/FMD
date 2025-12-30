@@ -74,3 +74,4 @@ if ($status) {
 
 Write-Host "`n✅ Deploy local concluído!" -ForegroundColor Green
 
+

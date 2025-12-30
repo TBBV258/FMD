@@ -117,3 +117,4 @@ Após seguir estes passos, a aplicação Vue deve aparecer corretamente. Se aind
 2. Conteúdo da branch `gh-pages`
 3. Console do navegador para erros
 
+

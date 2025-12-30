@@ -62,3 +62,4 @@ Se ainda não funcionar:
 3. Verifique se o GitHub Pages está configurado para `/docs`
 4. Verifique o console do navegador (F12) para erros
 
+
