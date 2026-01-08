@@ -6,7 +6,7 @@
     <!-- Loading overlay -->
     <div
       v-if="isLoading"
-      class="absolute inset-0 bg-white/80 dark:bg-dark-bg/80 flex items-center justify-center"
+      class="absolute inset-0 bg-white/80 dark:bg-dark-bg/80 flex items-center justify-center z-10"
     >
       <div class="text-center">
         <div class="spinner mb-2"></div>
@@ -15,7 +15,7 @@
     </div>
     
     <!-- Map controls -->
-    <div class="absolute top-4 right-4 space-y-2">
+    <div class="absolute top-4 right-4 space-y-2 z-10">
       <button
         class="btn-icon bg-white dark:bg-dark-card shadow-lg"
         @click="centerOnUserLocation"
@@ -32,15 +32,15 @@
     </div>
     
     <!-- Legend -->
-    <div class="absolute bottom-4 left-4 bg-white dark:bg-dark-card rounded-lg shadow-lg p-3">
+    <div class="absolute bottom-4 left-4 bg-white dark:bg-dark-card rounded-lg shadow-lg p-3 z-10">
       <div class="space-y-2 text-sm">
         <div class="flex items-center space-x-2">
           <div class="w-3 h-3 rounded-full" style="background-color: #DC3545;"></div>
           <span>Perdidos</span>
         </div>
         <div class="flex items-center space-x-2">
-          <div class="w-3 h-3 rounded-full" style="background-color: #28A745;"></div>
-          <span>Encontrados</span>
+          <div class="w-3 h-3 rounded-full" style="background-color: #FF8C00;"></div>
+          <span>Submetido por Utilizador</span>
         </div>
       </div>
     </div>
@@ -49,6 +49,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue'
+import maplibregl from 'maplibre-gl'
+import 'maplibre-gl/dist/maplibre-gl.css'
 import type { Document } from '@/types'
 import { useGeolocation } from '@/composables/useGeolocation'
 
@@ -70,23 +72,24 @@ const emit = defineEmits<{
 
 const mapContainer = ref<HTMLElement | null>(null)
 const isLoading = ref(true)
-const map = ref<any>(null)
-const markers = ref<any[]>([])
-const userMarker = ref<any>(null)
+const map = ref<maplibregl.Map | null>(null)
+const markers = ref<maplibregl.Marker[]>([])
+const userMarker = ref<maplibregl.Marker | null>(null)
 
 const { coordinates: userLocation, getCurrentPosition } = useGeolocation()
 
-let L: any = null
-
-onMounted(async () => {
-  await loadLeaflet()
+onMounted(() => {
   initializeMap()
-  await getUserLocation()
+  getUserLocation()
 })
 
 onUnmounted(() => {
   if (map.value) {
     map.value.remove()
+  }
+  markers.value.forEach(marker => marker.remove())
+  if (userMarker.value) {
+    userMarker.value.remove()
   }
 })
 
@@ -94,162 +97,165 @@ watch(() => props.documents, () => {
   updateMarkers()
 }, { deep: true })
 
-const loadLeaflet = async () => {
-  if (typeof window === 'undefined') return
+const initializeMap = () => {
+  if (!mapContainer.value) return
   
-  // Check if Leaflet is already loaded
-  if ((window as any).L) {
-    L = (window as any).L
-    return
-  }
-  
-  // Load Leaflet CSS
-  if (!document.querySelector('link[href*="leaflet.css"]')) {
-    const link = document.createElement('link')
-    link.rel = 'stylesheet'
-    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
-    document.head.appendChild(link)
-  }
-  
-  // Load Leaflet JS
-  return new Promise((resolve, reject) => {
-    if ((window as any).L) {
-      L = (window as any).L
-      resolve(true)
-      return
-    }
-    
-    const script = document.createElement('script')
-    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
-    script.onload = () => {
-      L = (window as any).L
-      resolve(true)
-    }
-    script.onerror = reject
-    document.head.appendChild(script)
+  // Create map
+  map.value = new maplibregl.Map({
+    container: mapContainer.value,
+    style: {
+      version: 8,
+      sources: {
+        'osm-tiles': {
+          type: 'raster',
+          tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+          tileSize: 256,
+          attribution: '© OpenStreetMap contributors'
+        }
+      },
+      layers: [
+        {
+          id: 'osm-tiles-layer',
+          type: 'raster',
+          source: 'osm-tiles',
+          minzoom: 0,
+          maxzoom: 19
+        }
+      ]
+    },
+    center: props.center,
+    zoom: props.zoom
+  })
+
+  // Add navigation controls
+  map.value.addControl(new maplibregl.NavigationControl(), 'bottom-right')
+
+  map.value.on('load', () => {
+    isLoading.value = false
+    updateMarkers()
   })
 }
 
-const initializeMap = () => {
-  if (!L || !mapContainer.value) return
-  
-  // Create map
-  map.value = L.map(mapContainer.value, {
-    zoomControl: false
-  }).setView(props.center, props.zoom)
-  
-  // Add tile layer
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors',
-    maxZoom: 19
-  }).addTo(map.value)
-  
-  // Add zoom control in bottom right
-  L.control.zoom({ position: 'bottomright' }).addTo(map.value)
-  
-  isLoading.value = false
-  
-  // Add markers
-  updateMarkers()
+const createMarkerElement = (color: string, icon: string) => {
+  const el = document.createElement('div')
+  el.className = 'custom-marker'
+  el.style.cssText = `
+    background-color: ${color};
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+  `
+  el.innerHTML = `<i class="fas ${icon}"></i>`
+  return el
 }
 
 const updateMarkers = () => {
-  if (!L || !map.value) return
+  if (!map.value || !map.value.loaded()) return
   
   // Remove existing markers
   markers.value.forEach(marker => marker.remove())
   markers.value = []
+  
+  const bounds = new maplibregl.LngLatBounds()
+  let hasBounds = false
   
   // Add new markers
   props.documents.forEach(doc => {
     if (!doc.location_metadata?.lat || !doc.location_metadata?.lng) return
     
     const { lat, lng } = doc.location_metadata
+    const coordinates: [number, number] = [lng, lat]
     
-    // Create custom icon based on status
-    const iconColor = doc.status === 'lost' ? '#DC3545' : '#28A745'
-    const iconHtml = `
-      <div style="
-        background-color: ${iconColor};
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        border: 3px solid white;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        display: flex;
-        align-items: center;
-        justify-center;
-        color: white;
-        font-size: 14px;
-      ">
-        <i class="fas ${doc.status === 'lost' ? 'fa-search' : 'fa-check'}"></i>
-      </div>
-    `
+    // Create custom marker based on status
+    const iconColor = doc.status === 'lost' ? '#DC3545' : '#FF8C00'
+    const iconName = doc.status === 'lost' ? 'fa-search' : 'fa-check'
+    const markerElement = createMarkerElement(iconColor, iconName)
     
-    const icon = L.divIcon({
-      html: iconHtml,
-      className: 'custom-marker',
-      iconSize: [30, 30],
-      iconAnchor: [15, 15]
+    const marker = new maplibregl.Marker({
+      element: markerElement,
+      anchor: 'center'
     })
+      .setLngLat(coordinates)
+      .addTo(map.value!)
     
-    const marker = L.marker([lat, lng], { icon })
-      .addTo(map.value)
-      .bindPopup(`
+    // Create popup
+    const popup = new maplibregl.Popup({ offset: 25 })
+      .setHTML(`
         <div class="p-2">
           <h4 class="font-semibold mb-1">${doc.title}</h4>
           <p class="text-sm text-gray-600">${doc.description || 'Sem descrição'}</p>
           <p class="text-xs text-gray-500 mt-1">${doc.location || 'Localização não especificada'}</p>
         </div>
       `)
-      .on('click', () => emit('markerClick', doc))
+    
+    marker.setPopup(popup)
+    
+    // Add click handler
+    markerElement.addEventListener('click', () => {
+      emit('markerClick', doc)
+    })
     
     markers.value.push(marker)
+    bounds.extend(coordinates)
+    hasBounds = true
   })
   
   // Fit bounds if there are markers
-  if (markers.value.length > 0) {
-    const group = L.featureGroup(markers.value)
-    map.value.fitBounds(group.getBounds().pad(0.1))
+  if (hasBounds && markers.value.length > 0) {
+    map.value.fitBounds(bounds, {
+      padding: 50,
+      maxZoom: 15
+    })
   }
 }
 
 const getUserLocation = async () => {
   const location = await getCurrentPosition()
   
-  if (location && L && map.value) {
-    // Add user location marker
-    const userIconHtml = `
-      <div style="
-        background-color: #007BFF;
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        border: 3px solid white;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-      "></div>
-    `
+  if (location && map.value && map.value.loaded()) {
+    const coordinates: [number, number] = [location.longitude, location.latitude]
     
-    const userIcon = L.divIcon({
-      html: userIconHtml,
-      className: 'user-marker',
-      iconSize: [20, 20],
-      iconAnchor: [10, 10]
-    })
-    
+    // Remove existing user marker
     if (userMarker.value) {
       userMarker.value.remove()
     }
     
-    userMarker.value = L.marker([location.latitude, location.longitude], { icon: userIcon })
+    // Create user location marker
+    const userEl = document.createElement('div')
+    userEl.className = 'user-marker'
+    userEl.style.cssText = `
+      background-color: #007BFF;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 3px solid white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    `
+    
+    userMarker.value = new maplibregl.Marker({
+      element: userEl,
+      anchor: 'center'
+    })
+      .setLngLat(coordinates)
+      .setPopup(new maplibregl.Popup().setHTML('Você está aqui'))
       .addTo(map.value)
-      .bindPopup('Você está aqui')
   }
 }
 
 const centerOnUserLocation = () => {
   if (userLocation.value && map.value) {
-    map.value.setView([userLocation.value.latitude, userLocation.value.longitude], 15)
+    map.value.flyTo({
+      center: [userLocation.value.longitude, userLocation.value.latitude],
+      zoom: 15
+    })
   }
 }
 
@@ -266,12 +272,12 @@ const toggleMapType = () => {
   border: none;
 }
 
-.leaflet-popup-content-wrapper {
+.maplibregl-popup-content {
   border-radius: 8px;
+  padding: 0;
 }
 
-.leaflet-popup-content {
-  margin: 0;
+.maplibregl-popup-content-wrapper {
+  padding: 0;
 }
 </style>
-

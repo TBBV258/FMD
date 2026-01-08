@@ -23,7 +23,16 @@
             <p class="text-xs text-gray-500">Documentos</p>
           </div>
           <div>
-            <p class="text-2xl font-bold text-success">{{ profile?.points || 0 }}</p>
+            <div class="flex items-center justify-center space-x-1">
+              <p class="text-2xl font-bold text-success">{{ profile?.points || 0 }}</p>
+              <button
+                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                @click.stop="showPointsInfo = true"
+                title="Como ganhar pontos?"
+              >
+                <i class="fas fa-info-circle text-xs"></i>
+              </button>
+            </div>
             <p class="text-xs text-gray-500">Pontos</p>
           </div>
           <div>
@@ -72,6 +81,54 @@
     <!-- Subscription Plans Modal -->
     <SubscriptionPlansModal v-model="showPlansModal" />
 
+    <!-- Points Info Modal -->
+    <BaseModal v-model="showPointsInfo" title="Como ganhar pontos?">
+      <div class="space-y-3">
+        <div class="flex items-start space-x-3">
+          <i class="fas fa-check-double text-success mt-1"></i>
+          <div>
+            <p class="font-semibold">Match de documento</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">+50 pontos</p>
+          </div>
+        </div>
+        <div class="flex items-start space-x-3">
+          <i class="fas fa-file-alt text-primary mt-1"></i>
+          <div>
+            <p class="font-semibold">Reportar documento</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">+10 pontos</p>
+          </div>
+        </div>
+        <div class="flex items-start space-x-3">
+          <i class="fas fa-shield-alt text-warning-dark mt-1"></i>
+          <div>
+            <p class="font-semibold">Documento verificado</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">+20 pontos</p>
+          </div>
+        </div>
+        <div class="flex items-start space-x-3">
+          <i class="fas fa-calendar-day text-info mt-1"></i>
+          <div>
+            <p class="font-semibold">Login diário</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">+5 pontos</p>
+          </div>
+        </div>
+        <div class="flex items-start space-x-3">
+          <i class="fas fa-hands-helping text-success mt-1"></i>
+          <div>
+            <p class="font-semibold">Ajudar outros</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">+15 pontos</p>
+          </div>
+        </div>
+        <div class="flex items-start space-x-3">
+          <i class="fas fa-user-check text-primary mt-1"></i>
+          <div>
+            <p class="font-semibold">Completar perfil</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">+25 pontos</p>
+          </div>
+        </div>
+      </div>
+    </BaseModal>
+
     <!-- Meus documentos (lista compacta) -->
     <div class="card mt-6">
       <div class="flex items-center justify-between mb-3">
@@ -119,6 +176,7 @@ import BaseButton from '@/components/common/BaseButton.vue'
 import ToastContainer from '@/components/common/ToastContainer.vue'
 import ProfilePhotoUpload from '@/components/profile/ProfilePhotoUpload.vue'
 import SubscriptionPlansModal from '@/components/profile/SubscriptionPlansModal.vue'
+import BaseModal from '@/components/common/BaseModal.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -127,6 +185,7 @@ const { items: myDocuments, loading: docsLoading, error: docsError, fetchMyDocum
 
 const isLoggingOut = ref(false)
 const showPlansModal = ref(false)
+const showPointsInfo = ref(false)
 
 const user = computed(() => authStore.user)
 const profile = computed(() => authStore.profile)
@@ -149,10 +208,7 @@ const menuItems = [
   {
     icon: 'fas fa-user-edit',
     label: 'Editar Perfil',
-    action: () => {
-      // TODO: Implementar edição de perfil
-      success('Funcionalidade em breve!')
-    }
+    action: () => router.push('/edit-profile')
   },
   {
     icon: 'fas fa-file-alt',
@@ -193,11 +249,6 @@ const menuItems = [
       success('Funcionalidade em breve!')
     }
   },
-  {
-    icon: 'fas fa-sign-out-alt',
-    label: 'Sair',
-    action: handleLogout
-  }
 ]
 
 onMounted(async () => {

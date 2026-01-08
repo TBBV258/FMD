@@ -70,6 +70,10 @@ export interface UserProfile {
   subscription_expires_at?: string
   privacy_settings?: PrivacySettings
   backup_settings?: BackupSettings
+  delivery_address?: string
+  base_location?: string
+  id_document_url?: string
+  preferences?: NotificationPreferences
   created_at: string
   updated_at: string
 }
@@ -86,6 +90,13 @@ export interface BackupSettings {
   autoBackup: boolean
   frequency: 'daily' | 'weekly' | 'monthly'
   lastBackup?: string
+}
+
+export interface NotificationPreferences {
+  sms_notifications?: boolean
+  push_notifications?: boolean
+  email_notifications?: boolean
+  sms_high_priority_only?: boolean
 }
 
 // Auth Types

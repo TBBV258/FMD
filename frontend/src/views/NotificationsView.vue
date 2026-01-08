@@ -1,6 +1,18 @@
 <template>
   <MainLayout>
     <div class="px-4 py-6 space-y-6">
+      <!-- Header with Mark All Read -->
+      <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-dark-text">Notificações</h1>
+        <button
+          v-if="unreadCount > 0"
+          class="text-sm text-primary font-medium"
+          @click="markAllAsRead"
+        >
+          Marcar todas como lidas
+        </button>
+      </div>
+
       <!-- Tabs -->
       <div class="flex rounded-full bg-gray-100 dark:bg-dark-card p-1">
         <button
@@ -8,6 +20,7 @@
           @click="activeTab = 'all'"
         >
           Notificações
+          <span v-if="unreadCount > 0" class="ml-1 text-xs">({{ unreadCount }})</span>
         </button>
         <button
           :class="tabClass('chats')"
@@ -52,9 +65,12 @@
             </div>
             <button
               v-if="!notification.read"
-              class="w-2 h-2 rounded-full bg-primary"
+              class="btn-icon text-primary"
               @click.stop="markAsRead(notification.id)"
-            ></button>
+              title="Marcar como lida"
+            >
+              <i class="fas fa-check"></i>
+            </button>
           </div>
         </div>
       </div>
@@ -73,7 +89,7 @@ import MainLayout from '@/components/layout/MainLayout.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
-const { error: showError } = useToast()
+const { error: showError, success } = useToast()
 
 const activeTab = ref<'all' | 'chats'>('all')
 const notifications = ref<Notification[]>([])
@@ -88,6 +104,10 @@ const chatNotifications = computed(() =>
 
 const displayedNotifications = computed(() => 
   activeTab.value === 'all' ? allNotifications.value : chatNotifications.value
+)
+
+const unreadCount = computed(() => 
+  notifications.value.filter(n => !n.read).length
 )
 
 const emptyState = computed(() => {
@@ -198,6 +218,21 @@ const markAsRead = async (id: string) => {
   } catch (err: any) {
     showError(err.message || 'Erro ao atualizar notificação')
     notification.read = false
+  }
+}
+
+const markAllAsRead = async () => {
+  if (!authStore.userId || unreadCount.value === 0) return
+
+  try {
+    await notificationsApi.markAllAsRead(authStore.userId)
+    // Update all notifications to read
+    notifications.value.forEach(n => {
+      n.read = true
+    })
+    success('Todas as notificações foram marcadas como lidas!')
+  } catch (err: any) {
+    showError(err.message || 'Erro ao marcar todas como lidas')
   }
 }
 

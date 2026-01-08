@@ -83,7 +83,7 @@ const searchTerm = ref('')
 const filters = [
   { label: 'Todos', value: 'all' as const, icon: 'fas fa-th' },
   { label: 'Perdidos', value: 'lost' as const, icon: 'fas fa-search' },
-  { label: 'Encontrados', value: 'found' as const, icon: 'fas fa-check' }
+  { label: 'Submetido por Utilizador', value: 'found' as const, icon: 'fas fa-check' }
 ]
 
 const filteredDocuments = computed(() => {

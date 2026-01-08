@@ -49,7 +49,7 @@
     "filters": {
       "all": "Todos",
       "lost": "Perdidos",
-      "found": "Encontrados"
+      "found": "Submetido por Utilizador"
     },
     "empty": "Nenhum documento encontrado",
     "loadMore": "Carregar mais",
@@ -72,7 +72,7 @@
     },
     "status": {
       "lost": "Perdido",
-      "found": "Encontrado",
+      "found": "Submetido por Utilizador",
       "matched": "Match",
       "returned": "Devolvido"
     },

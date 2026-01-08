@@ -108,7 +108,7 @@ const router = useRouter()
 const statusBadgeClass = computed(() => {
   const classes = {
     lost: 'badge badge-danger',
-    found: 'badge badge-success',
+    found: 'badge bg-orange-500/10 text-orange-600 dark:text-orange-400',
     matched: 'badge bg-purple-500/10 text-purple-500',
     returned: 'badge badge-success'
   }
@@ -118,7 +118,7 @@ const statusBadgeClass = computed(() => {
 const statusLabel = computed(() => {
   const labels = {
     lost: 'Perdido',
-    found: 'Encontrado',
+    found: 'Submetido por Utilizador',
     matched: 'Match',
     returned: 'Devolvido',
     normal: 'Normal'

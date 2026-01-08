@@ -95,11 +95,11 @@ export function useChat(initialUserId: string) {
       (b.last_message?.created_at ?? '').localeCompare(a.last_message?.created_at ?? '')
     )
 
-    // Enriquecer com perfil do outro usuário (opcional)
+    // Enriquecer com perfil do outro usuário
     const uniqueUserIds = [...new Set(previews.value.map((p) => p.other_user_id))]
     if (uniqueUserIds.length) {
       const { data: profiles, error: profileError } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .select('id, avatar_url, full_name')
         .in('id', uniqueUserIds)
 
@@ -112,6 +112,13 @@ export function useChat(initialUserId: string) {
           ...p,
           other_user_avatar_url: profileMap.get(p.other_user_id)?.avatar_url ?? null,
           other_user_name: profileMap.get(p.other_user_id)?.full_name ?? 'Usuário'
+        }))
+      } else {
+        // Fallback: set default values if profiles not found
+        previews.value = previews.value.map((p) => ({
+          ...p,
+          other_user_avatar_url: p.other_user_avatar_url ?? null,
+          other_user_name: p.other_user_name ?? 'Usuário'
         }))
       }
     }

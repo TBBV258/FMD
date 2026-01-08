@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
+    "maplibre-gl": "^4.7.0",
     "pinia": "^2.1.7",
     "vue": "^3.4.15",
     "vue-i18n": "^9.14.5",

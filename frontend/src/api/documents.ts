@@ -83,6 +83,38 @@ export const documentsApi = {
       .getPublicUrl(data.path)
 
     return publicUrl
+  },
+
+  async markAsLost(id: string, addTag: boolean = false) {
+    const updates: Partial<Document> = {
+      status: 'lost',
+      updated_at: new Date().toISOString()
+    }
+
+    if (addTag) {
+      // Get current document to preserve existing tags
+      const currentDoc = await this.getById(id)
+      const currentTags = currentDoc.tags || []
+      if (!currentTags.includes('Submetido por Utilizador')) {
+        updates.tags = [...currentTags, 'Submetido por Utilizador']
+      }
+    }
+
+    return this.update(id, updates)
+  },
+
+  async toggleVisibility(id: string, isPublic: boolean) {
+    return this.update(id, {
+      is_public: isPublic,
+      updated_at: new Date().toISOString()
+    })
+  },
+
+  async updateTags(id: string, tags: string[]) {
+    return this.update(id, {
+      tags,
+      updated_at: new Date().toISOString()
+    })
   }
 }
 

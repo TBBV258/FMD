@@ -27,8 +27,8 @@
             <p class="text-xs text-gray-500">Perdidos</p>
           </div>
           <div class="text-center">
-            <p class="text-2xl font-bold text-success">{{ foundDocuments }}</p>
-            <p class="text-xs text-gray-500">Encontrados</p>
+            <p class="text-2xl font-bold" style="color: #FF8C00;">{{ foundDocuments }}</p>
+            <p class="text-xs text-gray-500">Submetido por Utilizador</p>
           </div>
         </div>
       </div>
@@ -68,12 +68,14 @@
         <div
           v-for="document in filteredDocuments"
           :key="document.id"
-          class="card card-hover cursor-pointer"
-          @click="router.push(`/document/${document.id}`)"
+          class="card"
         >
           <div class="flex items-start space-x-3">
             <!-- Thumbnail -->
-            <div class="w-16 h-16 rounded-lg bg-gray-200 dark:bg-gray-700 flex-shrink-0 overflow-hidden">
+            <div 
+              class="w-16 h-16 rounded-lg bg-gray-200 dark:bg-gray-700 flex-shrink-0 overflow-hidden cursor-pointer"
+              @click="router.push(`/document/${document.id}`)"
+            >
               <img
                 v-if="document.thumbnail_url || document.file_url"
                 :src="document.thumbnail_url || document.file_url"
@@ -86,14 +88,28 @@
             </div>
 
             <!-- Content -->
-            <div class="flex-1 min-w-0">
+            <div class="flex-1 min-w-0" @click="router.push(`/document/${document.id}`)">
               <div class="flex items-start justify-between mb-1">
                 <h3 class="font-semibold text-gray-900 dark:text-dark-text truncate">
                   {{ document.title }}
                 </h3>
-                <span :class="getStatusBadgeClass(document.status)" class="ml-2">
-                  {{ getStatusLabel(document.status) }}
-                </span>
+                <div class="flex items-center space-x-2 ml-2">
+                  <span :class="getStatusBadgeClass(document.status)">
+                    {{ getStatusLabel(document.status) }}
+                  </span>
+                  <span 
+                    v-if="document.tags && document.tags.includes('Submetido por Utilizador')"
+                    class="badge bg-orange-500/10 text-orange-600 dark:text-orange-400 text-xs"
+                  >
+                    Submetido por Utilizador
+                  </span>
+                  <span 
+                    v-if="!document.is_public"
+                    class="badge bg-gray-500/10 text-gray-600 dark:text-gray-400 text-xs"
+                  >
+                    <i class="fas fa-lock mr-1"></i>Privado
+                  </span>
+                </div>
               </div>
               <p v-if="document.description" class="text-sm text-gray-600 dark:text-gray-400 line-clamp-1 mb-2">
                 {{ document.description }}
@@ -109,6 +125,45 @@
                 </span>
               </div>
             </div>
+
+            <!-- Actions Menu -->
+            <div class="relative">
+              <button
+                class="btn-icon"
+                @click.stop="toggleActionMenu(document.id)"
+              >
+                <i class="fas fa-ellipsis-v"></i>
+              </button>
+              <div
+                v-if="activeActionMenu === document.id"
+                class="absolute right-0 top-10 z-10 bg-white dark:bg-dark-card rounded-lg shadow-lg border border-gray-200 dark:border-dark-border min-w-[200px]"
+                @click.stop
+              >
+                <button
+                  v-if="document.status !== 'lost'"
+                  class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-2"
+                  @click="handleMarkAsLost(document.id, true)"
+                >
+                  <i class="fas fa-exclamation-triangle text-danger w-4"></i>
+                  <span>Marcar como Perdido</span>
+                </button>
+                <button
+                  v-if="document.status === 'lost' && (!document.tags || !document.tags.includes('Submetido por Utilizador'))"
+                  class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-2"
+                  @click="handleAddTag(document.id)"
+                >
+                  <i class="fas fa-tag text-orange-500 w-4"></i>
+                  <span>Adicionar tag "Submetido por Utilizador"</span>
+                </button>
+                <button
+                  class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-2"
+                  @click="handleToggleVisibility(document.id, document.is_public)"
+                >
+                  <i :class="document.is_public ? 'fas fa-eye-slash' : 'fas fa-eye'" class="w-4"></i>
+                  <span>{{ document.is_public ? 'Tornar Privado' : 'Tornar Público' }}</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -119,11 +174,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useDocumentsStore } from '@/stores/documents'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
+import { documentsApi } from '@/api/documents'
 import type { Document } from '@/types'
 import MainLayout from '@/components/layout/MainLayout.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
@@ -139,11 +195,12 @@ const { success, error: showError } = useToast()
 const activeFilter = ref<'all' | 'lost' | 'found' | 'matched' | 'returned'>('all')
 const isLoading = ref(false)
 const isDownloading = ref(false)
+const activeActionMenu = ref<string | null>(null)
 
 const filters = [
   { label: 'Todos', value: 'all' },
   { label: 'Perdidos', value: 'lost' },
-  { label: 'Encontrados', value: 'found' },
+  { label: 'Submetido por Utilizador', value: 'found' },
   { label: 'Matches', value: 'matched' },
   { label: 'Devolvidos', value: 'returned' }
 ]
@@ -170,10 +227,14 @@ const filterButtonClass = (filter: string) => {
 const getStatusBadgeClass = (status: string) => {
   const classes = {
     lost: 'badge badge-danger',
-    found: 'badge badge-success',
+    found: 'badge',
     matched: 'badge bg-purple-500/10 text-purple-500',
     returned: 'badge badge-success',
     normal: 'badge badge-primary'
+  }
+  // Apply orange color for found status
+  if (status === 'found') {
+    return 'badge bg-orange-500/10 text-orange-600 dark:text-orange-400'
   }
   return classes[status as keyof typeof classes] || 'badge badge-primary'
 }
@@ -181,7 +242,7 @@ const getStatusBadgeClass = (status: string) => {
 const getStatusLabel = (status: string) => {
   const labels = {
     lost: 'Perdido',
-    found: 'Encontrado',
+    found: 'Submetido por Utilizador',
     matched: 'Match',
     returned: 'Devolvido',
     normal: 'Normal'
@@ -254,6 +315,65 @@ const handleDownloadBackup = async () => {
   }
 }
 
+const toggleActionMenu = (documentId: string) => {
+  activeActionMenu.value = activeActionMenu.value === documentId ? null : documentId
+}
+
+const handleMarkAsLost = async (documentId: string, addTag: boolean = false) => {
+  try {
+    activeActionMenu.value = null
+    await documentsApi.markAsLost(documentId, addTag)
+    success('Documento marcado como perdido!')
+    // Refresh documents
+    if (authStore.userId) {
+      await documentsStore.fetchUserDocuments(authStore.userId, true)
+    }
+  } catch (err: any) {
+    showError(err.message || 'Erro ao marcar documento como perdido')
+  }
+}
+
+const handleAddTag = async (documentId: string) => {
+  try {
+    activeActionMenu.value = null
+    const currentDoc = documentsStore.documents.find(d => d.id === documentId)
+    if (!currentDoc) return
+    
+    const currentTags = currentDoc.tags || []
+    if (!currentTags.includes('Submetido por Utilizador')) {
+      await documentsApi.updateTags(documentId, [...currentTags, 'Submetido por Utilizador'])
+      success('Tag adicionada com sucesso!')
+      // Refresh documents
+      if (authStore.userId) {
+        await documentsStore.fetchUserDocuments(authStore.userId, true)
+      }
+    }
+  } catch (err: any) {
+    showError(err.message || 'Erro ao adicionar tag')
+  }
+}
+
+const handleToggleVisibility = async (documentId: string, currentVisibility: boolean) => {
+  try {
+    activeActionMenu.value = null
+    await documentsApi.toggleVisibility(documentId, !currentVisibility)
+    success(`Documento ${!currentVisibility ? 'tornado público' : 'tornado privado'}!`)
+    // Refresh documents
+    if (authStore.userId) {
+      await documentsStore.fetchUserDocuments(authStore.userId, true)
+    }
+  } catch (err: any) {
+    showError(err.message || 'Erro ao alterar visibilidade')
+  }
+}
+
+// Close menu when clicking outside
+const handleClickOutside = (event: MouseEvent) => {
+  if (activeActionMenu.value) {
+    activeActionMenu.value = null
+  }
+}
+
 onMounted(async () => {
   if (!authStore.userId) {
     showError('Usuário não autenticado')
@@ -264,6 +384,13 @@ onMounted(async () => {
   // Busca TODOS os documentos do usuário (não apenas perdidos/encontrados)
   await documentsStore.fetchUserDocuments(authStore.userId, true)
   isLoading.value = false
+
+  // Add click outside listener
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
 })
 </script>
 

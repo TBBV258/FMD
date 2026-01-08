@@ -49,7 +49,7 @@
     "filters": {
       "all": "All",
       "lost": "Lost",
-      "found": "Found"
+      "found": "Submitted by User"
     },
     "empty": "No documents found",
     "loadMore": "Load more",
@@ -72,7 +72,7 @@
     },
     "status": {
       "lost": "Lost",
-      "found": "Found",
+      "found": "Submitted by User",
       "matched": "Matched",
       "returned": "Returned"
     },
