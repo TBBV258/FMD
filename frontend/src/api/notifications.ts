@@ -10,7 +10,18 @@ export const notificationsApi = {
       .order('created_at', { ascending: false })
 
     if (error) throw error
-    return (data || []) as Notification[]
+    
+    // Map database fields to Notification interface
+    return (data || []).map((notif: any) => ({
+      id: notif.id,
+      user_id: notif.user_id,
+      type: notif.type,
+      title: notif.title,
+      message: notif.message,
+      data: notif.data || notif.metadata || {},
+      read: notif.is_read || notif.read || false,
+      created_at: notif.created_at
+    })) as Notification[]
   },
 
   async markAsRead(id: string) {
@@ -43,7 +54,17 @@ export const notificationsApi = {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
         (payload) => {
-          onInsert(payload.new as Notification)
+          const notif = payload.new as any
+          onInsert({
+            id: notif.id,
+            user_id: notif.user_id,
+            type: notif.type,
+            title: notif.title,
+            message: notif.message,
+            data: notif.data || notif.metadata || {},
+            read: notif.is_read || notif.read || false,
+            created_at: notif.created_at
+          } as Notification)
         }
       )
       .subscribe()

@@ -13,23 +13,6 @@
         </button>
       </div>
 
-      <!-- Tabs -->
-      <div class="flex rounded-full bg-gray-100 dark:bg-dark-card p-1">
-        <button
-          :class="tabClass('all')"
-          @click="activeTab = 'all'"
-        >
-          Notificações
-          <span v-if="unreadCount > 0" class="ml-1 text-xs">({{ unreadCount }})</span>
-        </button>
-        <button
-          :class="tabClass('chats')"
-          @click="activeTab = 'chats'"
-        >
-          Conversas
-        </button>
-      </div>
-
       <div v-if="displayedNotifications.length === 0" class="text-center py-12 card">
         <i class="fas fa-bell-slash text-gray-400 text-6xl mb-4"></i>
         <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
@@ -91,48 +74,23 @@ const router = useRouter()
 const authStore = useAuthStore()
 const { error: showError, success } = useToast()
 
-const activeTab = ref<'all' | 'chats'>('all')
 const notifications = ref<Notification[]>([])
 const isLoading = ref(false)
 let unsubscribe: (() => void) | null = null
 
-const allNotifications = computed(() => notifications.value)
-
-const chatNotifications = computed(() => 
-  notifications.value.filter(n => n.type === 'message')
-)
-
-const displayedNotifications = computed(() => 
-  activeTab.value === 'all' ? allNotifications.value : chatNotifications.value
-)
+const displayedNotifications = computed(() => notifications.value)
 
 const unreadCount = computed(() => 
   notifications.value.filter(n => !n.read).length
 )
 
-const emptyState = computed(() => {
-  if (activeTab.value === 'chats') {
-    return {
-      title: 'Sem conversas',
-      subtitle: 'Quando alguém enviar uma mensagem, ela aparecerá aqui.'
-    }
-  }
-  return {
-    title: 'Sem notificações',
-    subtitle: 'Você está em dia!'
-  }
-})
+const emptyState = computed(() => ({
+  title: 'Sem notificações',
+  subtitle: 'Você está em dia!'
+}))
 
 const notificationClass = (read: boolean) => {
   return read ? 'opacity-60' : ''
-}
-
-const tabClass = (tab: 'all' | 'chats') => {
-  const base = 'flex-1 py-2 rounded-full text-sm font-semibold transition-colors'
-  if (activeTab.value === tab) {
-    return `${base} bg-white dark:bg-dark-bg text-primary shadow`
-  }
-  return `${base} text-gray-500`
 }
 
 const iconClass = (type: string) => {

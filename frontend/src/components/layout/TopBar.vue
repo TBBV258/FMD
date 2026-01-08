@@ -10,6 +10,21 @@
       <!-- Actions -->
       <div class="flex items-center space-x-2">
         <slot name="actions">
+          <!-- Notifications -->
+          <router-link
+            to="/notifications"
+            class="btn-icon relative"
+            aria-label="Notificações"
+          >
+            <i class="fas fa-bell"></i>
+            <span
+              v-if="notificationCount > 0"
+              class="absolute -top-1 -right-1 bg-danger text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
+            >
+              {{ notificationCount > 99 ? '99+' : notificationCount }}
+            </span>
+          </router-link>
+          
           <!-- Language selector -->
           <LanguageSelector />
           
@@ -38,11 +53,13 @@ import logoImg from '/logofmd.jpg'
 interface Props {
   title?: string
   logo?: string
+  notificationCount?: number
 }
 
 withDefaults(defineProps<Props>(), {
   title: 'FindMyDocs',
-  logo: logoImg
+  logo: logoImg,
+  notificationCount: 0
 })
 
 const isDark = ref(false)

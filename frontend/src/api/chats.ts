@@ -16,18 +16,46 @@ export const chatsApi = {
 
     const { data, error } = await query
     if (error) throw error
-    return (data || []) as ChatMessage[]
+    
+    // Map database fields to ChatMessage interface
+    return (data || []).map((msg: any) => ({
+      id: msg.id,
+      document_id: msg.document_id,
+      sender_id: msg.sender_id,
+      receiver_id: msg.receiver_id,
+      message: msg.message,
+      created_at: msg.created_at,
+      read: msg.read || false
+    })) as ChatMessage[]
   },
 
   async sendMessage(message: Omit<ChatMessage, 'id' | 'created_at' | 'read'>) {
     const { data, error } = await supabase
       .from('chats')
-      .insert([{ ...message, read: false }])
+      .insert([{ 
+        document_id: message.document_id,
+        sender_id: message.sender_id,
+        receiver_id: message.receiver_id,
+        message: message.message,
+        message_type: 'text',
+        status: 'sent',
+        read: false
+      }])
       .select()
       .single()
 
     if (error) throw error
-    return data as ChatMessage
+    
+    // Map response to ChatMessage
+    return {
+      id: data.id,
+      document_id: data.document_id,
+      sender_id: data.sender_id,
+      receiver_id: data.receiver_id,
+      message: data.message,
+      created_at: data.created_at,
+      read: data.read || false
+    } as ChatMessage
   },
 
   subscribeToDocument(documentId: string, onInsert: (message: ChatMessage) => void) {
@@ -36,7 +64,16 @@ export const chatsApi = {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'chats', filter: `document_id=eq.${documentId}` },
         (payload) => {
-          onInsert(payload.new as ChatMessage)
+          const msg = payload.new as any
+          onInsert({
+            id: msg.id,
+            document_id: msg.document_id,
+            sender_id: msg.sender_id,
+            receiver_id: msg.receiver_id,
+            message: msg.message,
+            created_at: msg.created_at,
+            read: msg.read || false
+          } as ChatMessage)
         }
       )
       .subscribe()

@@ -65,14 +65,21 @@ export function useChat(initialUserId: string) {
 
     const threads = new Map<string, ChatPreview>()
 
-    (messages ?? []).forEach((msg) => {
+    (messages ?? []).forEach((msg: any) => {
+      // Skip if message is missing required fields
+      if (!msg.sender_id || !msg.receiver_id) return
+      
       const otherId = msg.sender_id === currentUserId.value ? msg.receiver_id : msg.sender_id
+      if (!otherId) return
+      
       const threadKey =
         msg.document_id !== null && msg.document_id !== undefined
           ? `document:${msg.document_id}`
           : `users:${[currentUserId.value, otherId].sort().join('-')}`
 
-      const unreadInc = msg.receiver_id === currentUserId.value && !msg.read ? 1 : 0
+      // Check read field (can be boolean or field name)
+      const isRead = msg.read === true || msg.read === 'true' || msg.is_read === true
+      const unreadInc = msg.receiver_id === currentUserId.value && !isRead ? 1 : 0
       const existing = threads.get(threadKey)
 
       if (!existing) {

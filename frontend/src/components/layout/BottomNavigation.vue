@@ -37,11 +37,11 @@ interface NavItem {
 }
 
 interface Props {
-  notificationCount?: number
+  chatUnreadCount?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  notificationCount: 0
+  chatUnreadCount: 0
 })
 
 const route = useRoute()
@@ -67,11 +67,11 @@ const navItems = computed<NavItem[]>(() => [
     to: '/report-found'
   },
   {
-    name: 'notifications',
-    label: t('nav.notifications'),
-    icon: 'fas fa-bell',
-    to: '/notifications',
-    badge: props.notificationCount
+    name: 'chats',
+    label: t('nav.chats'),
+    icon: 'fas fa-comments',
+    to: '/chats',
+    badge: props.chatUnreadCount
   },
   {
     name: 'profile',

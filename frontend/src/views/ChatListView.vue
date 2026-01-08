@@ -1,5 +1,5 @@
 <template>
-  <MainLayout :notification-count="0">
+  <MainLayout>
     <section class="max-w-3xl mx-auto px-4 py-6 space-y-4">
       <header class="flex items-center justify-between">
         <h1 class="text-2xl font-semibold">Conversas</h1>

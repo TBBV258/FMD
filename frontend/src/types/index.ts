@@ -116,7 +116,7 @@ export interface AuthSession {
 // Chat Types
 export interface ChatMessage {
   id: string
-  document_id: string
+  document_id: string | null
   sender_id: string
   receiver_id: string
   message: string
