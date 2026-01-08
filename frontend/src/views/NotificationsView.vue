@@ -13,6 +13,17 @@
         </button>
       </div>
 
+      <!-- Proximity Alerts Settings -->
+      <div class="card mb-6">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-dark-text mb-4">Alertas de Proximidade</h2>
+        <ProximityAlertsSettings />
+      </div>
+
+      <!-- Security Tips -->
+      <div class="card mb-6">
+        <SecurityTipsSection />
+      </div>
+
       <div v-if="displayedNotifications.length === 0" class="text-center py-12 card">
         <i class="fas fa-bell-slash text-gray-400 text-6xl mb-4"></i>
         <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
@@ -69,6 +80,8 @@ import { notificationsApi } from '@/api/notifications'
 import { useToast } from '@/composables/useToast'
 import type { Notification } from '@/types'
 import MainLayout from '@/components/layout/MainLayout.vue'
+import ProximityAlertsSettings from '@/components/notifications/ProximityAlertsSettings.vue'
+import SecurityTipsSection from '@/components/notifications/SecurityTipsSection.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()

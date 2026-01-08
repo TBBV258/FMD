@@ -48,6 +48,24 @@ export const notificationsApi = {
     return data as Notification[]
   },
 
+  async create(notification: Partial<Notification>) {
+    const { data, error } = await supabase
+      .from('notifications')
+      .insert([{
+        user_id: notification.user_id,
+        type: notification.type,
+        title: notification.title || '',
+        message: notification.message || '',
+        metadata: notification.data || {},
+        is_read: false
+      }])
+      .select()
+      .single()
+
+    if (error) throw error
+    return data as Notification
+  },
+
   subscribeToUser(userId: string, onInsert: (notification: Notification) => void) {
     const channel = supabase.channel(`notifications:${userId}`)
       .on(

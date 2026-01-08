@@ -76,6 +76,30 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/subscription-plans',
+    name: 'SubscriptionPlans',
+    component: () => import('@/views/SubscriptionPlansView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/privacy-security',
+    name: 'PrivacySecurity',
+    component: () => import('@/views/PrivacySecurityView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/help-support',
+    name: 'HelpSupport',
+    component: () => import('@/views/HelpSupportView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/settings',
+    name: 'Settings',
+    component: () => import('@/views/SettingsView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/'
   }

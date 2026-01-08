@@ -63,11 +63,15 @@ export function useChat(initialUserId: string) {
       return []
     }
 
-    const threads = new Map<string, ChatPreview>()
+    // Ensure messages is always an array
+    const messagesArray = Array.isArray(messages) ? messages : []
+    
+    // Use a plain object instead of Map for better compatibility
+    const threads: Record<string, ChatPreview> = {}
 
-    (messages ?? []).forEach((msg: any) => {
+    messagesArray.forEach((msg: any) => {
       // Skip if message is missing required fields
-      if (!msg.sender_id || !msg.receiver_id) return
+      if (!msg || !msg.sender_id || !msg.receiver_id) return
       
       const otherId = msg.sender_id === currentUserId.value ? msg.receiver_id : msg.sender_id
       if (!otherId) return
@@ -80,16 +84,16 @@ export function useChat(initialUserId: string) {
       // Check read field (can be boolean or field name)
       const isRead = msg.read === true || msg.read === 'true' || msg.is_read === true
       const unreadInc = msg.receiver_id === currentUserId.value && !isRead ? 1 : 0
-      const existing = threads.get(threadKey)
+      const existing = threads[threadKey]
 
       if (!existing) {
-        threads.set(threadKey, {
+        threads[threadKey] = {
           threadKey,
           document_id: msg.document_id,
           other_user_id: otherId,
           last_message: msg,
           unread_count: unreadInc
-        })
+        }
       } else {
         if (!existing.last_message || msg.created_at > existing.last_message.created_at) {
           existing.last_message = msg
@@ -98,7 +102,7 @@ export function useChat(initialUserId: string) {
       }
     })
 
-    previews.value = Array.from(threads.values()).sort((a, b) =>
+    previews.value = Object.values(threads).sort((a, b) =>
       (b.last_message?.created_at ?? '').localeCompare(a.last_message?.created_at ?? '')
     )
 
@@ -110,15 +114,18 @@ export function useChat(initialUserId: string) {
         .select('id, avatar_url, full_name')
         .in('id', uniqueUserIds)
 
-      if (!profileError && profiles) {
-        const profileMap = new Map(
-          profiles.map((p: any) => [p.id, { avatar_url: p.avatar_url, full_name: p.full_name }])
-        )
+      if (!profileError && profiles && Array.isArray(profiles)) {
+        const profileMap: Record<string, { avatar_url: string | null; full_name: string | null }> = {}
+        profiles.forEach((p: any) => {
+          if (p.id) {
+            profileMap[p.id] = { avatar_url: p.avatar_url || null, full_name: p.full_name || null }
+          }
+        })
 
         previews.value = previews.value.map((p) => ({
           ...p,
-          other_user_avatar_url: profileMap.get(p.other_user_id)?.avatar_url ?? null,
-          other_user_name: profileMap.get(p.other_user_id)?.full_name ?? 'Usuário'
+          other_user_avatar_url: profileMap[p.other_user_id]?.avatar_url ?? null,
+          other_user_name: profileMap[p.other_user_id]?.full_name ?? 'Usuário'
         }))
       } else {
         // Fallback: set default values if profiles not found

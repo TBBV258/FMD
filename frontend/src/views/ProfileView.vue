@@ -129,6 +129,9 @@
       </div>
     </BaseModal>
 
+    <!-- Points Ranking Section -->
+    <PointsRankingSection />
+
     <!-- Meus documentos (lista compacta) -->
     <div class="card mt-6">
       <div class="flex items-center justify-between mb-3">
@@ -177,6 +180,7 @@ import ToastContainer from '@/components/common/ToastContainer.vue'
 import ProfilePhotoUpload from '@/components/profile/ProfilePhotoUpload.vue'
 import SubscriptionPlansModal from '@/components/profile/SubscriptionPlansModal.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
+import PointsRankingSection from '@/components/profile/PointsRankingSection.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -218,7 +222,7 @@ const menuItems = [
   {
     icon: 'fas fa-crown',
     label: 'Planos de Subscrição',
-    action: () => showPlansModal.value = true
+    action: () => router.push('/subscription-plans')
   },
   {
     icon: 'fas fa-bell',
@@ -228,26 +232,17 @@ const menuItems = [
   {
     icon: 'fas fa-lock',
     label: 'Privacidade e Segurança',
-    action: () => {
-      // TODO: Criar view de privacidade
-      success('Funcionalidade em breve!')
-    }
+    action: () => router.push('/privacy-security')
   },
   {
     icon: 'fas fa-question-circle',
     label: 'Ajuda e Suporte',
-    action: () => {
-      // TODO: Criar view de ajuda
-      success('Funcionalidade em breve!')
-    }
+    action: () => router.push('/help-support')
   },
   {
     icon: 'fas fa-cog',
     label: 'Configurações',
-    action: () => {
-      // TODO: Criar view de configurações
-      success('Funcionalidade em breve!')
-    }
+    action: () => router.push('/settings')
   },
 ]
 

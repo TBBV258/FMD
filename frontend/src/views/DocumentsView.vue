@@ -64,36 +64,20 @@
       </EmptyState>
 
       <!-- Documents List -->
-      <div v-else class="space-y-3">
+      <div v-else class="space-y-6">
         <div
           v-for="document in filteredDocuments"
           :key="document.id"
           class="card"
         >
-          <div class="flex items-start space-x-3">
-            <!-- Thumbnail -->
-            <div 
-              class="w-16 h-16 rounded-lg bg-gray-200 dark:bg-gray-700 flex-shrink-0 overflow-hidden cursor-pointer"
-              @click="router.push(`/document/${document.id}`)"
-            >
-              <img
-                v-if="document.thumbnail_url || document.file_url"
-                :src="document.thumbnail_url || document.file_url"
-                :alt="document.title"
-                class="w-full h-full object-cover"
-              />
-              <div v-else class="w-full h-full flex items-center justify-center">
-                <i :class="getTypeIcon(document.type)" class="text-gray-400 text-2xl"></i>
-              </div>
-            </div>
-
-            <!-- Content -->
+          <!-- Document Header -->
+          <div class="flex items-start justify-between mb-4">
             <div class="flex-1 min-w-0" @click="router.push(`/document/${document.id}`)">
-              <div class="flex items-start justify-between mb-1">
-                <h3 class="font-semibold text-gray-900 dark:text-dark-text truncate">
+              <div class="flex items-start justify-between mb-2">
+                <h3 class="font-semibold text-gray-900 dark:text-dark-text truncate text-lg">
                   {{ document.title }}
                 </h3>
-                <div class="flex items-center space-x-2 ml-2">
+                <div class="flex items-center space-x-2 ml-2 flex-shrink-0">
                   <span :class="getStatusBadgeClass(document.status)">
                     {{ getStatusLabel(document.status) }}
                   </span>
@@ -111,60 +95,92 @@
                   </span>
                 </div>
               </div>
-              <p v-if="document.description" class="text-sm text-gray-600 dark:text-gray-400 line-clamp-1 mb-2">
+              <p v-if="document.description" class="text-sm text-gray-600 dark:text-gray-400 mb-3">
                 {{ document.description }}
               </p>
-              <div class="flex items-center text-xs text-gray-500 space-x-3">
-                <span>
-                  <i class="fas fa-calendar mr-1"></i>
-                  {{ formatDate(document.created_at) }}
-                </span>
-                <span v-if="document.location">
-                  <i class="fas fa-map-marker-alt mr-1"></i>
-                  {{ document.location }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Actions Menu -->
-            <div class="relative">
-              <button
-                class="btn-icon"
-                @click.stop="toggleActionMenu(document.id)"
-              >
-                <i class="fas fa-ellipsis-v"></i>
-              </button>
-              <div
-                v-if="activeActionMenu === document.id"
-                class="absolute right-0 top-10 z-10 bg-white dark:bg-dark-card rounded-lg shadow-lg border border-gray-200 dark:border-dark-border min-w-[200px]"
-                @click.stop
-              >
-                <button
-                  v-if="document.status !== 'lost'"
-                  class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-2"
-                  @click="handleMarkAsLost(document.id, true)"
-                >
-                  <i class="fas fa-exclamation-triangle text-danger w-4"></i>
-                  <span>Marcar como Perdido</span>
-                </button>
-                <button
-                  v-if="document.status === 'lost' && (!document.tags || !document.tags.includes('Submetido por Utilizador'))"
-                  class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-2"
-                  @click="handleAddTag(document.id)"
-                >
-                  <i class="fas fa-tag text-orange-500 w-4"></i>
-                  <span>Adicionar tag "Submetido por Utilizador"</span>
-                </button>
-                <button
-                  class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-2"
-                  @click="handleToggleVisibility(document.id, document.is_public)"
-                >
-                  <i :class="document.is_public ? 'fas fa-eye-slash' : 'fas fa-eye'" class="w-4"></i>
-                  <span>{{ document.is_public ? 'Tornar Privado' : 'Tornar Público' }}</span>
-                </button>
+              
+              <!-- Date and Location -->
+              <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-4">
+                <div class="flex items-center space-x-2">
+                  <i class="fas fa-calendar text-primary"></i>
+                  <span>
+                    <strong>Data:</strong> {{ formatDate(document.created_at) }}
+                  </span>
+                </div>
+                <div v-if="getLocationText(document)" class="flex items-center space-x-2">
+                  <i class="fas fa-map-marker-alt text-danger"></i>
+                  <span>
+                    <strong>Local:</strong> {{ getLocationText(document) }}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
+
+          <!-- Gallery -->
+          <DocumentGallery
+            v-if="document.file_url || document.thumbnail_url"
+            :documents="[document]"
+            class="mb-4"
+          />
+
+          <!-- Actions -->
+          <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-dark-border">
+            <div class="flex items-center space-x-2">
+              <ShareDocumentButton
+                :document="document"
+                variant="outline"
+                size="sm"
+              />
+              <!-- Actions Menu -->
+              <div class="relative">
+                <button
+                  class="btn-icon"
+                  @click.stop="toggleActionMenu(document.id)"
+                >
+                  <i class="fas fa-ellipsis-v"></i>
+                </button>
+                <div
+                  v-if="activeActionMenu === document.id"
+                  class="absolute right-0 top-10 z-10 bg-white dark:bg-dark-card rounded-lg shadow-lg border border-gray-200 dark:border-dark-border min-w-[200px]"
+                  @click.stop
+                >
+                  <button
+                    v-if="document.status !== 'lost'"
+                    class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-2"
+                    @click="handleMarkAsLost(document.id, true)"
+                  >
+                    <i class="fas fa-exclamation-triangle text-danger w-4"></i>
+                    <span>Marcar como Perdido</span>
+                  </button>
+                  <button
+                    v-if="document.status === 'lost' && (!document.tags || !document.tags.includes('Submetido por Utilizador'))"
+                    class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-2"
+                    @click="handleAddTag(document.id)"
+                  >
+                    <i class="fas fa-tag text-orange-500 w-4"></i>
+                    <span>Adicionar tag "Submetido por Utilizador"</span>
+                  </button>
+                  <button
+                    class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-2"
+                    @click="handleToggleVisibility(document.id, document.is_public)"
+                  >
+                    <i :class="document.is_public ? 'fas fa-eye-slash' : 'fas fa-eye'" class="w-4"></i>
+                    <span>{{ document.is_public ? 'Tornar Privado' : 'Tornar Público' }}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <BaseButton
+              variant="primary"
+              size="sm"
+              @click="router.push(`/document/${document.id}`)"
+            >
+              Ver Detalhes
+              <i class="fas fa-arrow-right ml-2"></i>
+            </BaseButton>
+          </div>
+        </div>
         </div>
       </div>
     </div>
@@ -186,6 +202,8 @@ import BaseButton from '@/components/common/BaseButton.vue'
 import LoadingSkeleton from '@/components/common/LoadingSkeleton.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import ToastContainer from '@/components/common/ToastContainer.vue'
+import DocumentGallery from '@/components/documents/DocumentGallery.vue'
+import ShareDocumentButton from '@/components/documents/ShareDocumentButton.vue'
 
 const router = useRouter()
 const documentsStore = useDocumentsStore()
@@ -267,8 +285,21 @@ const formatDate = (dateString: string) => {
   return date.toLocaleDateString('pt-BR', {
     day: '2-digit',
     month: 'short',
-    year: 'numeric'
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
   })
+}
+
+const getLocationText = (document: Document): string | null => {
+  if (document.location_metadata) {
+    const location = document.location_metadata as any
+    if (location.address) return location.address
+    if (location.city) return location.city
+    if (location.country) return location.country
+  }
+  if (typeof document.location === 'string') return document.location
+  return null
 }
 
 const handleDownloadBackup = async () => {
