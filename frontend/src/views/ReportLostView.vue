@@ -74,10 +74,20 @@
               class="border-2 border-dashed border-gray-300 dark:border-dark-border rounded-lg p-6 text-center cursor-pointer hover:border-primary transition-colors"
               @click="triggerFileInput"
             >
-              <div v-if="!formData.file">
+              <div v-if="!formData.file && !isBlurProcessing">
                 <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
                 <p class="text-gray-600 dark:text-gray-400">
                   Clique para adicionar foto
+                </p>
+                <p class="text-xs text-gray-500 mt-2">
+                  <i class="fas fa-shield-alt text-warning-dark"></i>
+                  Dados sensíveis serão automaticamente protegidos
+                </p>
+              </div>
+              <div v-else-if="isBlurProcessing" class="space-y-2">
+                <div class="spinner mx-auto"></div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                  Protegendo dados sensíveis... {{ blurProgress }}%
                 </p>
               </div>
               <div v-else class="flex items-center justify-center space-x-2">
@@ -95,6 +105,14 @@
               class="hidden"
               @change="handleFileChange"
             />
+            <div v-if="showBlurWarning" class="mt-2 p-3 bg-warning/10 border border-warning/20 rounded-lg">
+              <p class="text-sm text-warning-dark flex items-start space-x-2">
+                <i class="fas fa-info-circle mt-0.5"></i>
+                <span>
+                  <strong>Aviso de Segurança:</strong> Certifique-se de que números de BI, NUIT e outros dados sensíveis estão ocultos na imagem antes de fazer upload.
+                </span>
+              </p>
+            </div>
           </div>
           
           <!-- Submit Button -->
@@ -103,7 +121,8 @@
             variant="primary"
             size="lg"
             full-width
-            :loading="isSubmitting"
+            :loading="isSubmitting || isBlurProcessing"
+            :disabled="isBlurProcessing"
             loading-text="Publicando..."
           >
             <i class="fas fa-paper-plane mr-2"></i>
@@ -123,6 +142,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useDocumentsStore } from '@/stores/documents'
 import { useToast } from '@/composables/useToast'
+import { useSensitiveDataBlur } from '@/composables/useSensitiveDataBlur'
 import type { DocumentFormData, DocumentType } from '@/types'
 import MainLayout from '@/components/layout/MainLayout.vue'
 import BaseInput from '@/components/common/BaseInput.vue'
@@ -133,9 +153,11 @@ const router = useRouter()
 const authStore = useAuthStore()
 const documentsStore = useDocumentsStore()
 const { success, error: showError } = useToast()
+const { isProcessing: isBlurProcessing, progress: blurProgress, applyCommonDocumentBlur } = useSensitiveDataBlur()
 
 const isSubmitting = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
+const showBlurWarning = ref(false)
 
 const formData = reactive<DocumentFormData>({
   title: '',
@@ -173,11 +195,28 @@ const triggerFileInput = () => {
   fileInputRef.value?.click()
 }
 
-const handleFileChange = (event: Event) => {
+const handleFileChange = async (event: Event) => {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
   if (file) {
-    formData.file = file
+    // Verificar se é uma imagem
+    if (file.type.startsWith('image/')) {
+      try {
+        // Aplicar blur automático em dados sensíveis
+        showBlurWarning.value = true
+        const processedFile = await applyCommonDocumentBlur(file)
+        formData.file = processedFile
+        success('Imagem processada! Dados sensíveis foram protegidos.')
+      } catch (error) {
+        console.error('Erro ao processar imagem:', error)
+        // Em caso de erro, usar arquivo original mas mostrar aviso
+        formData.file = file
+        showBlurWarning.value = true
+        showError('Não foi possível processar a imagem automaticamente. Por favor, certifique-se de ocultar dados sensíveis manualmente.')
+      }
+    } else {
+      formData.file = file
+    }
   }
 }
 
